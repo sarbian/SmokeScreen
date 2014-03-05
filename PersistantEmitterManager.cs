@@ -1,6 +1,6 @@
 ﻿/*
  * Author: Sébastien GAGGINI AKA Sarbian, France
- * License: BY: Attribution 4.0 International (CC BY 4.0): http://creativecommons.org/licenses/by/4.0/
+ * License: Attribution 4.0 International (CC BY 4.0): http://creativecommons.org/licenses/by/4.0/
  * 
  * Thanks to Nothke for all the feature ideas, testing and feedback
  * 
@@ -19,14 +19,15 @@ class PersistantEmitterManager : MonoBehaviour
 
     public static PersistantEmitterManager Instance { get; private set; }
 
-    private static List<KSPParticleEmitter> emitters;
-    private static List<GameObject> emittersGameObjects;
+    private static List<PersistantKSPParticleEmitter> persistantEmitters;
+
 
     private void Awake()
     {
         PersistantEmitterManager.Instance = this;
-        emitters = new List<KSPParticleEmitter>();
-        emittersGameObjects = new List<GameObject>();
+
+        persistantEmitters = new List<PersistantKSPParticleEmitter>();
+
         GameEvents.onGameSceneLoadRequested.Add(new EventData<GameScenes>.OnEvent(this.OnSceneChange));
     }
 
@@ -35,38 +36,34 @@ class PersistantEmitterManager : MonoBehaviour
         GameEvents.onGameSceneLoadRequested.Remove(new EventData<GameScenes>.OnEvent(this.OnSceneChange));
     }
 
-    static public void Add(KSPParticleEmitter kpe, GameObject go)
-    {
-        emitters.Add(kpe);
-        emittersGameObjects.Add(go);
-        EffectBehaviour.AddParticleEmitter(kpe);
+    static public void Add(PersistantKSPParticleEmitter pkpe)
+    {        
+        persistantEmitters.Add(pkpe);
+        EffectBehaviour.AddParticleEmitter(pkpe.pe);
     }
 
     private void OnSceneChange(GameScenes scene)
     {
-        for (int i = 0; i < emitters.Count; i++)
+        for (int i = 0; i < persistantEmitters.Count; i++)
         {
-            EffectBehaviour.RemoveParticleEmitter(emitters[i]);
-            if (emittersGameObjects[i].transform.parent == null)
-                Destroy(emittersGameObjects[i]);
+            EffectBehaviour.RemoveParticleEmitter(persistantEmitters[i].pe);
+            if (persistantEmitters[i].go.transform.parent == null)
+                Destroy(persistantEmitters[i].go);
         }
-        emitters = new List<KSPParticleEmitter>();
-        emittersGameObjects = new List<GameObject>();
+        persistantEmitters = new List<PersistantKSPParticleEmitter>();
     }
 
-        
+
     void FixedUpdate()
     {
-        List<KSPParticleEmitter> emittersCopy = new List<KSPParticleEmitter>(emitters);
-        List<GameObject> emittersGameObjectsCopy = new List<GameObject>(emittersGameObjects);
-        for (int i = 0; i < emittersCopy.Count; i++)
+        List<PersistantKSPParticleEmitter> persistantEmittersCopy = new List<PersistantKSPParticleEmitter>(persistantEmitters);
+        for (int i = 0; i < persistantEmittersCopy.Count; i++)
         {
-            if (emittersGameObjectsCopy[i].transform.parent == null && emittersCopy[i].pe.particles.Count() == 0)
+            if (persistantEmittersCopy[i].go.transform.parent == null && persistantEmittersCopy[i].pe.pe.particles.Count() == 0)
             {
-                EffectBehaviour.RemoveParticleEmitter(emittersCopy[i]);
-                emitters.Remove(emittersCopy[i]);
-                emittersGameObjects.Remove(emittersGameObjectsCopy[i]);
-                Destroy(emittersGameObjectsCopy[i]);
+                EffectBehaviour.RemoveParticleEmitter(persistantEmittersCopy[i].pe);
+                persistantEmitters.Remove(persistantEmittersCopy[i]);
+                Destroy(persistantEmittersCopy[i].go);
             }
         }
 
@@ -79,4 +76,5 @@ class PersistantEmitterManager : MonoBehaviour
 
 
 }
+
 
