@@ -101,9 +101,6 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     public FXCurve angle = new FXCurve("angle", 1f);
     public FXCurve distance = new FXCurve("distance", 1f);
 
-    // Don't waste time on a division.
-    private const double fourThirdsPi = 4 / 3 * Math.PI;
-
     private List<PersistantKSPParticleEmitter> peristantEmitters;
 
     private float emissionPower;
@@ -247,14 +244,14 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                       // N.B.: multiplications rather than Pow, Pow is slow,
                       // multiplication by .5 rather than division by 2 (same 
                       // reason).
-                      double estimatedInitialVolume = fourThirdsPi * rMin * rMin * rMin;
-                      double currentVolume = fourThirdsPi * r * r * r;
+                      double estimatedInitialVolume = 0.75 * Math.PI * rMin * rMin * rMin;
+                      double currentVolume = 0.75 * Math.PI * r * r * r;
                       double volumeChange = currentVolume - estimatedInitialVolume;
                       double density = (estimatedInitialVolume * initialDensity + volumeChange) / currentVolume;
                       double atmosphericDensity = FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(pPos));
                       Vector3d acceleration = (1 - (atmosphericDensity / density)) * FlightGlobals.getGeeForceAtPosition(pPos);
                       // Euler is good enough for graphics.
-                      pVel = pVel + acceleration * TimeWarp.fixedDeltaTime;
+                      // pVel = pVel + acceleration * TimeWarp.fixedDeltaTime;
                       particles[j].velocity = (peristantEmitters[i].pe.useWorldSpace ? (Vector3)pVel : peristantEmitters[i].pe.transform.InverseTransformDirection(pVel));
                     }
 
@@ -267,12 +264,14 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                             if (hit.collider.name != "Launch Pad Grate")
                             {
                                 Vector3 hVel = Vector3.Exclude(hit.normal, pVel);
-                                Vector3 reflectedNormalVelocity = hVel - pVel;
+                                Vector3 reflectedNormalVelocity = collideRatio * (hVel - pVel);
+                                float residualFlow = reflectedNormalVelocity.magnitude * (1 - collideRatio);
                                 // An attempt at a better velocity change; the blob collides with some
                                 // restitution coefficient collideRatio << 1 and we add a random horizonal term
                                 // for flow conservation---randomness handwaved in through fluid dynamics:
-                                Vector3 flowConservationDirection = Vector3.Exclude(hit.normal, UnityEngine.Random.onUnitSphere);
-                                pVel = hVel + collideRatio * reflectedNormalVelocity + flowConservationDirection * (1 - collideRatio) * reflectedNormalVelocity.magnitude;
+                                float randomAngle = UnityEngine.Random.value * 360.0f;
+                                Vector3d flowConservationTerm = Quaternion.AngleAxis(randomAngle, hit.normal) * hVel.normalized * residualFlow;
+                                pVel = hVel + reflectedNormalVelocity + flowConservationTerm;
                                 particles[j].velocity = (peristantEmitters[i].pe.useWorldSpace ? pVel : peristantEmitters[i].pe.transform.InverseTransformDirection(pVel));
                             }
                             else
