@@ -42,12 +42,16 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     [Persistent]
     public float sizeClamp = 50;
 
-    // Initial density of the particle seen as a volume size^3 of perfect gas.
-    // We then assume (only true for ideally expanded exhaust) that the 
+    // Initial density of the particle seen as sphere of radius size of perfect 
+    // gas. We then assume (only true for ideally expanded exhaust) that the 
     // expansion is isobaric (by mixing with the atmosphere) in order to copmute
-    // the density afterwards.
+    // the density afterwards. Units (SI): kg / m^3.
     [Persistent]
-    public float initialGasDensity = .1f;
+    public float initialDensity = .1f;
+
+    // Whether to apply Archimedes' force, gravity and other things to the particle.
+    [Persistent]
+    public bool physical = true;
     
     public FXCurve emission = new FXCurve("emission", 1f);
 
@@ -96,6 +100,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     // Those 2 curve are related to the angle and distance to cam
     public FXCurve angle = new FXCurve("angle", 1f);
     public FXCurve distance = new FXCurve("distance", 1f);
+
+    // Don't waste time on a division.
+    private const double fourThirdsPi = 4 / 3 * Math.PI;
 
     private List<PersistantKSPParticleEmitter> peristantEmitters;
 
@@ -229,6 +236,28 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                 {
                     particles[j].size = Mathf.Min(particles[j].size, sizeClamp);
 
+                    if (physical) {
+                      Vector3d pPos = peristantEmitters[i].pe.useWorldSpace ? particles[j].position : peristantEmitters[i].pe.transform.TransformPoint(particles[j].position);
+                      Vector3d pVel = peristantEmitters[i].pe.useWorldSpace ? particles[j].velocity : peristantEmitters[i].pe.transform.TransformDirection(particles[j].velocity);
+                      float r = particles[j].size;
+                      float rMin = peristantEmitters[i].pe.minSize;
+                      float rMax = peristantEmitters[i].pe.maxSize;
+                      // TODO(robin): this a bad idea. There must be a way to
+                      // keep the actual initial volume, but I'm lazy.
+                      // N.B.: multiplications rather than Pow, Pow is slow,
+                      // multiplication by .5 rather than division by 2 (same 
+                      // reason).
+                      double estimatedInitialVolume = fourThirdsPi * rMin * rMin * rMin;
+                      double currentVolume = fourThirdsPi * r * r * r;
+                      double volumeChange = currentVolume - estimatedInitialVolume;
+                      double density = (estimatedInitialVolume * initialDensity + volumeChange) / currentVolume;
+                      double atmosphericDensity = FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(pPos));
+                      Vector3d acceleration = (1 - (atmosphericDensity / density)) * FlightGlobals.getGeeForceAtPosition(pPos);
+                      // Euler is good enough for graphics.
+                      pVel = pVel + acceleration * TimeWarp.fixedDeltaTime;
+                      particles[j].velocity = (peristantEmitters[i].pe.useWorldSpace ? (Vector3)pVel : peristantEmitters[i].pe.transform.InverseTransformDirection(pVel));
+                    }
+
                     if (collision)
                     {
                         Vector3 pPos = peristantEmitters[i].pe.useWorldSpace ? particles[j].position : peristantEmitters[i].pe.transform.TransformPoint(particles[j].position);
@@ -236,13 +265,14 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                         if (Physics.Raycast(pPos, pVel, out hit, particles[j].velocity.magnitude * 2f * TimeWarp.fixedDeltaTime, mask))
                             
                             if (hit.collider.name != "Launch Pad Grate")
-                            { 
-                                pVel = Vector3.Reflect(pVel, hit.normal);
+                            {
                                 Vector3 hVel = Vector3.Exclude(hit.normal, pVel);
-                                //Vector3d vVel = Vector3d.Project(pVel, hit.normal);
-                                // Make up something a bit more realistic ...
-                                pVel = ((1 - collideRatio) * hVel + collideRatio * pVel).normalized * pVel.magnitude;
-                                //pVel = hVel.normalized * pVel.magnitude;
+                                Vector3 reflectedNormalVelocity = hVel - pVel;
+                                // An attempt at a better velocity change; the blob collides with some
+                                // restitution coefficient collideRatio << 1 and we add a random horizonal term
+                                // for flow conservation---randomness handwaved in through fluid dynamics:
+                                Vector3 flowConservationDirection = Vector3.Exclude(hit.normal, UnityEngine.Random.onUnitSphere);
+                                pVel = hVel + collideRatio * reflectedNormalVelocity + flowConservationDirection * (1 - collideRatio) * reflectedNormalVelocity.magnitude;
                                 particles[j].velocity = (peristantEmitters[i].pe.useWorldSpace ? pVel : peristantEmitters[i].pe.transform.InverseTransformDirection(pVel));
                             }
                             else
@@ -425,6 +455,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public override void OnInitialize()
     {
+#if TRACE
+      print("ModelMultiParticlePersistFX.OnInitialize called;");
+#endif
         // The shader loading require proper testing
         // Unity doc says that "Creating materials this way supports only simple shaders (fixed function ones). 
         // If you need a surface shader, or vertex/pixel shaders, you'll need to create shader asset in the editor and use that."
