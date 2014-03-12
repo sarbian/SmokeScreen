@@ -41,6 +41,13 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     [Persistent]
     public float sizeClamp = 50;
+
+    // Initial density of the particle seen as a volume size^3 of perfect gas.
+    // We then assume (only true for ideally expanded exhaust) that the 
+    // expansion is isobaric (by mixing with the atmosphere) in order to copmute
+    // the density afterwards.
+    [Persistent]
+    public float initialGasDensity = .1f;
     
     public FXCurve emission = new FXCurve("emission", 1f);
 
