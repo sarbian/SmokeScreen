@@ -53,6 +53,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     [Persistent]
     public bool physical = true;
 
+    // How much of the particles stick to objects they collide to.
+    [Persistent]
+    public float stickiness = 0.9f;
+
     [Persistent]
     public double dragCoefficient = 0.1;
     
@@ -276,10 +280,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                                 float residualFlow = reflectedNormalVelocity.magnitude * (1 - collideRatio);
                                 // An attempt at a better velocity change; the blob collides with some
                                 // restitution coefficient collideRatio << 1 and we add a random tangential term
-                                // for flow conservation---randomness handwaved in through fluid dynamics:
+                                // for outflowing particles---randomness handwaved in through fluid dynamics:
                                 float randomAngle = UnityEngine.Random.value * 360.0f;
-                                Vector3d flowConservationTerm = Quaternion.AngleAxis(randomAngle, hit.normal) * unitTangent * residualFlow;
-                                pVel = hVel + collideRatio * reflectedNormalVelocity + flowConservationTerm;
+                                Vector3d outflow = Quaternion.AngleAxis(randomAngle, hit.normal) * unitTangent * residualFlow;
+                                pVel = hVel + collideRatio * reflectedNormalVelocity + outflow * (1 - stickiness);
                                 particles[j].velocity = (peristantEmitters[i].pe.useWorldSpace ? pVel : peristantEmitters[i].pe.transform.InverseTransformDirection(pVel));
                             }
                             else
