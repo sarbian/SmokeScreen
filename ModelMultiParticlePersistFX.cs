@@ -249,7 +249,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                       double volumeChange = currentVolume - estimatedInitialVolume;
                       double density = (estimatedInitialVolume * initialDensity + volumeChange) / currentVolume;
                       double atmosphericDensity = FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(pPos));
-                      double dragCoefficient = .5; // Computed by Pifomètre (R). Make it a setting?
+                      double dragCoefficient = .4; // Computed by Pifomètre. Make it a setting?
                       double mass = density * currentVolume;
                       // Weight and buoyancy.
                       Vector3d acceleration = (1 - (atmosphericDensity / density)) * FlightGlobals.getGeeForceAtPosition(pPos);
@@ -268,14 +268,15 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                             
                             if (hit.collider.name != "Launch Pad Grate")
                             {
+                                Vector3 unitTangent = (hit.normal.x == 0 && hit.normal.y == 0) ? new Vector3(1, 0, 0) : Vector3.Exclude(hit.normal, new Vector3(0, 0, 1)).normalized;
                                 Vector3 hVel = Vector3.Exclude(hit.normal, pVel);
                                 Vector3 reflectedNormalVelocity = hVel - pVel;
                                 float residualFlow = reflectedNormalVelocity.magnitude * (1 - collideRatio);
                                 // An attempt at a better velocity change; the blob collides with some
-                                // restitution coefficient collideRatio << 1 and we add a random horizonal term
+                                // restitution coefficient collideRatio << 1 and we add a random tangential term
                                 // for flow conservation---randomness handwaved in through fluid dynamics:
                                 float randomAngle = UnityEngine.Random.value * 360.0f;
-                                Vector3d flowConservationTerm = Quaternion.AngleAxis(randomAngle, hit.normal) * hVel.normalized * residualFlow;
+                                Vector3d flowConservationTerm = Quaternion.AngleAxis(randomAngle, hit.normal) * unitTangent * residualFlow;
                                 pVel = hVel + collideRatio * reflectedNormalVelocity + flowConservationTerm;
                                 particles[j].velocity = (peristantEmitters[i].pe.useWorldSpace ? pVel : peristantEmitters[i].pe.transform.InverseTransformDirection(pVel));
                             }
