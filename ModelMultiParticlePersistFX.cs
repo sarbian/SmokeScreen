@@ -459,9 +459,6 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public override void OnInitialize()
     {
-#if TRACE
-      print("ModelMultiParticlePersistFX.OnInitialize called;");
-#endif
         // The shader loading require proper testing
         // Unity doc says that "Creating materials this way supports only simple shaders (fixed function ones). 
         // If you need a surface shader, or vertex/pixel shaders, you'll need to create shader asset in the editor and use that."
