@@ -52,6 +52,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     // Whether to apply Archimedes' force, gravity and other things to the particle.
     [Persistent]
     public bool physical = true;
+
+    [Persistent]
+    public double dragCoefficient = 0.1;
     
     public FXCurve emission = new FXCurve("emission", 1f);
 
@@ -247,9 +250,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                       double estimatedInitialVolume = 0.75 * Math.PI * rMin * rMin * rMin;
                       double currentVolume = 0.75 * Math.PI * r * r * r;
                       double volumeChange = currentVolume - estimatedInitialVolume;
-                      double density = (estimatedInitialVolume * initialDensity + volumeChange) / currentVolume;
                       double atmosphericDensity = FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(pPos));
-                      double dragCoefficient = .4; // Computed by Pifomètre. Make it a setting?
+                      double density = (estimatedInitialVolume * initialDensity + volumeChange * atmosphericDensity) / currentVolume;
                       double mass = density * currentVolume;
                       // Weight and buoyancy.
                       Vector3d acceleration = (1 - (atmosphericDensity / density)) * FlightGlobals.getGeeForceAtPosition(pPos);
