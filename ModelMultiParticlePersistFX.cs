@@ -28,7 +28,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     public string collide = "false";
 
     [Persistent]
-    public float collideRatio = 0.01f;
+    public float collideRatio = 0.0f;
 
     [Persistent]
     public Vector3 localRotation = Vector3.zero;
@@ -47,18 +47,25 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     // expansion is isobaric (by mixing with the atmosphere) in order to copmute
     // the density afterwards. Units (SI): kg / m^3.
     [Persistent]
-    public float initialDensity = .1f;
+    public double initialDensity = .6;
 
     // Whether to apply Archimedes' force, gravity and other things to the particle.
     [Persistent]
-    public bool physical = true;
+    public bool physical = false;
 
-    // How much of the particles stick to objects they collide to.
+    // How much the particles stick to objects they collide with.
     [Persistent]
-    public float stickiness = 0.9f;
+    public double stickiness = 0.9;
 
     [Persistent]
     public double dragCoefficient = 0.1;
+
+    // Logarithmic growth applied to to the particle.
+    // The size at time t after emission will be approximately
+    // (Log(logarithmicGrowth * t + 1) + 1) * initialSize, assuming growth = 0.
+    // TODO(sarbian): make this a cfg-configurable curve (as a function of density).
+    [Persistent]
+    public double logarithmicGrowth = 0.0;
     
     public FXCurve emission = new FXCurve("emission", 1f);
 
@@ -239,15 +246,22 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                 if (particles[j].energy > 0)
                 {
                     particles[j].size = Mathf.Min(particles[j].size, sizeClamp);
+                    // No need to waste time doing a division if the result is 0.
+                    if(logarithmicGrowth != 0.0) {
+                      // Euler integration of the derivative of Log(logarithmicGrowth * t + 1) + 1.
+                      // TODO(robin): We use minSize rather than keeping the initial size.
+                      // This might look weird.
+                      particles[j].size += (float)(((TimeWarp.fixedDeltaTime * logarithmicGrowth) / (1 + (particles[j].startEnergy - particles[j].energy) * logarithmicGrowth)) * peristantEmitters[i].pe.minSize);
+                    }
 
                     if (physical) {
                       Vector3d pPos = peristantEmitters[i].pe.useWorldSpace ? particles[j].position : peristantEmitters[i].pe.transform.TransformPoint(particles[j].position);
                       Vector3d pVel = peristantEmitters[i].pe.useWorldSpace ? particles[j].velocity : peristantEmitters[i].pe.transform.TransformDirection(particles[j].velocity);
-                      float r = particles[j].size;
-                      float rMin = peristantEmitters[i].pe.minSize;
-                      float rMax = peristantEmitters[i].pe.maxSize;
-                      // TODO(robin): this a bad idea. There must be a way to
-                      // keep the actual initial volume, but I'm lazy.
+                      double r = particles[j].size;
+                      double rMin = peristantEmitters[i].pe.minSize;
+                      // TODO(robin): using rMin is probably a bad idea, as above.
+                      // There must be a way to keep the actual initial volume, 
+                      // but I'm lazy.
                       // N.B.: multiplications rather than Pow, Pow is slow,
                       // multiplication by .5 rather than division by 2 (same 
                       // reason).
