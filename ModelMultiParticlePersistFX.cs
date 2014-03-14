@@ -309,7 +309,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                       particles[j].velocity = (peristantEmitters[i].pe.useWorldSpace ? (Vector3)pVel : peristantEmitters[i].pe.transform.InverseTransformDirection(pVel));
                     }
 
-                    if (collision)
+                    if (particles[j].energy != particles[j].startEnergy && // Do not collide newly created particles (they collide with the emitter and things look bad).
+                        collision)
                     {
                         if (Physics.Raycast(pPos, pVel, out hit, particles[j].velocity.magnitude * 2f * TimeWarp.fixedDeltaTime, mask))
                             
