@@ -250,7 +250,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             double averageEmittedParticles = UnityEngine.Random.Range(peristantEmitters[i].pe.minEmission, peristantEmitters[i].pe.maxEmission) * TimeWarp.fixedDeltaTime;
             int emittedParticles = (int)Math.Floor(averageEmittedParticles) + (UnityEngine.Random.value < averageEmittedParticles - Math.Floor(averageEmittedParticles) ? 1 : 0);
             for (int k = 0; k < emittedParticles; ++k) {
-              peristantEmitters[k].pe.EmitParticle();
+              peristantEmitters[i].pe.EmitParticle();
             }
           }
             Particle[] particles = peristantEmitters[i].pe.pe.particles;
