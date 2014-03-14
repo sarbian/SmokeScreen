@@ -44,7 +44,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     // Initial density of the particle seen as sphere of radius size of perfect 
     // gas. We then assume (only true for ideally expanded exhaust) that the 
-    // expansion is isobaric (by mixing with the atmosphere) in order to copmute
+    // expansion is isobaric (by mixing with the atmosphere) in order to compute
     // the density afterwards. Units (SI): kg / m^3.
     [Persistent]
     public double initialDensity = .6;
