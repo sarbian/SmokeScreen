@@ -67,6 +67,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     [Persistent]
     public double logarithmicGrowth = 0.0;
     
+    // Whether to emit particles every FixedUpdate rather than every Update.
+    [Persistent]
+    public bool fixedEmissions = true;
+    
     public FXCurve emission = new FXCurve("emission", 1f);
 
     public FXCurve energy = new FXCurve("energy", 1f);
@@ -161,7 +165,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         for (int i = 0; i < peristantEmitters.Count; i++)
             if (peristantEmitters[i].go != null && peristantEmitters[i].go.transform.parent != null)
             {
-                peristantEmitters[i].pe.emit = false;
+              peristantEmitters[i].fixedEmit = false; 
+              peristantEmitters[i].pe.emit = false; 
 
                 // detach from the parent so the emmitter(and its particle) don't get removed instantly
                 peristantEmitters[i].go.transform.parent = null;
@@ -188,13 +193,21 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         if (power > 0f)
         {
             UpdateEmitters(power);
-            for (int i = 0; i < peristantEmitters.Count; i++)
+            for (int i = 0; i < peristantEmitters.Count; i++) {
+              if (fixedEmissions) {
+                peristantEmitters[i].fixedEmit = true;
+                peristantEmitters[i].pe.emit = false;
+              } else {
                 peristantEmitters[i].pe.emit = true;
+              }
+            }
         }
         else
         {
-            for (int j = 0; j < peristantEmitters.Count; j++)
-                peristantEmitters[j].pe.emit = false;
+          for (int j = 0; j < peristantEmitters.Count; j++) {
+              peristantEmitters[j].fixedEmit = false;
+              peristantEmitters[j].pe.emit = false;
+          }
         }
     }
 
@@ -230,10 +243,20 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
         for (int i = 0; i < peristantEmitters.Count; i++)
         {
+          // Emit particles on fixedUpdate rather than Update so that the
+          // appearance is not performance-dependent (dotted smoke effect).
+          if(peristantEmitters[i].fixedEmit) {
+            // Number of particles to emit:
+            double averageEmittedParticles = UnityEngine.Random.Range(peristantEmitters[i].pe.minEmission, peristantEmitters[i].pe.maxEmission) * TimeWarp.fixedDeltaTime;
+            int emittedParticles = (int)Math.Floor(averageEmittedParticles) + (UnityEngine.Random.value < averageEmittedParticles - Math.Floor(averageEmittedParticles) ? 1 : 0);
+            for (int k = 0; k < emittedParticles; ++k) {
+              peristantEmitters[k].pe.EmitParticle();
+            }
+          }
             Particle[] particles = peristantEmitters[i].pe.pe.particles;
 
             for (int j = 0; j < particles.Length; j++)
-            {
+            {   
                 // Check if we need to cull the number of particles
 
                 if (particuleDecimate != 0 && particles.Length > decimateFloor)
@@ -245,6 +268,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
                 if (particles[j].energy > 0)
                 {
+                  Vector3d pPos = peristantEmitters[i].pe.useWorldSpace ? particles[j].position : peristantEmitters[i].pe.transform.TransformPoint(particles[j].position);
+                  Vector3d pVel = peristantEmitters[i].pe.useWorldSpace ? particles[j].velocity : peristantEmitters[i].pe.transform.TransformDirection(particles[j].velocity);
+
                     particles[j].size = Mathf.Min(particles[j].size, sizeClamp);
                     // No need to waste time doing a division if the result is 0.
                     if(logarithmicGrowth != 0.0) {
@@ -254,9 +280,12 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                       particles[j].size += (float)(((TimeWarp.fixedDeltaTime * logarithmicGrowth) / (1 + (particles[j].startEnergy - particles[j].energy) * logarithmicGrowth)) * peristantEmitters[i].pe.minSize);
                     }
 
+                    if (particles[j].energy == particles[j].startEnergy) {
+                      // Uniformly scatter the particles along the emitter's trajectory in order to remove the dotted smoke effect.
+                      pPos += hostPart.vel * UnityEngine.Random.value * TimeWarp.fixedDeltaTime;
+                    }
+
                     if (physical) {
-                      Vector3d pPos = peristantEmitters[i].pe.useWorldSpace ? particles[j].position : peristantEmitters[i].pe.transform.TransformPoint(particles[j].position);
-                      Vector3d pVel = peristantEmitters[i].pe.useWorldSpace ? particles[j].velocity : peristantEmitters[i].pe.transform.TransformDirection(particles[j].velocity);
                       double r = particles[j].size;
                       double rMin = peristantEmitters[i].pe.minSize;
                       // TODO(robin): using rMin is probably a bad idea, as above.
@@ -282,8 +311,6 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
                     if (collision)
                     {
-                        Vector3 pPos = peristantEmitters[i].pe.useWorldSpace ? particles[j].position : peristantEmitters[i].pe.transform.TransformPoint(particles[j].position);
-                        Vector3 pVel = peristantEmitters[i].pe.useWorldSpace ? particles[j].velocity : peristantEmitters[i].pe.transform.TransformDirection(particles[j].velocity);
                         if (Physics.Raycast(pPos, pVel, out hit, particles[j].velocity.magnitude * 2f * TimeWarp.fixedDeltaTime, mask))
                             
                             if (hit.collider.name != "Launch Pad Grate")
@@ -298,7 +325,6 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                                 float randomAngle = UnityEngine.Random.value * 360.0f;
                                 Vector3d outflow = Quaternion.AngleAxis(randomAngle, hit.normal) * unitTangent * residualFlow;
                                 pVel = hVel + collideRatio * reflectedNormalVelocity + outflow * (1 - stickiness);
-                                particles[j].velocity = (peristantEmitters[i].pe.useWorldSpace ? pVel : peristantEmitters[i].pe.transform.InverseTransformDirection(pVel));
                             }
                             else
                             {
@@ -307,6 +333,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                                     AddLaunchPadColliders(hit);
                             }
                     }
+                  
+                  particles[j].velocity = (peristantEmitters[i].pe.useWorldSpace ? (Vector3)pVel : peristantEmitters[i].pe.transform.InverseTransformDirection(pVel));
+                  particles[j].position = (peristantEmitters[i].pe.useWorldSpace ? (Vector3)pPos : peristantEmitters[i].pe.transform.InverseTransformPoint(pPos));
                 }
             }
             peristantEmitters[i].pe.pe.particles = particles;
