@@ -19,6 +19,7 @@ public class PersistantKSPParticleEmitter
 {
     public GameObject go;
     public KSPParticleEmitter pe;
+    public bool fixedEmit = false;
     public float baseMaxSize;
 
     public PersistantKSPParticleEmitter(GameObject go, KSPParticleEmitter pe, float ms)
