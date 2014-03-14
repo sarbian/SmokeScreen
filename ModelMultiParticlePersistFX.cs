@@ -67,9 +67,11 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     [Persistent]
     public double logarithmicGrowth = 0.0;
     
-    // Whether to emit particles every FixedUpdate rather than every Update.
+    // Whether to nudge particles in order to alleviate the dotted smoke effect.
     [Persistent]
     public bool fixedEmissions = true;
+
+    private float variableDeltaTime;
     
     public FXCurve emission = new FXCurve("emission", 1f);
 
@@ -243,8 +245,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
         for (int i = 0; i < peristantEmitters.Count; i++)
         {
-          // Emit particles on fixedUpdate rather than Update so that the
-          // appearance is not performance-dependent (dotted smoke effect).
+          // Emit particles on fixedUpdate rather than Update so that we know which particles
+          // were just created and should be nudged, should not be collided, etc.
           if(peristantEmitters[i].fixedEmit) {
             // Number of particles to emit:
             double averageEmittedParticles = UnityEngine.Random.Range(peristantEmitters[i].pe.minEmission, peristantEmitters[i].pe.maxEmission) * TimeWarp.fixedDeltaTime;
@@ -280,9 +282,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                       particles[j].size += (float)(((TimeWarp.fixedDeltaTime * logarithmicGrowth) / (1 + (particles[j].startEnergy - particles[j].energy) * logarithmicGrowth)) * peristantEmitters[i].pe.minSize);
                     }
 
-                    if (particles[j].energy == particles[j].startEnergy) {
+                    if (fixedEmissions && particles[j].energy == particles[j].startEnergy) {
                       // Uniformly scatter the particles along the emitter's trajectory in order to remove the dotted smoke effect.
-                      pPos += hostPart.vel * UnityEngine.Random.value * TimeWarp.fixedDeltaTime;
+                      pPos -= hostPart.rb.velocity * UnityEngine.Random.value * variableDeltaTime;
                     }
 
                     if (physical) {
@@ -491,7 +493,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public void Update()
     {
-
+      variableDeltaTime = Time.deltaTime;
         if (peristantEmitters == null)
         {
             return;
