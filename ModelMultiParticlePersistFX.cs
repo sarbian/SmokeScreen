@@ -121,7 +121,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     public FXCurve angle = new FXCurve("angle", 1f);
     public FXCurve distance = new FXCurve("distance", 1f);
 
-    private List<PersistantKSPParticleEmitter> peristantEmitters;
+    private List<PersistentKSPParticleEmitter> peristantEmitters;
 
     private float emissionPower;
     private float minEmissionBase;
@@ -557,7 +557,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             templateKspParticleEmitter.material.shader = shader;
 
 
-        // TODO : move those in PersistantKSPParticleEmitter 
+        // TODO : move those in PersistentKSPParticleEmitter 
         scale1DBase = (templateKspParticleEmitter.shape1D *= fixedScale);
         scale2DBase = (templateKspParticleEmitter.shape2D *= fixedScale);
         scale3DBase = (templateKspParticleEmitter.shape3D *= fixedScale);
@@ -573,7 +573,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         localVelocityBase = templateKspParticleEmitter.localVelocity;
 
         if (peristantEmitters == null)
-            peristantEmitters = new List<PersistantKSPParticleEmitter>();
+            peristantEmitters = new List<PersistentKSPParticleEmitter>();
 
 
         for (int i = 0; i < transforms.Count; i++)
@@ -582,7 +582,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             GameObject emmitterGameObject = UnityEngine.Object.Instantiate(model) as GameObject;
             KSPParticleEmitter componentInChildren = emmitterGameObject.GetComponentInChildren<KSPParticleEmitter>();
 
-            PersistantKSPParticleEmitter pkpe = new PersistantKSPParticleEmitter(emmitterGameObject, componentInChildren, templateKspParticleEmitter.maxParticleSize);
+            PersistentKSPParticleEmitter pkpe = new PersistentKSPParticleEmitter(emmitterGameObject, componentInChildren, templateKspParticleEmitter.maxParticleSize);
 
             if (componentInChildren != null)
             {
@@ -609,7 +609,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             emmitterGameObject.transform.localPosition = localPosition;
             emmitterGameObject.transform.localRotation = Quaternion.Euler(localRotation);
 
-            PersistantEmitterManager.Add(pkpe);
+            PersistentEmitterManager.Add(pkpe);
 
         }
 

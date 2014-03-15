@@ -14,22 +14,22 @@ using System.Text;
 using UnityEngine;
 
 
-// TODO : handle the relation with PersistantEmitterManager inside the class
-public class PersistantKSPParticleEmitter
+// TODO : handle the relation with PersistentEmitterManager inside the class
+public class PersistentKSPParticleEmitter
 {
     public GameObject go;
     public KSPParticleEmitter pe;
     public bool fixedEmit = false;
     public float baseMaxSize;
 
-    public PersistantKSPParticleEmitter(GameObject go, KSPParticleEmitter pe, float ms)
+    public PersistentKSPParticleEmitter(GameObject go, KSPParticleEmitter pe, float ms)
     {
         this.go = go;
         this.pe = pe;
         baseMaxSize = ms;
     }
 
-    public PersistantKSPParticleEmitter(GameObject go, KSPParticleEmitter pe)
+    public PersistentKSPParticleEmitter(GameObject go, KSPParticleEmitter pe)
     {
         this.go = go;
         this.pe = pe;
