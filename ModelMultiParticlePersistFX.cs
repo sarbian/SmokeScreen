@@ -271,11 +271,13 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                 if (particles[j].energy > 0)
                 {
                   Vector3d pPos = persistentEmitters[i].pe.useWorldSpace ? particles[j].position : persistentEmitters[i].pe.transform.TransformPoint(particles[j].position);
-                  Vector3d pVel = persistentEmitters[i].pe.useWorldSpace ? particles[j].velocity : persistentEmitters[i].pe.transform.TransformDirection(particles[j].velocity);
-
+                  Vector3d pVel = (persistentEmitters[i].pe.useWorldSpace ? particles[j].velocity : persistentEmitters[i].pe.transform.TransformDirection(particles[j].velocity)) 
+                                  + Krakensbane.GetFrameVelocity();
+                  // try-finally block to ensure we set the particle velocities correctly in the end.
+                  try {
                     particles[j].size = Mathf.Min(particles[j].size, sizeClamp);
                     // No need to waste time doing a division if the result is 0.
-                    if(logarithmicGrowth != 0.0) {
+                    if (logarithmicGrowth != 0.0) {
                       // Euler integration of the derivative of Log(logarithmicGrowth * t + 1) + 1.
                       // TODO(robin): We use minSize rather than keeping the initial size.
                       // This might look weird.
@@ -284,7 +286,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
                     if (fixedEmissions && particles[j].energy == particles[j].startEnergy) {
                       // Uniformly scatter the particles along the emitter's trajectory in order to remove the dotted smoke effect.
-                      pPos -= hostPart.rb.velocity * UnityEngine.Random.value * variableDeltaTime;
+                      pPos -= (hostPart.rb.velocity + Krakensbane.GetFrameVelocity()) * UnityEngine.Random.value * variableDeltaTime;
                     }
 
                     if (physical) {
@@ -305,40 +307,38 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                       // Weight and buoyancy.
                       Vector3d acceleration = (1 - (atmosphericDensity / density)) * FlightGlobals.getGeeForceAtPosition(pPos);
                       // Drag. TODO(robin): simplify.
-                      acceleration += - 0.5 * atmosphericDensity * pVel * pVel.magnitude * dragCoefficient * Math.PI * r * r / mass;
+                      acceleration += -0.5 * atmosphericDensity * pVel * pVel.magnitude * dragCoefficient * Math.PI * r * r / mass;
                       // Euler is good enough for graphics.
                       pVel = pVel + acceleration * TimeWarp.fixedDeltaTime;
-                      particles[j].velocity = (persistentEmitters[i].pe.useWorldSpace ? (Vector3)pVel : persistentEmitters[i].pe.transform.InverseTransformDirection(pVel));
                     }
 
                     if (particles[j].energy != particles[j].startEnergy && // Do not collide newly created particles (they collide with the emitter and things look bad).
-                        collision)
-                    {
-                        if (Physics.Raycast(pPos, pVel, out hit, particles[j].velocity.magnitude * 2f * TimeWarp.fixedDeltaTime, mask))
-                            
-                            if (hit.collider.name != "Launch Pad Grate")
-                            {
-                                Vector3 unitTangent = (hit.normal.x == 0 && hit.normal.y == 0) ? new Vector3(1, 0, 0) : Vector3.Exclude(hit.normal, new Vector3(0, 0, 1)).normalized;
-                                Vector3 hVel = Vector3.Exclude(hit.normal, pVel);
-                                Vector3 reflectedNormalVelocity = hVel - pVel;
-                                float residualFlow = reflectedNormalVelocity.magnitude * (1 - collideRatio);
-                                // An attempt at a better velocity change; the blob collides with some
-                                // restitution coefficient collideRatio << 1 and we add a random tangential term
-                                // for outflowing particles---randomness handwaved in through fluid dynamics:
-                                float randomAngle = UnityEngine.Random.value * 360.0f;
-                                Vector3d outflow = Quaternion.AngleAxis(randomAngle, hit.normal) * unitTangent * residualFlow;
-                                pVel = hVel + collideRatio * reflectedNormalVelocity + outflow * (1 - stickiness);
-                            }
-                            else
-                            {
-                                // Don't collide with the launch pad grid and add colliders under it
-                                if (!addedLaunchPadCollider)
-                                    AddLaunchPadColliders(hit);
-                            }
+                        collision) {
+                      if (Physics.Raycast(pPos, pVel, out hit, (float)pVel.magnitude * 2f * TimeWarp.fixedDeltaTime, mask))
+
+                        if (hit.collider.name != "Launch Pad Grate") {
+                          Vector3 unitTangent = (hit.normal.x == 0 && hit.normal.y == 0) ? new Vector3(1, 0, 0) : Vector3.Exclude(hit.normal, new Vector3(0, 0, 1)).normalized;
+                          Vector3 hVel = Vector3.Exclude(hit.normal, pVel);
+                          Vector3 reflectedNormalVelocity = hVel - pVel;
+                          float residualFlow = reflectedNormalVelocity.magnitude * (1 - collideRatio);
+                          // An attempt at a better velocity change; the blob collides with some
+                          // restitution coefficient collideRatio << 1 and we add a random tangential term
+                          // for outflowing particles---randomness handwaved in through fluid dynamics:
+                          float randomAngle = UnityEngine.Random.value * 360.0f;
+                          Vector3d outflow = Quaternion.AngleAxis(randomAngle, hit.normal) * unitTangent * residualFlow;
+                          pVel = hVel + collideRatio * reflectedNormalVelocity + outflow * (1 - stickiness);
+                        } else {
+                          // Don't collide with the launch pad grid and add colliders under it
+                          if (!addedLaunchPadCollider)
+                            AddLaunchPadColliders(hit);
+                        }
                     }
-                  
-                  particles[j].velocity = (persistentEmitters[i].pe.useWorldSpace ? (Vector3)pVel : persistentEmitters[i].pe.transform.InverseTransformDirection(pVel));
-                  particles[j].position = (persistentEmitters[i].pe.useWorldSpace ? (Vector3)pPos : persistentEmitters[i].pe.transform.InverseTransformPoint(pPos));
+                  } finally {
+                    particles[j].velocity = (persistentEmitters[i].pe.useWorldSpace ? 
+                                              (Vector3)(pVel - Krakensbane.GetFrameVelocity()) :
+                                              persistentEmitters[i].pe.transform.InverseTransformDirection(pVel - Krakensbane.GetFrameVelocity()));
+                    particles[j].position = (persistentEmitters[i].pe.useWorldSpace ? (Vector3)pPos : persistentEmitters[i].pe.transform.InverseTransformPoint(pPos));
+                  }
                 }
             }
             persistentEmitters[i].pe.pe.particles = particles;
