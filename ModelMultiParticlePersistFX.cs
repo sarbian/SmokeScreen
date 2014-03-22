@@ -73,6 +73,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     [Persistent]
     public bool fixedEmissions = true;
 
+    // The time between Update()s (in seconds).
     private float variableDeltaTime;
     
     public FXCurve emission = new FXCurve("emission", 1f);
