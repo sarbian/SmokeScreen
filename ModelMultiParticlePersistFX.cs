@@ -68,6 +68,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     public double logarithmicGrowth = 0.0;
     
     // Whether to nudge particles in order to alleviate the dotted smoke effect.
+    // Set this to true (default) when using 'Simulate World Space' in Unity,
+    // false otherwise.
     [Persistent]
     public bool fixedEmissions = true;
 
