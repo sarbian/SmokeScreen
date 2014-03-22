@@ -63,7 +63,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour {
     // Logarithmic growth applied to to the particle.
     // The size at time t after emission will be approximately
     // (Log(logarithmicGrowth * t + 1) + 1) * initialSize, assuming growth = 0.
-    // TODO(sarbian): make this a cfg-configurable curve (as a function of density).
+    // TODO(sarbian): make this a cfg-configurable curve (as a function of 
+    // density).
     [Persistent]
     public double logarithmicGrowth = 0.0;
     
@@ -73,8 +74,11 @@ public class ModelMultiParticlePersistFX : EffectBehaviour {
     [Persistent]
     public bool fixedEmissions = true;
 
-    // The radius of the disk from which the random initial velocity offsets are
-    // sampled. TODO(sarbian): make this a cfg-configurable curve.
+    // The initial velocity of the particles will be offset by a random amount
+    // lying in a disk perpendicular to the mean initial velocity whose radius
+    // is randomOffsetMaxRadius. This is similar to Unity's 'Random Velocity'
+    // Setting, except it will sample the offset from a (normal) disk rather
+    // than from a cube.
     [Persistent]
     public float randomOffsetMaxRadius = 0.0f;
   #endregion Persistent fields
