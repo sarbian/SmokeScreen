@@ -81,7 +81,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour {
     // Setting, except it will sample the offset from a (normal) disk rather
     // than from a cube.
     [Persistent]
-    public float randomOffsetMaxRadius = 0.0f;
+    public float randomInitalVelocityMaxOffsetMaxRadius = 0.0f;
   #endregion Persistent fields
     
     public FXCurve emission = new FXCurve("emission", 1f);
@@ -300,15 +300,15 @@ public class ModelMultiParticlePersistFX : EffectBehaviour {
                         // Uniformly scatter newly emitted particles along the emitter's trajectory in order to remove the dotted smoke effect.
                         pPos -= (hostPart.rb.velocity + Krakensbane.GetFrameVelocity()) * UnityEngine.Random.value * variableDeltaTime;
                       }
-                      if (randomOffsetMaxRadius != 0.0) {
+                      if (randomInitalVelocityMaxOffsetMaxRadius != 0.0) {
                         Vector3d initialVelocity = persistentEmitters[i].pe.pe.worldVelocity + Krakensbane.GetFrameVelocity();
-                        Vector2 diskPoint = UnityEngine.Random.insideUnitCircle * randomOffsetMaxRadius;
+                        Vector2 diskPoint = UnityEngine.Random.insideUnitCircle * randomInitalVelocityMaxOffsetMaxRadius;
                         Vector3d offset;
                         if (initialVelocity.x == 0.0 && initialVelocity.y == 0.0) {
                           offset = new Vector3d(diskPoint.x, diskPoint.y, 0.0);
                         } else {
                           // Convoluted calculations to save some operations (especially divisions).
-                          // Not that it really matters.
+                          // Not that it really matters, but this achieves 2 divisions and 1 square root.
                           double x = initialVelocity.x;
                           double y = initialVelocity.y;
                           double z = initialVelocity.z;
@@ -316,7 +316,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour {
                           double ySquared = y * y;
                           double xySquareNorm = xSquared + ySquared;
                           double inversexySquareNorm = 1 / xySquareNorm;
-                          double inverseNorm = Math.Sqrt(xySquareNorm + z * z);
+                          double inverseNorm = 1 / Math.Sqrt(xySquareNorm + z * z);
                           double zOverNorm = z * inverseNorm;
                           // TODO(robin): find an identifier for that...
                           double mixedTerm = x * y * (zOverNorm - 1);
@@ -325,6 +325,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour {
                               ((xSquared + ySquared * zOverNorm) * diskPoint.y + mixedTerm * diskPoint.x) * inversexySquareNorm,
                               -(x * diskPoint.x + y * diskPoint.y) * inverseNorm);
                         }
+                        pVel += offset;
                       }
                     }
 
