@@ -206,12 +206,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour {
         {
             UpdateEmitters(power);
             for (int i = 0; i < persistentEmitters.Count; i++) {
-              if (fixedEmissions) {
-                persistentEmitters[i].fixedEmit = true;
-                persistentEmitters[i].pe.emit = false;
-              } else {
-                persistentEmitters[i].pe.emit = true;
-              }
+              persistentEmitters[i].fixedEmit = true;
+              persistentEmitters[i].pe.emit = false;
             }
         }
         else
@@ -306,24 +302,24 @@ public class ModelMultiParticlePersistFX : EffectBehaviour {
                         if (initialVelocity.x == 0.0 && initialVelocity.y == 0.0) {
                           offset = new Vector3d(diskPoint.x, diskPoint.y, 0.0);
                         } else {
-                        // Convoluted calculations to save some operations (especially divisions).
-                        // Not that it really matters.
-                        double x = initialVelocity.x;
-                        double y = initialVelocity.y;
-                        double z = initialVelocity.z;
-                        double xSquared = x * x;
-                        double ySquared = y * y;
-                        double xySquareNorm = xSquared + ySquared;
-                        double inversexySquareNorm = 1 / xySquareNorm;
-                        double inverseNorm = Math.Sqrt(xySquareNorm + z * z);
-                        double zOverNorm = z * inverseNorm;
-                        // TODO(robin): find an identifier for that...
-                        double mixedTerm = x * y * (zOverNorm - 1);
-                        offset = new Vector3d(
-                            ((ySquared + xSquared * zOverNorm) * diskPoint.x + mixedTerm * diskPoint.y) * inversexySquareNorm,
-                            ((xSquared + ySquared * zOverNorm) * diskPoint.y + mixedTerm * diskPoint.x) * inversexySquareNorm,
-                            -(x * diskPoint.x + y * diskPoint.y) * inverseNorm);
-                      }
+                          // Convoluted calculations to save some operations (especially divisions).
+                          // Not that it really matters.
+                          double x = initialVelocity.x;
+                          double y = initialVelocity.y;
+                          double z = initialVelocity.z;
+                          double xSquared = x * x;
+                          double ySquared = y * y;
+                          double xySquareNorm = xSquared + ySquared;
+                          double inversexySquareNorm = 1 / xySquareNorm;
+                          double inverseNorm = Math.Sqrt(xySquareNorm + z * z);
+                          double zOverNorm = z * inverseNorm;
+                          // TODO(robin): find an identifier for that...
+                          double mixedTerm = x * y * (zOverNorm - 1);
+                          offset = new Vector3d(
+                              ((ySquared + xSquared * zOverNorm) * diskPoint.x + mixedTerm * diskPoint.y) * inversexySquareNorm,
+                              ((xSquared + ySquared * zOverNorm) * diskPoint.y + mixedTerm * diskPoint.x) * inversexySquareNorm,
+                              -(x * diskPoint.x + y * diskPoint.y) * inverseNorm);
+                        }
                       }
                     }
 
