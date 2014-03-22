@@ -288,7 +288,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                     }
 
                     if (fixedEmissions && particles[j].energy == particles[j].startEnergy) {
-                      // Uniformly scatter the particles along the emitter's trajectory in order to remove the dotted smoke effect.
+                      // Uniformly scatter newly emitted particles along the emitter's trajectory in order to remove the dotted smoke effect.
                       pPos -= (hostPart.rb.velocity + Krakensbane.GetFrameVelocity()) * UnityEngine.Random.value * variableDeltaTime;
                     }
 
