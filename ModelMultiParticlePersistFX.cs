@@ -10,8 +10,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [EffectDefinition("MODEL_MULTI_PARTICLE_PERSIST")]
-public class ModelMultiParticlePersistFX : EffectBehaviour
-{
+public class ModelMultiParticlePersistFX : EffectBehaviour {
+  #region Persistent fields
     [Persistent]
     public string modelName = string.Empty;
 
@@ -73,8 +73,11 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     [Persistent]
     public bool fixedEmissions = true;
 
-    // The time between Update()s (in seconds).
-    private float variableDeltaTime;
+    // The radius of the disk from which the random initial velocity offsets are
+    // sampled. TODO(sarbian): make this a cfg-configurable curve.
+    [Persistent]
+    public float randomOffsetMaxRadius = 0.0f;
+  #endregion Persistent fields
     
     public FXCurve emission = new FXCurve("emission", 1f);
 
@@ -125,6 +128,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     public FXCurve distance = new FXCurve("distance", 1f);
 
     private List<PersistentKSPParticleEmitter> persistentEmitters;
+
+
+    // The time between Update()s (in seconds).
+    private float variableDeltaTime;
 
     private float emissionPower;
     private float minEmissionBase;
@@ -287,9 +294,37 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                       particles[j].size += (float)(((TimeWarp.fixedDeltaTime * logarithmicGrowth) / (1 + (particles[j].startEnergy - particles[j].energy) * logarithmicGrowth)) * persistentEmitters[i].pe.minSize);
                     }
 
-                    if (fixedEmissions && particles[j].energy == particles[j].startEnergy) {
-                      // Uniformly scatter newly emitted particles along the emitter's trajectory in order to remove the dotted smoke effect.
-                      pPos -= (hostPart.rb.velocity + Krakensbane.GetFrameVelocity()) * UnityEngine.Random.value * variableDeltaTime;
+                    if (particles[j].energy == particles[j].startEnergy) {
+                      if (fixedEmissions) {
+                        // Uniformly scatter newly emitted particles along the emitter's trajectory in order to remove the dotted smoke effect.
+                        pPos -= (hostPart.rb.velocity + Krakensbane.GetFrameVelocity()) * UnityEngine.Random.value * variableDeltaTime;
+                      }
+                      if (randomOffsetMaxRadius != 0.0) {
+                        Vector3d initialVelocity = persistentEmitters[i].pe.pe.worldVelocity + Krakensbane.GetFrameVelocity();
+                        Vector2 diskPoint = UnityEngine.Random.insideUnitCircle * randomOffsetMaxRadius;
+                        Vector3d offset;
+                        if (initialVelocity.x == 0.0 && initialVelocity.y == 0.0) {
+                          offset = new Vector3d(diskPoint.x, diskPoint.y, 0.0);
+                        } else {
+                        // Convoluted calculations to save some operations (especially divisions).
+                        // Not that it really matters.
+                        double x = initialVelocity.x;
+                        double y = initialVelocity.y;
+                        double z = initialVelocity.z;
+                        double xSquared = x * x;
+                        double ySquared = y * y;
+                        double xySquareNorm = xSquared + ySquared;
+                        double inversexySquareNorm = 1 / xySquareNorm;
+                        double inverseNorm = Math.Sqrt(xySquareNorm + z * z);
+                        double zOverNorm = z * inverseNorm;
+                        // TODO(robin): find an identifier for that...
+                        double mixedTerm = x * y * (zOverNorm - 1);
+                        offset = new Vector3d(
+                            ((ySquared + xSquared * zOverNorm) * diskPoint.x + mixedTerm * diskPoint.y) * inversexySquareNorm,
+                            ((xSquared + ySquared * zOverNorm) * diskPoint.y + mixedTerm * diskPoint.x) * inversexySquareNorm,
+                            -(x * diskPoint.x + y * diskPoint.y) * inverseNorm);
+                      }
+                      }
                     }
 
                     if (physical) {
