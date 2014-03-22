@@ -49,7 +49,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour {
     [Persistent]
     public double initialDensity = .6;
 
-    // Whether to apply Archimedes' force, gravity and other things to the particle.
+    // Whether to apply Archimedes' force, gravity and other things to the 
+    // particle.
     [Persistent]
     public bool physical = false;
 
