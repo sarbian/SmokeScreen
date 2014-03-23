@@ -301,28 +301,27 @@ public class ModelMultiParticlePersistFX : EffectBehaviour {
                         pPos -= (hostPart.rb.velocity + Krakensbane.GetFrameVelocity()) * UnityEngine.Random.value * variableDeltaTime;
                       }
                       if (randomInitalVelocityMaxOffsetMaxRadius != 0.0) {
-                        Vector3d initialVelocity = persistentEmitters[i].pe.pe.worldVelocity + Krakensbane.GetFrameVelocity();
                         Vector2 diskPoint = UnityEngine.Random.insideUnitCircle * randomInitalVelocityMaxOffsetMaxRadius;
                         Vector3d offset;
-                        if (initialVelocity.x == 0.0 && initialVelocity.y == 0.0) {
+                        if (pVel.x == 0.0 && pVel.y == 0.0) {
                           offset = new Vector3d(diskPoint.x, diskPoint.y, 0.0);
                         } else {
                           // Convoluted calculations to save some operations (especially divisions).
                           // Not that it really matters, but this achieves 2 divisions and 1 square root.
-                          double x = initialVelocity.x;
-                          double y = initialVelocity.y;
-                          double z = initialVelocity.z;
+                          double x = pVel.x;
+                          double y = pVel.y;
+                          double z = pVel.z;
                           double xSquared = x * x;
                           double ySquared = y * y;
                           double xySquareNorm = xSquared + ySquared;
-                          double inversexySquareNorm = 1 / xySquareNorm;
+                          double inverseXYSquareNorm = 1 / xySquareNorm;
                           double inverseNorm = 1 / Math.Sqrt(xySquareNorm + z * z);
                           double zOverNorm = z * inverseNorm;
                           // TODO(robin): find an identifier for that...
                           double mixedTerm = x * y * (zOverNorm - 1);
                           offset = new Vector3d(
-                              ((ySquared + xSquared * zOverNorm) * diskPoint.x + mixedTerm * diskPoint.y) * inversexySquareNorm,
-                              ((xSquared + ySquared * zOverNorm) * diskPoint.y + mixedTerm * diskPoint.x) * inversexySquareNorm,
+                              ((ySquared + xSquared * zOverNorm) * diskPoint.x + mixedTerm * diskPoint.y) * inverseXYSquareNorm,
+                              ((xSquared + ySquared * zOverNorm) * diskPoint.y + mixedTerm * diskPoint.x) * inverseXYSquareNorm,
                               -(x * diskPoint.x + y * diskPoint.y) * inverseNorm);
                         }
                         pVel += offset;
