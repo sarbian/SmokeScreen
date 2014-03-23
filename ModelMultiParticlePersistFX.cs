@@ -81,7 +81,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour {
     // Setting, except it will sample the offset from a (normal) disk rather
     // than from a cube. Units (SI): m/s.
     [Persistent]
-    public float randomInitalVelocityMaxOffsetMaxRadius = 0.0f;
+    public float randomInitalVelocityOffsetMaxRadius = 0.0f;
   #endregion Persistent fields
     
     public FXCurve emission = new FXCurve("emission", 1f);
@@ -300,8 +300,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour {
                         // Uniformly scatter newly emitted particles along the emitter's trajectory in order to remove the dotted smoke effect.
                         pPos -= (hostPart.rb.velocity + Krakensbane.GetFrameVelocity()) * UnityEngine.Random.value * variableDeltaTime;
                       }
-                      if (randomInitalVelocityMaxOffsetMaxRadius != 0.0) {
-                        Vector2 diskPoint = UnityEngine.Random.insideUnitCircle * randomInitalVelocityMaxOffsetMaxRadius;
+                      if (randomInitalVelocityOffsetMaxRadius != 0.0) {
+                        Vector2 diskPoint = UnityEngine.Random.insideUnitCircle * randomInitalVelocityOffsetMaxRadius;
                         Vector3d offset;
                         if (pVel.x == 0.0 && pVel.y == 0.0) {
                           offset = new Vector3d(diskPoint.x, diskPoint.y, 0.0);
