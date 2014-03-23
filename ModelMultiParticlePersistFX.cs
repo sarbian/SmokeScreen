@@ -79,7 +79,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour {
     // lying in a disk perpendicular to the mean initial velocity whose radius
     // is randomOffsetMaxRadius. This is similar to Unity's 'Random Velocity'
     // Setting, except it will sample the offset from a (normal) disk rather
-    // than from a cube.
+    // than from a cube. Units (SI): m/s.
     [Persistent]
     public float randomInitalVelocityMaxOffsetMaxRadius = 0.0f;
   #endregion Persistent fields
