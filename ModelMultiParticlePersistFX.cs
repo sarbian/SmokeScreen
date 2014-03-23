@@ -10,8 +10,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [EffectDefinition("MODEL_MULTI_PARTICLE_PERSIST")]
-public class ModelMultiParticlePersistFX : EffectBehaviour
-{
+public class ModelMultiParticlePersistFX : EffectBehaviour {
+  #region Persistent fields
     [Persistent]
     public string modelName = string.Empty;
 
@@ -49,7 +49,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     [Persistent]
     public double initialDensity = .6;
 
-    // Whether to apply Archimedes' force, gravity and other things to the particle.
+    // Whether to apply Archimedes' force, gravity and other things to the 
+    // particle.
     [Persistent]
     public bool physical = false;
 
@@ -63,15 +64,25 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     // Logarithmic growth applied to to the particle.
     // The size at time t after emission will be approximately
     // (Log(logarithmicGrowth * t + 1) + 1) * initialSize, assuming growth = 0.
-    // TODO(sarbian): make this a cfg-configurable curve (as a function of density).
+    // TODO(sarbian): make this a cfg-configurable curve (as a function of 
+    // density).
     [Persistent]
     public double logarithmicGrowth = 0.0;
     
     // Whether to nudge particles in order to alleviate the dotted smoke effect.
+    // Set this to true (default) when using 'Simulate World Space' in Unity,
+    // false otherwise.
     [Persistent]
     public bool fixedEmissions = true;
 
-    private float variableDeltaTime;
+    // The initial velocity of the particles will be offset by a random amount
+    // lying in a disk perpendicular to the mean initial velocity whose radius
+    // is randomOffsetMaxRadius. This is similar to Unity's 'Random Velocity'
+    // Setting, except it will sample the offset from a (normal) disk rather
+    // than from a cube. Units (SI): m/s.
+    [Persistent]
+    public float randomInitalVelocityOffsetMaxRadius = 0.0f;
+  #endregion Persistent fields
     
     public FXCurve emission = new FXCurve("emission", 1f);
 
@@ -122,6 +133,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     public FXCurve distance = new FXCurve("distance", 1f);
 
     private List<PersistentKSPParticleEmitter> persistentEmitters;
+
+
+    // The time between Update()s (in seconds).
+    private float variableDeltaTime;
 
     private float emissionPower;
     private float minEmissionBase;
@@ -196,12 +211,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         {
             UpdateEmitters(power);
             for (int i = 0; i < persistentEmitters.Count; i++) {
-              if (fixedEmissions) {
-                persistentEmitters[i].fixedEmit = true;
-                persistentEmitters[i].pe.emit = false;
-              } else {
-                persistentEmitters[i].pe.emit = true;
-              }
+              persistentEmitters[i].fixedEmit = true;
+              persistentEmitters[i].pe.emit = false;
             }
         }
         else
@@ -284,9 +295,37 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                       particles[j].size += (float)(((TimeWarp.fixedDeltaTime * logarithmicGrowth) / (1 + (particles[j].startEnergy - particles[j].energy) * logarithmicGrowth)) * persistentEmitters[i].pe.minSize);
                     }
 
-                    if (fixedEmissions && particles[j].energy == particles[j].startEnergy) {
-                      // Uniformly scatter the particles along the emitter's trajectory in order to remove the dotted smoke effect.
-                      pPos -= (hostPart.rb.velocity + Krakensbane.GetFrameVelocity()) * UnityEngine.Random.value * variableDeltaTime;
+                    if (particles[j].energy == particles[j].startEnergy) {
+                      if (fixedEmissions) {
+                        // Uniformly scatter newly emitted particles along the emitter's trajectory in order to remove the dotted smoke effect.
+                        pPos -= (hostPart.rb.velocity + Krakensbane.GetFrameVelocity()) * UnityEngine.Random.value * variableDeltaTime;
+                      }
+                      if (randomInitalVelocityOffsetMaxRadius != 0.0) {
+                        Vector2 diskPoint = UnityEngine.Random.insideUnitCircle * randomInitalVelocityOffsetMaxRadius;
+                        Vector3d offset;
+                        if (pVel.x == 0.0 && pVel.y == 0.0) {
+                          offset = new Vector3d(diskPoint.x, diskPoint.y, 0.0);
+                        } else {
+                          // Convoluted calculations to save some operations (especially divisions).
+                          // Not that it really matters, but this achieves 2 divisions and 1 square root.
+                          double x = pVel.x;
+                          double y = pVel.y;
+                          double z = pVel.z;
+                          double xSquared = x * x;
+                          double ySquared = y * y;
+                          double xySquareNorm = xSquared + ySquared;
+                          double inverseXYSquareNorm = 1 / xySquareNorm;
+                          double inverseNorm = 1 / Math.Sqrt(xySquareNorm + z * z);
+                          double zOverNorm = z * inverseNorm;
+                          // TODO(robin): find an identifier for that...
+                          double mixedTerm = x * y * (zOverNorm - 1);
+                          offset = new Vector3d(
+                              ((ySquared + xSquared * zOverNorm) * diskPoint.x + mixedTerm * diskPoint.y) * inverseXYSquareNorm,
+                              ((xSquared + ySquared * zOverNorm) * diskPoint.y + mixedTerm * diskPoint.x) * inverseXYSquareNorm,
+                              -(x * diskPoint.x + y * diskPoint.y) * inverseNorm);
+                        }
+                        pVel += offset;
+                      }
                     }
 
                     if (physical) {
