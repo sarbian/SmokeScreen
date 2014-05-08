@@ -22,18 +22,36 @@ public class PersistentKSPParticleEmitter
     public bool fixedEmit = false;
     public float baseMaxSize;
 
+    public float timer = 0;
+
     public PersistentKSPParticleEmitter(GameObject go, KSPParticleEmitter pe, float ms)
     {
         this.go = go;
         this.pe = pe;
         baseMaxSize = ms;
+        PersistentEmitterManager.Add(this);
     }
 
     public PersistentKSPParticleEmitter(GameObject go, KSPParticleEmitter pe)
+        : this(go, pe, 0)
     {
-        this.go = go;
-        this.pe = pe;
-        this.baseMaxSize = 1;
+    }
+
+    // Detach the emitter from its parent gaemobject and stop its emmission in timer seconds
+    public void Detach(float timer)
+    {
+        this.timer = Time.fixedTime + timer;
+        if (go != null && go.transform.parent != null)
+        {
+            // detach from the parent so the emmitter(and its particle) don't get removed instantly
+            go.transform.parent = null;
+        }
+    }
+
+    public void EmissionStop()
+    {
+        fixedEmit = false;
+        pe.emit = false;
     }
 
 }

@@ -59,6 +59,9 @@ class PersistentEmitterManager : MonoBehaviour
         List<PersistentKSPParticleEmitter> persistentEmittersCopy = new List<PersistentKSPParticleEmitter>(persistentEmitters);
         for (int i = 0; i < persistentEmittersCopy.Count; i++)
         {
+            if (persistentEmittersCopy[i].timer != 0 && persistentEmittersCopy[i].timer < Time.fixedTime)
+                persistentEmittersCopy[i].EmissionStop();
+
             if (persistentEmittersCopy[i].go.transform.parent == null && persistentEmittersCopy[i].pe.pe.particles.Count() == 0)
             {
                 EffectBehaviour.RemoveParticleEmitter(persistentEmittersCopy[i].pe);
@@ -66,7 +69,6 @@ class PersistentEmitterManager : MonoBehaviour
                 Destroy(persistentEmittersCopy[i].go);
             }
         }
-
     }
 
     private void print(String s)
