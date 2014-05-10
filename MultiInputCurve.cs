@@ -8,21 +8,28 @@ using System.Text;
 public class MultiInputCurve
 {
     private string name;
-    string[] keyNames;
-    private Dictionary<string, FXCurve> curves;
+    private Dictionary<Input, FXCurve> curves;
     bool additive;
 
-    public MultiInputCurve(string name, string[] keyNames, bool additive = false)
+    public enum Input
+    {
+        power = 0,
+        density,
+        mach
+    }
+
+    public MultiInputCurve(string name, bool additive = false)
     {
         this.name = name;
-        this.keyNames = keyNames;
         this.additive = additive;
 
-        curves = new Dictionary<string, FXCurve>(keyNames.Length, StringComparer.Ordinal);
+        int count = Enum.GetValues(typeof(Input)).Length;
 
-        foreach (string key in keyNames)
+        curves = new Dictionary<Input, FXCurve>(count);
+
+        foreach (Input key in Enum.GetValues(typeof(Input)))
         {
-            curves[key] = new FXCurve(key, additive ? 0f : 1f);
+            curves[key] = new FXCurve(key.ToString(), additive ? 0f : 1f);
         }
     }
 
@@ -30,22 +37,26 @@ public class MultiInputCurve
     {
         // For backward compat load the power curve as the one with the same name
         // it will get overwritten if a power is defined in the subnode
-        curves["power"].Load(name, node);
+        curves[Input.power].Load(name, node);
 
         if (node.HasNode(name))
-            foreach (string key in keyNames)
-                curves[key].Load(key, node.GetNode(name));
+        {
+            foreach (Input key in Enum.GetValues(typeof(Input)))
+            {
+                curves[key].Load(key.ToString(), node.GetNode(name));
+            }
+        }
     }
 
-    public float Value(Dictionary<string, float> input)
+    public float Value(Dictionary<Input, float> inputs)
     {
         float result = additive ? 0f : 1f;
 
-        foreach (string key in keyNames)
+        foreach (Input key in Enum.GetValues(typeof(Input)))
             if (additive)
-                result += curves[key].Value(input[key]);
+                result += curves[key].Value(inputs[key]);
             else
-                result *= curves[key].Value(input[key]);
+                result *= curves[key].Value(inputs[key]);
 
         return result;
     }
@@ -53,7 +64,7 @@ public class MultiInputCurve
     public void Save(ConfigNode node)
     {
         if (node.HasNode(name))
-            foreach (string key in keyNames)
+            foreach (Input key in Enum.GetValues(typeof(Input)))
             {
                 ConfigNode subNode = new ConfigNode(name);
                 curves[key].Save(subNode);
