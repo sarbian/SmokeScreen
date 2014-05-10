@@ -70,9 +70,12 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     [Persistent]
     public double logarithmicGrowth = 0.0;
 
-    // Whether to nudge particles in order to alleviate the dotted smoke effect.
-    // Set this to true (default) when using 'Simulate World Space' in Unity,
-    // false otherwise.
+
+    /// <summary>
+    /// Whether to nudge particles in order to alleviate the dotted smoke effect.
+    /// Set this to true (default) when using 'Simulate World Space' in Unity,
+    /// false otherwise.
+    /// </summary>
     [Persistent]
     public bool fixedEmissions = true;
 
@@ -85,18 +88,15 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     public float randomInitalVelocityOffsetMaxRadius = 0.0f;
     #endregion Persistent fields
 
+    public MultiInputCurve emission = new MultiInputCurve("emission");
+    public MultiInputCurve energy   = new MultiInputCurve("energy");
+    public MultiInputCurve speed    = new MultiInputCurve("speed");
+    public MultiInputCurve grow     = new MultiInputCurve("grow", true);
+    public MultiInputCurve scale    = new MultiInputCurve("scale");
+    public MultiInputCurve size     = new MultiInputCurve("size");
+    public MultiInputCurve offset   = new MultiInputCurve("offset", true);
 
-    public static readonly string[] CurveKeys = { "power", "density", "mach" };
-
-    public MultiInputCurve emission = new MultiInputCurve("emission", CurveKeys);
-    public MultiInputCurve energy   = new MultiInputCurve("energy", CurveKeys);
-    public MultiInputCurve speed    = new MultiInputCurve("speed", CurveKeys);
-    public MultiInputCurve grow     = new MultiInputCurve("grow", CurveKeys, true);
-    public MultiInputCurve scale    = new MultiInputCurve("scale", CurveKeys);
-    public MultiInputCurve size     = new MultiInputCurve("size", CurveKeys);
-    public MultiInputCurve offset   = new MultiInputCurve("offset", CurveKeys, true);
-
-    public MultiInputCurve logGrow = new MultiInputCurve("loggrow", CurveKeys, true);
+    public MultiInputCurve logGrow  = new MultiInputCurve("loggrow", true);
 
     // Those 2 curve are related to the angle and distance to cam
     public FXCurve angle = new FXCurve("angle", 1f);
@@ -104,8 +104,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     private List<PersistentKSPParticleEmitter> persistentEmitters;
 
-    // The time between Update()s (in seconds).
-    private float variableDeltaTime;
+    private float lastPower;
 
     private float minEmissionBase;
     private float maxEmissionBase;
@@ -136,8 +135,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     private void OnDestroy()
     {
         if (persistentEmitters != null)
+        {
             for (int i = 0; i < persistentEmitters.Count; i++)
                 persistentEmitters[i].Detach(0);
+        }
     }
 
     public override void OnEvent()
@@ -156,6 +157,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     {
         if (persistentEmitters == null)
             return;
+
+        lastPower = power;
 
         if (power > 0f)
         {
@@ -182,8 +185,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     private Dictionary<string, bool> colidersName;
 
-    public static uint physicPass = 4;
-    public static uint activePhysicPass = 0;
+    public static uint physicsPass = 4;
+    public static uint activePhysicsPass = 0;
 
     public void FixedUpdate()
     {
@@ -235,12 +238,14 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             for (int j = 0; j < particles.Length; j++)
             {
                 // Check if we need to cull the number of particles
-
                 if (particuleDecimate != 0 && particles.Length > decimateFloor)
                 {
                     particleCounter++;
-                    if ((particuleDecimate > 0 && (particleCounter % particuleDecimate) == 0) || (particuleDecimate < 0 && (particleCounter % particuleDecimate) != 0))
+                    if ((particuleDecimate > 0 && (particleCounter % particuleDecimate) == 0)
+                        || (particuleDecimate < 0 && (particleCounter % particuleDecimate) != 0))
+                    {
                         particles[j].energy = 0; // energy set to 0 remove the particle, as per Unity doc
+                    }
                 }
 
                 if (particles[j].energy > 0)
@@ -248,18 +253,23 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                     Vector3d pPos = persistentEmitters[i].pe.useWorldSpace ? particles[j].position : persistentEmitters[i].pe.transform.TransformPoint(particles[j].position);
                     Vector3d pVel = (persistentEmitters[i].pe.useWorldSpace ? particles[j].velocity : persistentEmitters[i].pe.transform.TransformDirection(particles[j].velocity))
                                     + Krakensbane.GetFrameVelocity();
+
                     // try-finally block to ensure we set the particle velocities correctly in the end.
                     try
                     {
                         // Fixed update is not the best place to update the size but the particles array copy is slow so doing each frame would be worse
                         particles[j].size = Mathf.Min(particles[j].size, sizeClamp);
+
+                        var inputs = this.GetInputs(lastPower);
+
+                        float lGrowth = logGrow.Value(inputs);
+                        
                         // No need to waste time doing a division if the result is 0.
-                        if (logarithmicGrowth != 0.0)
+                        if (lGrowth != 0.0)
                         {
                             // Euler integration of the derivative of Log(logarithmicGrowth * t + 1) + 1.
-                            // TODO(robin): We use minSize rather than keeping the initial size.
                             // This might look weird.
-                            particles[j].size += (float)(((TimeWarp.fixedDeltaTime * logarithmicGrowth) / (1 + (particles[j].startEnergy - particles[j].energy) * logarithmicGrowth)) * persistentEmitters[i].pe.minSize);
+                            particles[j].size += (float)(((TimeWarp.fixedDeltaTime * lGrowth) / (1 + (particles[j].startEnergy - particles[j].energy) * lGrowth)) * 0.5 * (persistentEmitters[i].pe.minSize + persistentEmitters[i].pe.maxSize));
                         }
 
                         if (particles[j].energy == particles[j].startEnergy)
@@ -267,7 +277,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                             if (fixedEmissions)
                             {
                                 // Uniformly scatter newly emitted particles along the emitter's trajectory in order to remove the dotted smoke effect.
-                                pPos -= (hostPart.rb.velocity + Krakensbane.GetFrameVelocity()) * UnityEngine.Random.value * variableDeltaTime;
+                                pPos -= (hostPart.rb.velocity + Krakensbane.GetFrameVelocity()) * UnityEngine.Random.value * TimeWarp.fixedDeltaTime;
                             }
                             if (randomInitalVelocityOffsetMaxRadius != 0.0)
                             {
@@ -301,43 +311,42 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                             }
                         }
 
-                        if (physical && (j % physicPass == activePhysicPass))
+                        if (physical && (j % physicsPass == activePhysicsPass))
                         {
                             // TODO(robin): using pe.minSize is probably a bad idea, as above.
                             // There must be a way to keep the actual initial volume, 
                             // but I'm lazy.
-                            pVel = ParticlePhysic(particles[j].size, persistentEmitters[i].pe.minSize, pPos, pVel);
+                            pVel = ParticlePhysics(particles[j].size, 0.5  * (persistentEmitters[i].pe.minSize + persistentEmitters[i].pe.maxSize), pPos, pVel);
                         }
 
                         if (collide && particles[j].energy != particles[j].startEnergy  // Do not collide newly created particles (they collide with the emitter and things look bad).
-                            && (j % physicPass == activePhysicPass)
-                            && pad != null && (pad.transform.position - pPos).sqrMagnitude < 25f * 25f) // Dont colide if the particule is far from the pad
+                            && (j % physicsPass == activePhysicsPass))
+                            //&& pad != null && (pad.transform.position - pPos).sqrMagnitude < 25f * 25f) // Dont colide if the particule is far from the pad
                         {
                             pVel = ParticleCollision(pPos, pVel, hit, mask);
                         }
                     }
                     finally
                     {
-                        particles[j].velocity = (persistentEmitters[i].pe.useWorldSpace ?
-                                                  (Vector3)(pVel - Krakensbane.GetFrameVelocity()) :
-                                                  persistentEmitters[i].pe.transform.InverseTransformDirection(pVel - Krakensbane.GetFrameVelocity()));
-                        particles[j].position = (persistentEmitters[i].pe.useWorldSpace ? (Vector3)pPos : persistentEmitters[i].pe.transform.InverseTransformPoint(pPos));
+                        particles[j].velocity = (persistentEmitters[i].pe.useWorldSpace ? (Vector3)pVel : persistentEmitters[i].pe.transform.InverseTransformDirection(pVel)) 
+                                                    - Krakensbane.GetFrameVelocity();
+                        particles[j].position = persistentEmitters[i].pe.useWorldSpace ? (Vector3)pPos : persistentEmitters[i].pe.transform.InverseTransformPoint(pPos);
                     }
                 }
             }
-            activePhysicPass = ++activePhysicPass % physicPass;
+            activePhysicsPass = ++activePhysicsPass % physicsPass;
             persistentEmitters[i].pe.pe.particles = particles;
             activeParticles += persistentEmitters[i].pe.pe.particleCount;
         }
     }
 
-    private Vector3 ParticlePhysic(double radius, double initialVolume, Vector3d pPos, Vector3d pVel)
+    private Vector3 ParticlePhysics(double radius, double initialRadius, Vector3d pPos, Vector3d pVel)
     {
         // N.B.: multiplications rather than Pow, Pow is slow,
         // multiplication by .5 rather than division by 2 (same 
         // reason).
         CelestialBody mainBody = FlightGlobals.currentMainBody;
-        double estimatedInitialVolume = 0.75 * Math.PI * initialVolume * initialVolume * initialVolume;
+        double estimatedInitialVolume = 0.75 * Math.PI * initialRadius * initialRadius * initialRadius;
         double currentVolume = 0.75 * Math.PI * radius * radius * radius;
         double volumeChange = currentVolume - estimatedInitialVolume;
         double atmosphericDensity = FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(pPos, mainBody));
@@ -349,36 +358,33 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         Vector3d geeForce = mainBodyDist.normalized * (mainBody.gMagnitudeAtCenter / mainBodyDist.sqrMagnitude);
         Vector3d acceleration = (1 - (atmosphericDensity / density)) * geeForce;
 
-        //Vector3d acceleration = (1 - (atmosphericDensity / density)) * FlightGlobals.getGeeForceAtPosition(pPos);
         // Drag. TODO(robin): simplify.
         acceleration += -0.5 * atmosphericDensity * pVel * pVel.magnitude * dragCoefficient * Math.PI * radius * radius / mass;
+
         // Euler is good enough for graphics.
-        return pVel + acceleration * TimeWarp.fixedDeltaTime * (float)physicPass;
+        return pVel + acceleration * TimeWarp.fixedDeltaTime * (float)physicsPass;
     }
 
     private Vector3 ParticleCollision(Vector3d pPos, Vector3d pVel, RaycastHit hit, int mask)
     {
-        if (Physics.Raycast(pPos, pVel, out hit, (float)pVel.magnitude * TimeWarp.fixedDeltaTime * (float)physicPass, mask))
+        if (Physics.Raycast(pPos, pVel, out hit, (float)pVel.magnitude * TimeWarp.fixedDeltaTime * (float)physicsPass, mask))
         {
-            //colidersName[hit.collider.name] = true;
+            //// colidersName[hit.collider.name] = true;
 
-            if (hit.collider.name != "Launch Pad Grate")
+            if (hit.collider.name != LaunchPadGrateColliderName)
             {
-                //Vector3 unitTangent = (hit.normal.x == 0 && hit.normal.y == 0) ? new Vector3(1, 0, 0) : Vector3.Exclude(hit.normal, new Vector3(0, 0, 1)).normalized;
 
-                // Gerer le cas ou hVel est null et utiliser le calcul de unitTangent  pour outflow dans ce cas.
-
+                Vector3 unitTangent = (hit.normal.x == 0 && hit.normal.y == 0) ? new Vector3(1, 0, 0) : Vector3.Exclude(hit.normal, new Vector3(0, 0, 1)).normalized;
                 Vector3 hVel = Vector3.Exclude(hit.normal, pVel);
                 Vector3 reflectedNormalVelocity = hVel - pVel;
                 float residualFlow = reflectedNormalVelocity.magnitude * (1 - collideRatio);
+
                 // An attempt at a better velocity change; the blob collides with some
                 // restitution coefficient collideRatio << 1 and we add a random tangential term
                 // for outflowing particles---randomness handwaved in through fluid dynamics:
-                //float randomAngle = UnityEngine.Random.value * 360.0f;
-                float randomAngle = 0;
-                //Vector3d outflow = Quaternion.AngleAxis(randomAngle, hit.normal) * unitTangent * residualFlow;
-                Vector3d outflow = Quaternion.AngleAxis(randomAngle, hit.normal) * hVel.normalized * residualFlow;
-                pVel = hVel + collideRatio * reflectedNormalVelocity + outflow * (1 - stickiness);
+                float randomAngle = UnityEngine.Random.value * 360.0f;
+                Vector3d outflow = Quaternion.AngleAxis(randomAngle, hit.normal) * unitTangent * residualFlow;
+                pVel = hVel + collideRatio * reflectedNormalVelocity + outflow * (1 - stickiness);                
             }
             else
             {
@@ -390,9 +396,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         return pVel;
     }
 
-    private const string LaunchPadColliderName = "LaunchPadColliderSmokeScreen";
     // The whole pad object is named "ksp_pad_launchPad"
-
+    private const string LaunchPadGrateColliderName = "Launch Pad Grate";
+    private const string LaunchPadColliderName = "LaunchPadColliderSmokeScreen";
+    
     private void AddLaunchPadColliders(RaycastHit hit)
     {
         // the Grate Collider size is  (37.70, 20.22, 3.47). Way larger that the actual grate
@@ -400,9 +407,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
         Transform parentTransform = hit.collider.gameObject.transform;
 
-        //print("AddLaunchPadColliders col name = " + hit.collider.gameObject.name);
+        ////print("AddLaunchPadColliders col name = " + hit.collider.gameObject.name);
 
-        //print("AddLaunchPadColliders parent col name = " + hit.collider.gameObject.transform.parent.gameObject.name);
+        ////print("AddLaunchPadColliders parent col name = " + hit.collider.gameObject.transform.parent.gameObject.name);
 
         // Are the collider already here ?
         if (parentTransform.FindChild(LaunchPadColliderName))
@@ -466,9 +473,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
 
     private static float lastTime = 0;
-    private void ResetParticleCount()
+    private static void ResetParticleCount()
     {
-        if (lastTime != Time.fixedTime)
+        if (lastTime < Time.fixedTime)
         {
             if (activeParticles > maximumActiveParticles)
             {
@@ -488,30 +495,55 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         }
     }
 
-
-    public void UpdateEmitters(float power)
+    private Dictionary<MultiInputCurve.Inputs, float> GetInputs(float power)
     {
         float atmDensity = 1;
         float surfaceVelMach = 1;
-        if (hostPart != null && hostPart.vessel != null)
+        float partTemp = 1;
+        float externalTemp = 1;
+        if (hostPart != null)
         {
-            Vessel vessel = hostPart.vessel;
-            atmDensity = (float)vessel.atmDensity;
+            partTemp = hostPart.temperature;
 
-            // does not work
-            //float p = (float)FlightGlobals.getStaticPressure(vessel.altitude, vessel.mainBody);
-            //float speedOfSound = Mathf.Sqrt(1.4f * p / atmDensity);
+            if (hostPart.vessel != null)
+            {
+                Vessel vessel = hostPart.vessel;
+                atmDensity = (float)vessel.atmDensity;
 
-            // Cheating for now
-            double speedOfSound = 343.2f;
+                externalTemp = vessel.flightIntegrator.getExternalTemperature();
 
-            surfaceVelMach = (float)(vessel.srf_velocity.magnitude / speedOfSound);
+                // does not work
+                //float p = (float)FlightGlobals.getStaticPressure(vessel.altitude, vessel.mainBody);
+                //float speedOfSound = Mathf.Sqrt(1.4f * p / atmDensity);
+
+                // Cheating for now
+                const double speedOfSound = 343.2f;
+
+                //double speedOfSound = Math.Sqrt(externalTemp * currentBodyAtm.x)
+
+                surfaceVelMach = (float)(vessel.srf_velocity.magnitude / speedOfSound);
+            }
+            else
+            {
+                // TODO atmDensity & mach when not attached to a vessel
+                atmDensity = (float)FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(hostPart.transform.position, FlightGlobals.currentMainBody));
+            }
         }
 
-        Dictionary<string, float> inputs = new Dictionary<string, float>(CurveKeys.Length, StringComparer.Ordinal);
-        inputs["power"] = power;
-        inputs["density"] = atmDensity;
-        inputs["mach"] = surfaceVelMach;
+        var inputs = new Dictionary<MultiInputCurve.Inputs, float>(5);
+        inputs[MultiInputCurve.Inputs.power] = power;
+        inputs[MultiInputCurve.Inputs.density] = atmDensity;
+        inputs[MultiInputCurve.Inputs.mach] = surfaceVelMach;
+        inputs[MultiInputCurve.Inputs.parttemp] = partTemp;
+        inputs[MultiInputCurve.Inputs.externaltemp] = externalTemp;
+
+        return inputs;
+    }
+
+
+    public void UpdateEmitters(float power)
+    {
+        var inputs = this.GetInputs(power);
 
         for (int i = 0; i < persistentEmitters.Count; i++)
         {
@@ -540,13 +572,12 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
             persistentEmitters[i].go.transform.localPosition = Vector3d.forward * offset.Value(inputs);
 
-            //print(atmDensity.ToString("F2") + " " + offset.Value(power).ToString("F2") + " " + offsetFromDensity.Value(atmDensity).ToString("F2") + " " + offsetFromMach.Value(surfaceVelMach).ToString("F2"));
+            ////print(atmDensity.ToString("F2") + " " + offset.Value(power).ToString("F2") + " " + offsetFromDensity.Value(atmDensity).ToString("F2") + " " + offsetFromMach.Value(surfaceVelMach).ToString("F2"));
         }
     }
 
     public void Update()
     {
-        variableDeltaTime = Time.deltaTime;
         if (persistentEmitters == null)
         {
             return;
@@ -570,7 +601,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         // If you need a surface shader, or vertex/pixel shaders, you'll need to create shader asset in the editor and use that."
         // But importing the same shader that the one used in the editor seems to work
         string filename = KSPUtil.ApplicationRootPath + "GameData/" + shaderFileName;
-        if (shaderFileName != String.Empty && System.IO.File.Exists(filename))
+        if (shaderFileName != string.Empty && System.IO.File.Exists(filename))
         {
             try
             {
@@ -607,7 +638,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         }
 
         if (shader != null)
+        {
             templateKspParticleEmitter.material.shader = shader;
+        }
 
 
         // TODO : move those in PersistentKSPParticleEmitter 
@@ -688,11 +721,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         speed.Save(node);
         grow.Save(node);
         scale.Save(node);
-
         size.Save(node);
-
         offset.Save(node);
-
 
         angle.Save(node);
         distance.Save(node);
@@ -725,7 +755,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         collide = GUILayout.Toggle(collide, "collide");
         physical = GUILayout.Toggle(physical, "physical");
 
-        GUILayout.Label("activePhysicPass " + activePhysicPass);
+        GUILayout.Label("activePhysicPass " + activePhysicsPass);
 
         GUILayout.Space(10);
 
@@ -739,6 +769,17 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         GUILayout.Label("particleCounter : " + particleCounter);
                 
         GUILayout.Space(10);
+
+        double externalTemp = FlightGlobals.ActiveVessel.flightIntegrator.getExternalTemperature();
+        GUILayout.Label("External Temperature : " + externalTemp.ToString("F2"));
+
+
+        // FAR use a nice config file to get the atmo info for each body. 
+        // For now I'll just use Air for all.
+        const double magicNumeberFromFAR = 1.4 * 8.3145 * 1000 / 28.96;
+        double speedOfSound = Math.Sqrt((externalTemp + 273.15) * magicNumeberFromFAR);
+
+        GUILayout.Label("Speed of Sound : " + speedOfSound.ToString("F2"));
 
         GameObject pad = GameObject.Find("ksp_pad_launchPad");
 
