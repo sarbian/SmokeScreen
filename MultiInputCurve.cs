@@ -8,34 +8,33 @@ using UnityEngine;
 public class MultiInputCurve
 {
     private string name;
-    private Dictionary<Inputs, FXCurve> curves;
-    private Dictionary<Inputs, FXCurve> logCurves;
+    private FXCurve[] curves;
+    private FXCurve[] logCurves;
 
-    private bool hasLog = false;
     bool additive;
 
     public enum Inputs
     {
-        power,
-        density,
-        mach,
-        parttemp,
-        externaltemp
+        power = 0,
+        density = 1,
+        mach = 2,
+        parttemp = 3,
+        externaltemp = 4
     }
+
+    public static readonly int inputsCount = Enum.GetValues(typeof(Inputs)).Length;
 
     public MultiInputCurve(string name, bool additive = false)
     {
         this.name = name;
         this.additive = additive;
+        
+        curves = new FXCurve[inputsCount];
+        logCurves = new FXCurve[inputsCount];
 
-        int count = Enum.GetValues(typeof(Inputs)).Length;
-
-        curves = new Dictionary<Inputs, FXCurve>(count);
-        logCurves = new Dictionary<Inputs, FXCurve>(count);
-
-        foreach (Inputs key in Enum.GetValues(typeof(Inputs)))
+        for (int i = 0; i < inputsCount; i++)
         {
-            curves[key] = new FXCurve(key.ToString(), additive ? 0f : 1f);
+            curves[i] = new FXCurve(Enum.GetName(typeof(Inputs), i), additive ? 0f : 1f);
         }
     }
 
@@ -43,39 +42,38 @@ public class MultiInputCurve
     {
         // For backward compat load the power curve as the one with the same name
         // it will get overwritten if a power is defined in the subnode
-        curves[Inputs.power].Load(name, node);
+        curves[(int)Inputs.power].Load(name, node);
 
         if (node.HasNode(name))
         {
-            foreach (Inputs key in Enum.GetValues(typeof(Inputs)))
+            for (int i = 0; i < inputsCount; i++)
             {
-                curves[key].Load(key.ToString(), node.GetNode(name));
+                string key = Enum.GetName(typeof(Inputs), i);
+                curves[i].Load(key, node.GetNode(name));
 
                 string logKey = "log" + key;
                 if (node.GetNode(name).HasValue(logKey))
                 {
-                    hasLog = true;
-                    logCurves[key] = new FXCurve(logKey, additive ? 0f : 1f);
-                    logCurves[key].Load(logKey, node.GetNode(name));
+                    logCurves[i] = new FXCurve(logKey, additive ? 0f : 1f);
+                    logCurves[i].Load(logKey, node.GetNode(name));
                 }
             }
         }
     }
 
-    public float Value(Dictionary<Inputs, float> inputs)
+    public float Value(float[] inputs)
     {
         float result = additive ? 0f : 1f;
 
-        foreach (Inputs key in Enum.GetValues(typeof(Inputs)))
+        for (int i = 0; i < inputsCount; i++)
         {
-            float input = inputs[key];
+            float input = inputs[i];
 
-            result = additive ? result + curves[key].Value(input) : result * curves[key].Value(input);
+            result = additive ? result + curves[i].Value(input) : result * curves[i].Value(input);
 
-            FXCurve logCurve;
-            if (hasLog && logCurves.TryGetValue(key, out logCurve))
+            if (logCurves[i] != null)
             {
-                result = additive ? result + logCurve.Value(Mathf.Log(input)) : result * logCurve.Value(Mathf.Log(input));
+                result = additive ? result + logCurves[i].Value(Mathf.Log(input)) : result * logCurves[i].Value(Mathf.Log(input));
             }
         }
         return result;
@@ -83,17 +81,20 @@ public class MultiInputCurve
 
     public void Save(ConfigNode node)
     {
-        foreach (FXCurve curve in curves.Values)
+        for (int i = 0; i < inputsCount; i++)
         {
             ConfigNode subNode = new ConfigNode(name);
-            curve.Save(subNode);
+            curves[i].Save(subNode);
             node.AddNode(subNode);
         }
-        foreach (FXCurve curve in logCurves.Values)
+        for (int i = 0; i < inputsCount; i++)
         {
-            ConfigNode subNode = new ConfigNode(name);
-            curve.Save(subNode);
-            node.AddNode(subNode);
+            if (logCurves[i] != null)
+            {
+                ConfigNode subNode = new ConfigNode(name);
+                logCurves[i].Save(subNode);
+                node.AddNode(subNode);
+            }
         }
     }
 }
