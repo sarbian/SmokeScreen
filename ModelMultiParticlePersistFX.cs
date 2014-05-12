@@ -57,7 +57,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     // How much the particles stick to objects they collide with.
     [Persistent]
-    public double stickiness = 0.9;
+    public double stickiness = 0.5;
 
     [Persistent]
     public double dragCoefficient = 0.1;
@@ -231,8 +231,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                     Vector3d pPos = persistentEmitters[i].pe.useWorldSpace ? particles[j].position : persistentEmitters[i].pe.transform.TransformPoint(particles[j].position);
                     Vector3d pVel = (persistentEmitters[i].pe.useWorldSpace
                                          ? particles[j].velocity
-                                         : persistentEmitters[i].pe.transform.TransformDirection(particles[j].velocity));
-                                    ////+ Krakensbane.GetFrameVelocity();
+                                         : persistentEmitters[i].pe.transform.TransformDirection(particles[j].velocity))
+                                    + Krakensbane.GetFrameVelocity();
 
                     // try-finally block to ensure we set the particle velocities correctly in the end.
                     try
@@ -251,10 +251,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
                         if (particles[j].energy == particles[j].startEnergy)
                         {
-                            if (fixedEmissions)
+                            if (fixedEmissions )
                             {
                                 // Uniformly scatter newly emitted particles along the emitter's trajectory in order to remove the dotted smoke effect.
-                                pPos -= (hostPart.rb.velocity) * UnityEngine.Random.value * TimeWarp.fixedDeltaTime;
+                                pPos -= (hostPart.rb.velocity + Krakensbane.GetFrameVelocity()) * UnityEngine.Random.value * TimeWarp.fixedDeltaTime;
                             }
                             if (randomInitalVelocityOffsetMaxRadius != 0.0)
                             {
@@ -307,8 +307,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                         particles[j].velocity = (persistentEmitters[i].pe.useWorldSpace
                                                      ? (Vector3)pVel
                                                      : persistentEmitters[i].pe.transform.InverseTransformDirection(
-                                                         pVel));
-                                                    ////- Krakensbane.GetFrameVelocity();
+                                                         pVel))
+                                                    - Krakensbane.GetFrameVelocity();
                         particles[j].position = persistentEmitters[i].pe.useWorldSpace ? (Vector3)pPos : persistentEmitters[i].pe.transform.InverseTransformPoint(pPos);
                     }
                 }
@@ -626,13 +626,13 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
         for (int i = 0; i < transforms.Count; i++)
         {
-            GameObject emmitterGameObject = UnityEngine.Object.Instantiate(model) as GameObject;
-            KSPParticleEmitter childKSPParticleEmitter = emmitterGameObject.GetComponentInChildren<KSPParticleEmitter>();
+            GameObject emitterGameObject = UnityEngine.Object.Instantiate(model) as GameObject;
+            KSPParticleEmitter childKSPParticleEmitter = emitterGameObject.GetComponentInChildren<KSPParticleEmitter>();
 
             if (childKSPParticleEmitter != null)
             {
 
-                PersistentKSPParticleEmitter pkpe = new PersistentKSPParticleEmitter(emmitterGameObject, childKSPParticleEmitter, templateKspParticleEmitter);
+                PersistentKSPParticleEmitter pkpe = new PersistentKSPParticleEmitter(emitterGameObject, childKSPParticleEmitter, templateKspParticleEmitter);
 
                 childKSPParticleEmitter.shape1D *= fixedScale;
                 childKSPParticleEmitter.shape2D *= fixedScale;
@@ -654,10 +654,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                 persistentEmitters.Add(pkpe);
 
 
-                emmitterGameObject.transform.SetParent(transforms[i]);
+                emitterGameObject.transform.SetParent(transforms[i]);
 
-                emmitterGameObject.transform.localPosition = localPosition;
-                emmitterGameObject.transform.localRotation = Quaternion.Euler(localRotation);
+                emitterGameObject.transform.localPosition = localPosition;
+                emitterGameObject.transform.localRotation = Quaternion.Euler(localRotation);
             }
 
         }
