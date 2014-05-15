@@ -653,6 +653,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     public override void OnInitialize()
     {
         print("OnInitialize");
+        print("OnInitialize" + emission.name);
+        print("OnInitialize" + emission.curves[0].valueName);
         
         // The shader loading require proper testing
         // Unity doc says that "Creating materials this way supports only simple shaders (fixed function ones). 
@@ -766,6 +768,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
         angle.Load("angle", node);
         distance.Load("distance", node);
+
+        print("OnLoad3" + emission.name);
+        print("OnLoad3" + emission.curves[0].valueName);
     }
 
     public override void OnSave(ConfigNode node)

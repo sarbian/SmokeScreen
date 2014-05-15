@@ -6,40 +6,80 @@ using System.Text;
 
 using UnityEngine;
 
+
+[Serializable]
+public class FXCurves
+{
+    [SerializeField]
+    private FXCurve power;
+    [SerializeField]
+    private FXCurve density;
+    [SerializeField]
+    private FXCurve mach;
+    [SerializeField]
+    private FXCurve parttemp;
+    [SerializeField]
+    private FXCurve externaltemp;
+
+    public FXCurve this[int i]
+    {
+        get
+        {
+            switch (i)
+            {
+                case  (int)MultiInputCurve.Inputs.power:
+                    return power;
+                case (int)MultiInputCurve.Inputs.density:
+                    return density;
+                case (int)MultiInputCurve.Inputs.mach:
+                    return mach;
+                case (int)MultiInputCurve.Inputs.parttemp:
+                    return parttemp;
+                case (int)MultiInputCurve.Inputs.externaltemp:
+                    return externaltemp;
+                default:
+                    return power;
+            }
+        }
+        set
+        {
+            switch (i)
+            {
+                case (int)MultiInputCurve.Inputs.power:
+                    power = value;
+                    break;
+                case (int)MultiInputCurve.Inputs.density:
+                    density = value;
+                    break;
+                case (int)MultiInputCurve.Inputs.mach:
+                    mach = value;
+                    break;
+                case (int)MultiInputCurve.Inputs.parttemp:
+                    parttemp = value;
+                    break;
+                case (int)MultiInputCurve.Inputs.externaltemp:
+                    externaltemp = value;
+                    break;
+            }
+        }
+    }
+}
+
+
 [Serializable]
 public class MultiInputCurve
 {
     public string name;
-    private FXCurve[] _curves = new FXCurve[inputsCount];
-    public FXCurve[] curves
-    {
-        get { return _curves; }
-        set { _curves = value; }
-    }
+    public FXCurves curves = new FXCurves();
+    public FXCurves logCurves = new FXCurves();
 
-    private FXCurve[] _logCurves = new FXCurve[inputsCount];
-    public FXCurve[] logCurves
-    {
-        get { return _logCurves; }
-        set { _logCurves = value; }
-    }
-
-    private float[] _minKey = new float[inputsCount];
-    public float[] minKey
-    {
-        get { return _minKey; }
-        set { _minKey = value; }
-    }
-    private float[] _maxKey = new float[inputsCount];
-    public float[] maxKey
-    {
-        get { return _maxKey; }
-        set { _maxKey = value; }
-    }
+    public float[] minKey = new float[inputsCount];
+    public float[] maxKey = new float[inputsCount];
 
     public float minVal;
     public float maxVal;
 
+    [SerializeField]
     bool additive;
 
     public enum Inputs
