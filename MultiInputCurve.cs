@@ -10,11 +10,32 @@ using UnityEngine;
 public class MultiInputCurve
 {
     public string name;
-    public FXCurve[] curves = new FXCurve[inputsCount];
-    public FXCurve[] logCurves = new FXCurve[inputsCount];
+    private FXCurve[] _curves = new FXCurve[inputsCount];
+    public FXCurve[] curves
+    {
+        get { return _curves; }
+        set { _curves = value; }
+    }
 
-    public float[] minKey = new float[inputsCount];
-    public float[] maxKey = new float[inputsCount];
+    private FXCurve[] _logCurves = new FXCurve[inputsCount];
+    public FXCurve[] logCurves
+    {
+        get { return _logCurves; }
+        set { _logCurves = value; }
+    }
+
+    private float[] _minKey = new float[inputsCount];
+    public float[] minKey
+    {
+        get { return _minKey; }
+        set { _minKey = value; }
+    }
+    private float[] _maxKey = new float[inputsCount];
+    public float[] maxKey
+    {
+        get { return _maxKey; }
+        set { _maxKey = value; }
+    }
 
     public float minVal;
     public float maxVal;
@@ -30,7 +51,8 @@ public class MultiInputCurve
         externaltemp = 4
     }
 
-    public static readonly int inputsCount = Enum.GetValues(typeof(Inputs)).Length;
+    //public static readonly int inputsCount = Enum.GetValues(typeof(Inputs)).Length;
+    public const int inputsCount = 5;
 
     public MultiInputCurve(string name, bool additive = false)
     {
