@@ -87,19 +87,19 @@ public class MultiInputCurve
         curves[(int)Inputs.power].Load(name, node);
         curves[(int)Inputs.power].valueName = "power";
 
-        print("Load of " + name);
+        //print("Load of " + name);
 
         if (node.HasNode(name))
         {
-            print("Load HasNode " + name);
+            //print("Load HasNode " + name);
             for (int i = 0; i < inputsCount; i++)
             {
                 string key = Enum.GetName(typeof(Inputs), i);
                 //print("Loading " + key);
                 curves[i].Load(key, node.GetNode(name));
-                print(
-                    "Loaded " + key + " in " + curves[i].valueName + " " + curves[i].keyFrames.Count() + " should be "
-                    + node.GetNode(name).GetValues(key).Length);
+                //print(
+                //    "Loaded " + key + " in " + curves[i].valueName + " " + curves[i].keyFrames.Count() + " should be "
+                //    + node.GetNode(name).GetValues(key).Length);
 
                 string logKey = "log" + key;
                 if (node.GetNode(name).HasValue(logKey))
@@ -188,11 +188,11 @@ public class MultiInputCurve
         ConfigNode subNode = new ConfigNode(name);
         for (int i = 0; i < inputsCount; i++)
         {
-            print("Saving curve " + curves[i].valueName + " " + curves[i].keyFrames.Count());
+            //print("Saving curve " + curves[i].valueName + " " + curves[i].keyFrames.Count());
             curves[i].Save(subNode);
             if (logCurves[i] != null)
             {
-                print("Saving curve " + logCurves[i].valueName);
+                //print("Saving curve " + logCurves[i].valueName);
                 logCurves[i].Save(subNode);
             }
         }

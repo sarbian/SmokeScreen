@@ -8,8 +8,7 @@ namespace SmokeScreen
     using UnityEngine;
 
     static class SmokeScreenUtil
-    {      
-        
+    {
         public static string WriteRootNode(ConfigNode node)
         {
             StringBuilder builder = new StringBuilder();

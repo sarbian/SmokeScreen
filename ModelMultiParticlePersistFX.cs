@@ -44,6 +44,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     public Vector3 localPosition = Vector3.zero;
 
     [Persistent]
+    public Vector3 offsetDirection = Vector3.forward;
+
+
+    [Persistent]
     public float fixedScale = 1;
 
     [Persistent]
@@ -114,21 +118,20 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     private Shader shader;
 
-    public static int activeParticles = 0;
 
-    public static int particleDecimate = 0;
+    public bool activated = true;
 
-    public static uint particleCounter = 0;
-
-    // Particles Emitter with more than decimateFloor particles will have
-    // some particles culled if there is more than maximumActiveParticles active
-    public static int decimateFloor = 30;
-
-    public static int maximumActiveParticles = 8000; // The engine won't spawn more than 10k anyway
-
-    public bool showUI = true;
+    public bool showUI = false;
 
     private static readonly List<ModelMultiParticlePersistFX> list = new List<ModelMultiParticlePersistFX>();
+
+    public static List<ModelMultiParticlePersistFX> List
+    {
+        get
+        {
+            return list;
+        }
+    }
 
     public bool overRideInputs = false;
 
@@ -144,9 +147,15 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public ModelMultiParticlePersistFX()
     {
-        list.Add(this);
-        winID = baseWinID + list.Count;
+        winID = baseWinID++;
     }
+
+    //~ModelMultiParticlePersistFX()
+    //{
+    //    print("DESTROY ALL HUMAN");
+    //    list.Remove(this);
+    //}
+
 
     private void OnDestroy()
     {
@@ -162,7 +171,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public override void OnEvent()
     {
-        if (persistentEmitters == null)
+        if (!activated || persistentEmitters == null)
         {
             return;
         }
@@ -181,7 +190,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             return;
         }
 
-        if (power > 0f)
+        if (power > 0f && activated)
         {
             UpdateEmitters(power);
             for (int i = 0; i < persistentEmitters.Count; i++)
@@ -213,7 +222,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             return;
         }
 
-        UpdateParticlesCount();
+        SmokeScreenConfig.UpdateParticlesCount();
 
         RaycastHit hit = new RaycastHit();
 
@@ -260,11 +269,11 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             for (int j = 0; j < particles.Length; j++)
             {
                 // Check if we need to cull the number of particles
-                if (particleDecimate != 0 && particles.Length > decimateFloor)
+                if (SmokeScreenConfig.particleDecimate != 0 && particles.Length > SmokeScreenConfig.decimateFloor)
                 {
-                    particleCounter++;
-                    if ((particleDecimate > 0 && (particleCounter % particleDecimate) == 0)
-                        || (particleDecimate < 0 && (particleCounter % particleDecimate) != 0))
+                    SmokeScreenConfig.particleCounter++;
+                    if ((SmokeScreenConfig.particleDecimate > 0 && (SmokeScreenConfig.particleCounter % SmokeScreenConfig.particleDecimate) == 0)
+                        || (SmokeScreenConfig.particleDecimate < 0 && (SmokeScreenConfig.particleCounter % SmokeScreenConfig.particleDecimate) != 0))
                     {
                         particles[j].energy = 0; // energy set to 0 remove the particle, as per Unity doc
                     }
@@ -344,14 +353,14 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                             }
                         }
 
-                        if (physical && (j % physicsPass == activePhysicsPass))
+                        if (physical && !SmokeScreenConfig.Instance.globalPhysicalDisable && (j % physicsPass == activePhysicsPass))
                         {
                             // There must be a way to keep the actual initial volume, 
                             // but I'm lazy.
                             pVel = ParticlePhysics(particles[j].size, averageSize, pPos, pVel);
                         }
 
-                        if (collide && particles[j].energy != particles[j].startEnergy
+                        if (collide && !SmokeScreenConfig.Instance.globalCollideDisable && particles[j].energy != particles[j].startEnergy
                             // Do not collide newly created particles (they collide with the emitter and things look bad).
                             && (j % physicsPass == activePhysicsPass))
                         {
@@ -372,7 +381,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             }
             activePhysicsPass = ++activePhysicsPass % physicsPass;
             persistentEmitters[i].pe.pe.particles = particles;
-            activeParticles += persistentEmitters[i].pe.pe.particleCount;
+            SmokeScreenConfig.activeParticles += persistentEmitters[i].pe.pe.particleCount;
         }
     }
 
@@ -515,34 +524,6 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         addedLaunchPadCollider = true;
     }
 
-    private static float lastTime = 0;
-
-    private static void UpdateParticlesCount()
-    {
-        if (lastTime < Time.fixedTime)
-        {
-            if (activeParticles > maximumActiveParticles)
-            {
-                int toRemove = activeParticles - maximumActiveParticles;
-                if (toRemove < maximumActiveParticles)
-                {
-                    particleDecimate = activeParticles / (toRemove + 1); // positive we remove each n
-                }
-                else
-                {
-                    particleDecimate = -activeParticles / maximumActiveParticles; // negative we keep each n
-                }
-            }
-            else
-            {
-                particleDecimate = 0;
-            }
-
-            activeParticles = 0;
-            lastTime = Time.fixedTime;
-        }
-    }
-
     private void UpdateInputs(float power)
     {
         if (overRideInputs)
@@ -565,18 +546,20 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
                 // FAR use a nice config file to get the atmo info for each body. 
                 // For now I'll just use Air for all.
-                const double magicNumeberFromFAR = 1.4 * 8.3145 * 1000 / 28.96;
-                double speedOfSound = Math.Sqrt((externalTemp + 273.15) * magicNumeberFromFAR);
-
+                const double magicNumberFromFAR = 1.4 * 8.3145 * 1000 / 28.96;
+                double speedOfSound = Math.Sqrt((externalTemp + 273.15) * magicNumberFromFAR);
                 surfaceVelMach = (float)(vessel.srf_velocity.magnitude / speedOfSound);
             }
             else
             {
-                // TODO atmDensity & mach when not attached to a vessel
                 atmDensity =
                     (float)
                     FlightGlobals.getAtmDensity(
                         FlightGlobals.getStaticPressure(hostPart.transform.position, FlightGlobals.currentMainBody));
+                externalTemp = FlightGlobals.getExternalTemperature(hostPart.transform.position);
+                const double magicNumberFromFAR = 1.4 * 8.3145 * 1000 / 28.96;
+                double speedOfSound = Math.Sqrt((externalTemp + 273.15) * magicNumberFromFAR);
+                surfaceVelMach = (float)((hostPart.vel - FlightGlobals.currentMainBody.getRFrmVel(hostPart.transform.position)).magnitude / speedOfSound);
             }
         }
 
@@ -595,7 +578,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         {
             PersistentKSPParticleEmitter pkpe = persistentEmitters[i];
 
-            float sizePower = size.Value(inputs);
+            float sizePower = size.Value(inputs) * fixedScale;
             pkpe.pe.minSize = Mathf.Min(pkpe.minSizeBase * sizePower, sizeClamp);
             pkpe.pe.maxSize = Mathf.Min(pkpe.maxSizeBase * sizePower, sizeClamp);
 
@@ -612,14 +595,14 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
             pkpe.pe.sizeGrow = grow.Value(inputs);
 
-            float currentScale = scale.Value(inputs);
+            float currentScale = scale.Value(inputs) * fixedScale;
             pkpe.pe.shape1D = pkpe.scale1DBase * currentScale;
             pkpe.pe.shape2D = pkpe.scale2DBase * currentScale;
             pkpe.pe.shape3D = pkpe.scale3DBase * currentScale;
 
             logarithmicGrow = logGrow.Value(inputs);
 
-            pkpe.go.transform.localPosition = Vector3d.forward * offset.Value(inputs);
+            pkpe.go.transform.localPosition = localPosition + offsetDirection.normalized * offset.Value(inputs) * fixedScale;
 
             ////print(atmDensity.ToString("F2") + " " + offset.Value(power).ToString("F2") + " " + offsetFromDensity.Value(atmDensity).ToString("F2") + " " + offsetFromMach.Value(surfaceVelMach).ToString("F2"));
         }
@@ -646,21 +629,13 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         }
     }
 
+
+
     public override void OnInitialize()
     {
+        // Restore the Curve config from the node content backup
+        // Done because I could not get the serialization of MultiInputCurve to work
         if (node_backup != string.Empty) Restore();
-
-        print("OnInitialize");
-        print("OnInitialize " + emission.name);
-        emission.Test();
-        
-
-        if (emission.curves != null && emission.curves[0] == null)
-            print("OnInitialize curve[0] is null");
-
-        if (emission.curves != null && emission.curves[0] != null)
-            print("OnInitialize curve[0] is " + emission.curves[0].valueName);
-        //print("OnInitialize " + emission.curves[0].valueName);
 
         
         // The shader loading require proper testing
@@ -727,15 +702,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                     emitterGameObject,
                     childKSPParticleEmitter,
                     templateKspParticleEmitter);
-
-                childKSPParticleEmitter.shape1D *= fixedScale;
-                childKSPParticleEmitter.shape2D *= fixedScale;
-                childKSPParticleEmitter.shape3D *= fixedScale;
-
-                templateKspParticleEmitter.shape1D *= fixedScale;
-                templateKspParticleEmitter.shape2D *= fixedScale;
-                templateKspParticleEmitter.shape3D *= fixedScale;
-
+               
                 try
                 {
                     childKSPParticleEmitter.particleRenderMode =
@@ -756,6 +723,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         }
 
         UnityEngine.Object.Destroy(templateKspParticleEmitter);
+
+        list.Add(this);
     }
 
     public string node_backup = string.Empty;
@@ -766,12 +735,12 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     public void Backup(ConfigNode node)
     {
         node_backup = SmokeScreenUtil.WriteRootNode(node);
-        print("Backup node_backup is\n " + node_backup.Replace(Environment.NewLine, Environment.NewLine + "ModelMultiParticlePersistFX "));
+        //print("Backup node_backup is\n " + node_backup.Replace(Environment.NewLine, Environment.NewLine + "ModelMultiParticlePersistFX "));
     }
 
     public void Restore()
     {
-        print("Restore node_backup is\n " + node_backup.Replace(Environment.NewLine, Environment.NewLine + "ModelMultiParticlePersistFX "));
+        //print("Restore node_backup is\n " + node_backup.Replace(Environment.NewLine, Environment.NewLine + "ModelMultiParticlePersistFX "));
         string[] text = node_backup.Split(new string[] { "\n" }, StringSplitOptions.None);
         ConfigNode node = SmokeScreenUtil.RecurseFormat(SmokeScreenUtil.PreFormatConfig(text));
         this.OnLoad(node);
@@ -779,7 +748,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public override void OnLoad(ConfigNode node)
     {
-        print("OnLoad");
+        //print("OnLoad");
         Backup(node);
 
         emission = new MultiInputCurve("emission");
@@ -792,7 +761,6 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         logGrow = new MultiInputCurve("logGrow", true);
 
         ConfigNode.LoadObjectFromConfig(this, node);
-        print("OnLoad2");
         emission.Load(node);
         energy.Load(node);
         speed.Load(node);
@@ -805,16 +773,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
         angle.Load("angle", node);
         distance.Load("distance", node);
-
-        print("OnLoad3" + emission.name);
-        print("OnLoad3" + emission.curves[0].valueName);
-
-        //isLoaded = true;
     }
 
     public override void OnSave(ConfigNode node)
     {
-        print("OnSave");
         ConfigNode.CreateConfigFromObject(this, node);
         emission.Save(node);
         energy.Save(node);
@@ -837,9 +799,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     // TODO : move the whole UI stuff to a dedicated class - this is getting way to big
 
-    private Rect winPos = new Rect(300, 100, 400, 100);
-    private const int baseWinID = 512100;
-    private int winID;
+    private Rect winPos = new Rect(50, 50, 400, 100);
+    private static int baseWinID = 512100;
+    private static int winID = baseWinID;
 
     private string nodeText = "";
 
@@ -853,10 +815,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         {
             return;
         }
-        
         if (showUI)
         {
-            winPos = GUILayout.Window(winID, winPos, windowGUI, "ModelMultiParticlePersistFX", GUILayout.MinWidth(300));
+            winPos = GUILayout.Window(winID, winPos, windowGUI, hostPart.name + " " + this.effectName + " " + this.instanceName, GUILayout.MinWidth(300));
         }
     }
 
@@ -864,47 +825,28 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     {
         GUILayout.BeginVertical();
 
-        collide = GUILayout.Toggle(collide, "collide");
-        physical = GUILayout.Toggle(physical, "physical");
-
-        GUILayout.Space(10);
-
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("maximumActiveParticles", GUILayout.ExpandWidth(true));
-        int.TryParse(
-            GUILayout.TextField(maximumActiveParticles.ToString(), GUILayout.ExpandWidth(true), GUILayout.Width(100)),
-            out maximumActiveParticles);
-        GUILayout.EndHorizontal();
-
-        GUILayout.Label("activeParticles : " + activeParticles);
-        GUILayout.Label("particleDecimate : " + particleDecimate);
-        GUILayout.Label("particleCounter : " + particleCounter);
+        activated = GUILayout.Toggle(activated, "Active");
 
         GUILayout.Space(10);
 
         overRideInputs = GUILayout.Toggle(overRideInputs, "Manual Inputs");
 
-        //if (!overRideInputs)
-        //{
-        //    GUILayout.Label("Power : " + inputs[(int)MultiInputCurve.Inputs.power].ToString("F2"));
-        //
-        //    GUILayout.Label("Atmo Density : " + inputs[(int)MultiInputCurve.Inputs.density].ToString("F2"));
-        //
-        //    GUILayout.Label("Mach Speed : " + inputs[(int)MultiInputCurve.Inputs.mach].ToString("F2"));
-        //
-        //    GUILayout.Label("Part Temperature : " + inputs[(int)MultiInputCurve.Inputs.parttemp].ToString("F2"));
-        //
-        //    GUILayout.Label("External Temperature : " + inputs[(int)MultiInputCurve.Inputs.externaltemp].ToString("F2"));
-        //}
-        //else
+        GUIInput((int)MultiInputCurve.Inputs.power, "Power");
+        GUIInput((int)MultiInputCurve.Inputs.density, "Atmo Density");
+        GUIInput((int)MultiInputCurve.Inputs.mach, "Mach Speed");
+        GUIInput((int)MultiInputCurve.Inputs.parttemp, "Part Temperature");
+        GUIInput((int)MultiInputCurve.Inputs.externaltemp, "External Temperature");
+
+        GUILayout.Space(10);
+
+        if (GUILayout.Button("Clear Particles"))
         {
-            GUIInput((int)MultiInputCurve.Inputs.power,"Power");
-            GUIInput((int)MultiInputCurve.Inputs.density,"Atmo Density");
-            GUIInput((int)MultiInputCurve.Inputs.mach, "Mach Speed");
-            GUIInput((int)MultiInputCurve.Inputs.parttemp, "Part Temperature");
-            GUIInput((int)MultiInputCurve.Inputs.externaltemp, "External Temperature");
+            for (int i = 0; i < persistentEmitters.Count; i++)
+            {
+                persistentEmitters[i].pe.pe.ClearParticles();
+            }
         }
-        
+
         GUILayout.Space(10);
 
         nodeEdit = GUILayout.Toggle(nodeEdit, "Open Config Editor");
@@ -912,14 +854,24 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         if (nodeEdit)
         {
             GUILayout.BeginHorizontal();
+
+            // Set the node with what was in the .cfg
             if (GUILayout.Button("Import"))
+            {
+
+                nodeText = string.Copy(node_backup);
+                //print("Displaying node \n " + nodeText.Replace("\n", "\n" + "ModelMultiParticlePersistFX "));
+            }
+
+            // Rebuild the text from the active config
+            if (GUILayout.Button("Rebuild"))
             {
                 ConfigNode node = new ConfigNode();
                 this.OnSave(node);
                 nodeText = SmokeScreenUtil.WriteRootNode(node);
-                print("Displaying node \n " + nodeText.Replace("\n", "\n" + "ModelMultiParticlePersistFX "));
             }
 
+            // Apply the text
             if (GUILayout.Button("Apply"))
             {
                 string[] text = nodeText.Split(new string[] { "\n" }, StringSplitOptions.None);
