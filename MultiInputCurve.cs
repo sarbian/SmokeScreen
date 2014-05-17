@@ -3,114 +3,80 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-
+using SmokeScreen;
 using UnityEngine;
 
 
-[Serializable]
-public class FXCurves
-{
-    [SerializeField]
-    private FXCurve power;
-    [SerializeField]
-    private FXCurve density;
-    [SerializeField]
-    private FXCurve mach;
-    [SerializeField]
-    private FXCurve parttemp;
-    [SerializeField]
-    private FXCurve externaltemp;
-
-    public FXCurve this[int i]
-    {
-        get
-        {
-            switch (i)
-            {
-                case  (int)MultiInputCurve.Inputs.power:
-                    return power;
-                case (int)MultiInputCurve.Inputs.density:
-                    return density;
-                case (int)MultiInputCurve.Inputs.mach:
-                    return mach;
-                case (int)MultiInputCurve.Inputs.parttemp:
-                    return parttemp;
-                case (int)MultiInputCurve.Inputs.externaltemp:
-                    return externaltemp;
-                default:
-                    return power;
-            }
-        }
-        set
-        {
-            switch (i)
-            {
-                case (int)MultiInputCurve.Inputs.power:
-                    power = value;
-                    break;
-                case (int)MultiInputCurve.Inputs.density:
-                    density = value;
-                    break;
-                case (int)MultiInputCurve.Inputs.mach:
-                    mach = value;
-                    break;
-                case (int)MultiInputCurve.Inputs.parttemp:
-                    parttemp = value;
-                    break;
-                case (int)MultiInputCurve.Inputs.externaltemp:
-                    externaltemp = value;
-                    break;
-            }
-        }
-    }
-}
-
-
+// This class Serialization DOES NOT WORK in Unity
+// Life would be so easier if it did.
 [Serializable]
 public class MultiInputCurve
 {
     public string name;
-    public FXCurves curves = new FXCurves();
-    public FXCurves logCurves = new FXCurves();
 
-    public float[] minKey = new float[inputsCount];
-    public float[] maxKey = new float[inputsCount];
+    public FXCurve[] curves = new FXCurve[inputsCount];
 
-    public float minVal;
-    public float maxVal;
+    public FXCurve[] logCurves = new FXCurve[inputsCount];
 
-    [SerializeField]
-    bool additive;
+    public float[] minInput = new float[inputsCount];
+
+    public float[] maxInput = new float[inputsCount];
+
+    public float minOutput;
+
+    public float maxOutput;
+
+    private bool additive;
 
     public enum Inputs
     {
         power = 0,
+
         density = 1,
+
         mach = 2,
+
         parttemp = 3,
+
         externaltemp = 4
     }
 
-    //public static readonly int inputsCount = Enum.GetValues(typeof(Inputs)).Length;
-    public const int inputsCount = 5;
+    public static readonly int inputsCount = Enum.GetValues(typeof(Inputs)).Length;
+
+    //public const int inputsCount = 5;
 
     public MultiInputCurve(string name, bool additive = false)
     {
-        print("Constructor");
+        //print("Constructor for " + name + " backup_node is null = " + (node_backup == null).ToString());
         this.name = name;
         this.additive = additive;
+        //if (node_backup != null)
+        //    print("node_backup is\n " + node_backup.Replace(Environment.NewLine, Environment.NewLine + "MultiInputCurve "));
     }
 
     private void Reset()
     {
-        print("Reset");
+        //print("Reset");
         for (int i = 0; i < inputsCount; i++)
         {
             string key = Enum.GetName(typeof(Inputs), i);
-            print("Resetting " + key);
-            curves[i] = new FXCurve(key, additive ? 0f : 1f);
-            minVal = maxVal = additive ? 0f : 1f;
+            //print("Resetting " + key);
+            curves[i] = new FXCurve(key, additive ? 0f : 1f) { valueName = key };
+
+            // FXCurve constructor does not set the value name
+
+            this.minOutput = this.maxOutput = additive ? 0f : 1f;
         }
+    }
+
+    public void Test()
+    {
+        //if (!isLoaded) Restore();
+        if (curves != null && curves[0] != null)
+        {
+            print("Test curve[0] is " + curves[0].valueName);
+        }
+        //print("Test for " + name + " backup_node is null = " + (backup_node == null).ToString());
     }
 
     public void Load(ConfigNode node)
@@ -129,19 +95,23 @@ public class MultiInputCurve
             for (int i = 0; i < inputsCount; i++)
             {
                 string key = Enum.GetName(typeof(Inputs), i);
-                print("Loading " + key);
+                //print("Loading " + key);
                 curves[i].Load(key, node.GetNode(name));
-                print("Loaded " + curves[i].valueName);
+                print(
+                    "Loaded " + key + " in " + curves[i].valueName + " " + curves[i].keyFrames.Count() + " should be "
+                    + node.GetNode(name).GetValues(key).Length);
 
                 string logKey = "log" + key;
                 if (node.GetNode(name).HasValue(logKey))
                 {
-                    logCurves[i] = new FXCurve(logKey, additive ? 0f : 1f);
+                    logCurves[i] = new FXCurve(logKey, additive ? 0f : 1f) { valueName = logKey };
+                    // FXCurve constructor does not set the value name
                     logCurves[i].Load(logKey, node.GetNode(name));
                 }
             }
         }
         UpdateMinMax();
+        //isLoaded = true;
     }
 
     private void UpdateMinMax()
@@ -151,7 +121,6 @@ public class MultiInputCurve
             float minValue = additive ? 0f : 1f;
             float maxValue = additive ? 0f : 1f;
 
-
             if (!curves[i].evalSingle)
             {
                 //print("UpdateMinMax i=" + i + " " + curves[i].fCurve.length);
@@ -160,15 +129,15 @@ public class MultiInputCurve
                     float key = curves[i].fCurve.keys[j].time;
                     float val = curves[i].fCurve.keys[j].value;
 
-                    minKey[i] = Mathf.Min(minKey[i], key);
-                    maxKey[i] = Mathf.Max(maxKey[i], key);
+                    this.minInput[i] = Mathf.Min(this.minInput[i], key);
+                    this.maxInput[i] = Mathf.Max(this.maxInput[i], key);
 
                     minValue = Mathf.Min(minValue, val);
                     maxValue = Mathf.Max(maxValue, val);
                 }
             }
-            
-            if ( logCurves[i] != null && !logCurves[i].evalSingle)
+
+            if (logCurves[i] != null && !logCurves[i].evalSingle)
             {
                 //print("UpdateMinMax i=" + i + " " + logCurves[i].fCurve.length);
                 for (int j = 0; j < logCurves[i].fCurve.length; j++)
@@ -176,8 +145,8 @@ public class MultiInputCurve
                     float key = logCurves[i].fCurve.keys[j].time;
                     float val = logCurves[i].fCurve.keys[j].value;
 
-                    minKey[i] = Mathf.Min(minKey[i], key);
-                    maxKey[i] = Mathf.Max(maxKey[i], key);
+                    this.minInput[i] = Mathf.Min(this.minInput[i], key);
+                    this.maxInput[i] = Mathf.Max(this.maxInput[i], key);
 
                     minValue = Mathf.Min(minValue, val);
                     maxValue = Mathf.Max(maxValue, val);
@@ -185,15 +154,14 @@ public class MultiInputCurve
             }
             if (additive)
             {
-                minVal += minValue;
+                minOutput += minValue;
             }
             else
             {
-                maxVal *= maxValue;
+                maxOutput *= maxValue;
             }
         }
     }
-
 
     public float Value(float[] inputs)
     {
@@ -207,7 +175,9 @@ public class MultiInputCurve
 
             if (logCurves[i] != null)
             {
-                result = additive ? result + logCurves[i].Value(Mathf.Log(input)) : result * logCurves[i].Value(Mathf.Log(input));
+                result = additive
+                             ? result + logCurves[i].Value(Mathf.Log(input))
+                             : result * logCurves[i].Value(Mathf.Log(input));
             }
         }
         return result;
@@ -218,7 +188,7 @@ public class MultiInputCurve
         ConfigNode subNode = new ConfigNode(name);
         for (int i = 0; i < inputsCount; i++)
         {
-            print("Saving curve " + curves[i].valueName);
+            print("Saving curve " + curves[i].valueName + " " + curves[i].keyFrames.Count());
             curves[i].Save(subNode);
             if (logCurves[i] != null)
             {

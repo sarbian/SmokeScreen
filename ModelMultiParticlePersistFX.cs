@@ -10,6 +10,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
+using SmokeScreen;
+
 using UnityEngine;
 
 [EffectDefinition("MODEL_MULTI_PARTICLE_PERSIST")]
@@ -85,24 +87,18 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     #endregion Persistent fields
 
-    public MultiInputCurve emission = new MultiInputCurve("emission");
-
-    public MultiInputCurve energy = new MultiInputCurve("energy");
-
-    public MultiInputCurve speed = new MultiInputCurve("speed");
-
-    public MultiInputCurve grow = new MultiInputCurve("grow", true);
-
-    public MultiInputCurve scale = new MultiInputCurve("scale");
-
-    public MultiInputCurve size = new MultiInputCurve("size");
-
-    public MultiInputCurve offset = new MultiInputCurve("offset", true);
+    public MultiInputCurve emission;
+    public MultiInputCurve energy;
+    public MultiInputCurve speed;
+    public MultiInputCurve grow;
+    public MultiInputCurve scale;
+    public MultiInputCurve size;
+    public MultiInputCurve offset;
 
     // Logarithmic growth applied to to the particle.
     // The size at time t after emission will be approximately
     // (Log(logarithmicGrowth * t + 1) + 1) * initialSize, assuming grow = 0.
-    public MultiInputCurve logGrow = new MultiInputCurve("logGrow", true);
+    public MultiInputCurve logGrow;
 
     private float logarithmicGrow;
 
@@ -132,7 +128,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public bool showUI = true;
 
-    private readonly List<ModelMultiParticlePersistFX> list = new List<ModelMultiParticlePersistFX>();
+    private static readonly List<ModelMultiParticlePersistFX> list = new List<ModelMultiParticlePersistFX>();
 
     public bool overRideInputs = false;
 
@@ -146,11 +142,11 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         }
     }
 
-    //public ModelMultiParticlePersistFX()
-    //{
-    //    list.Add(this);
-    //    winID++;
-    //}
+    public ModelMultiParticlePersistFX()
+    {
+        list.Add(this);
+        winID = baseWinID + list.Count;
+    }
 
     private void OnDestroy()
     {
@@ -652,9 +648,20 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public override void OnInitialize()
     {
+        if (node_backup != string.Empty) Restore();
+
         print("OnInitialize");
-        print("OnInitialize" + emission.name);
-        print("OnInitialize" + emission.curves[0].valueName);
+        print("OnInitialize " + emission.name);
+        emission.Test();
+        
+
+        if (emission.curves != null && emission.curves[0] == null)
+            print("OnInitialize curve[0] is null");
+
+        if (emission.curves != null && emission.curves[0] != null)
+            print("OnInitialize curve[0] is " + emission.curves[0].valueName);
+        //print("OnInitialize " + emission.curves[0].valueName);
+
         
         // The shader loading require proper testing
         // Unity doc says that "Creating materials this way supports only simple shaders (fixed function ones). 
@@ -751,9 +758,39 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         UnityEngine.Object.Destroy(templateKspParticleEmitter);
     }
 
+    public string node_backup = string.Empty;
+
+    //private bool node_backupisLoaded = false;
+
+
+    public void Backup(ConfigNode node)
+    {
+        node_backup = SmokeScreenUtil.WriteRootNode(node);
+        print("Backup node_backup is\n " + node_backup.Replace(Environment.NewLine, Environment.NewLine + "ModelMultiParticlePersistFX "));
+    }
+
+    public void Restore()
+    {
+        print("Restore node_backup is\n " + node_backup.Replace(Environment.NewLine, Environment.NewLine + "ModelMultiParticlePersistFX "));
+        string[] text = node_backup.Split(new string[] { "\n" }, StringSplitOptions.None);
+        ConfigNode node = SmokeScreenUtil.RecurseFormat(SmokeScreenUtil.PreFormatConfig(text));
+        this.OnLoad(node);
+    }
+
     public override void OnLoad(ConfigNode node)
     {
         print("OnLoad");
+        Backup(node);
+
+        emission = new MultiInputCurve("emission");
+        energy = new MultiInputCurve("energy");
+        speed = new MultiInputCurve("speed");
+        grow = new MultiInputCurve("grow", true);
+        scale = new MultiInputCurve("scale");
+        size = new MultiInputCurve("size");
+        offset = new MultiInputCurve("offset", true);
+        logGrow = new MultiInputCurve("logGrow", true);
+
         ConfigNode.LoadObjectFromConfig(this, node);
         print("OnLoad2");
         emission.Load(node);
@@ -771,6 +808,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
         print("OnLoad3" + emission.name);
         print("OnLoad3" + emission.curves[0].valueName);
+
+        //isLoaded = true;
     }
 
     public override void OnSave(ConfigNode node)
@@ -796,11 +835,11 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     }
 
 
-    // TODO : move the whole UI stuff to a dedicated class - this is getting to big
+    // TODO : move the whole UI stuff to a dedicated class - this is getting way to big
 
     private Rect winPos = new Rect(300, 100, 400, 100);
     private const int baseWinID = 512100;
-    private int winID = baseWinID;
+    private int winID;
 
     private string nodeText = "";
 
@@ -845,19 +884,19 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
         overRideInputs = GUILayout.Toggle(overRideInputs, "Manual Inputs");
 
-        if (!overRideInputs)
-        {
-            GUILayout.Label("Power : " + inputs[(int)MultiInputCurve.Inputs.power].ToString("F2"));
-
-            GUILayout.Label("Atmo Density : " + inputs[(int)MultiInputCurve.Inputs.density].ToString("F2"));
-
-            GUILayout.Label("Mach Speed : " + inputs[(int)MultiInputCurve.Inputs.mach].ToString("F2"));
-
-            GUILayout.Label("Part Temperature : " + inputs[(int)MultiInputCurve.Inputs.parttemp].ToString("F2"));
-
-            GUILayout.Label("External Temperature : " + inputs[(int)MultiInputCurve.Inputs.externaltemp].ToString("F2"));
-        }
-        else
+        //if (!overRideInputs)
+        //{
+        //    GUILayout.Label("Power : " + inputs[(int)MultiInputCurve.Inputs.power].ToString("F2"));
+        //
+        //    GUILayout.Label("Atmo Density : " + inputs[(int)MultiInputCurve.Inputs.density].ToString("F2"));
+        //
+        //    GUILayout.Label("Mach Speed : " + inputs[(int)MultiInputCurve.Inputs.mach].ToString("F2"));
+        //
+        //    GUILayout.Label("Part Temperature : " + inputs[(int)MultiInputCurve.Inputs.parttemp].ToString("F2"));
+        //
+        //    GUILayout.Label("External Temperature : " + inputs[(int)MultiInputCurve.Inputs.externaltemp].ToString("F2"));
+        //}
+        //else
         {
             GUIInput((int)MultiInputCurve.Inputs.power,"Power");
             GUIInput((int)MultiInputCurve.Inputs.density,"Atmo Density");
@@ -877,21 +916,22 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             {
                 ConfigNode node = new ConfigNode();
                 this.OnSave(node);
-                nodeText = WriteRootNode(node);
+                nodeText = SmokeScreenUtil.WriteRootNode(node);
+                print("Displaying node \n " + nodeText.Replace("\n", "\n" + "ModelMultiParticlePersistFX "));
             }
 
-            //if (GUILayout.Button("Apply"))
-            //{
-            //    string[] text = nodeText.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
-            //    ConfigNode node = ConfigNode.RecurseFormat(ConfigNode.PreFormatConfig(text));
-            //    this.OnLoad(node);
-            //}
+            if (GUILayout.Button("Apply"))
+            {
+                string[] text = nodeText.Split(new string[] { "\n" }, StringSplitOptions.None);
+                ConfigNode node = SmokeScreenUtil.RecurseFormat(SmokeScreenUtil.PreFormatConfig(text));
+                this.OnLoad(node);
+            }
 
             GUILayout.EndHorizontal();
 
-            scrollPosition = GUILayout.BeginScrollView(scrollPosition, GUILayout.ExpandWidth(true), GUILayout.Height(200));
+            scrollPosition = GUILayout.BeginScrollView(scrollPosition, false, true, GUILayout.MinHeight(300));
 
-            nodeText = GUILayout.TextArea(nodeText, GUILayout.ExpandWidth(true), GUILayout.Height(200));
+            nodeText = GUILayout.TextArea(nodeText, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
             GUILayout.EndScrollView();
         }
         
@@ -904,122 +944,58 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     private void GUIInput(int id, string text)
     {
-        GUILayout.Label(text);
 
-        GUILayout.BeginHorizontal();
-        boxInput[id] = GUILayout.Toggle(boxInput[id],"");
+        float min = minInput(id);
+        float max = maxInput(id);
 
-        if (boxInput[id])
+        GUILayout.Label(text + " Val=" + inputs[id].ToString("F3") + " Min=" + min.ToString("F2") + " Max=" + max.ToString("F2"));
+
+
+        if (overRideInputs)
         {
-            float.TryParse(
-                GUILayout.TextField(inputs[id].ToString("F2"), GUILayout.ExpandWidth(true), GUILayout.Width(100)),
-                out inputs[id]);
-        }
-        else
-        {
-            inputs[id] = GUILayout.HorizontalSlider(inputs[id], minInput(id), maxInput(id));
-        }
+            GUILayout.BeginHorizontal();
+            boxInput[id] = GUILayout.Toggle(boxInput[id], "", GUILayout.ExpandWidth(false));
 
-        GUILayout.EndHorizontal();
+            if (boxInput[id])
+            {
+                float.TryParse(
+                    GUILayout.TextField(inputs[id].ToString("F2"), GUILayout.ExpandWidth(true), GUILayout.Width(100)),
+                    out inputs[id]);
+            }
+            else
+            {
+                inputs[id] = GUILayout.HorizontalSlider(inputs[id], minInput(id), maxInput(id), GUILayout.ExpandWidth(true));
+            }
+
+            GUILayout.EndHorizontal();
+        }
     }
 
     private float minInput(int id)
     {
-        float min = emission.minKey[id];
-        min = Mathf.Min(min, energy.minKey[id]);
-        min = Mathf.Min(min, speed.minKey[id]);
-        min = Mathf.Min(min, grow.minKey[id]);
-        min = Mathf.Min(min, scale.minKey[id]);
-        min = Mathf.Min(min, size.minKey[id]);
-        min = Mathf.Min(min, offset.minKey[id]);
-        min = Mathf.Min(min, logGrow.minKey[id]);
-
+        float min = emission.minInput[id];
+        min = Mathf.Min(min, energy.minInput[id]);
+        min = Mathf.Min(min, speed.minInput[id]);
+        min = Mathf.Min(min, grow.minInput[id]);
+        min = Mathf.Min(min, scale.minInput[id]);
+        min = Mathf.Min(min, size.minInput[id]);
+        min = Mathf.Min(min, offset.minInput[id]);
+        min = Mathf.Min(min, logGrow.minInput[id]);
+        
         return min;
     }
 
     private float maxInput(int id)
     {
-        float max = emission.maxKey[id];
-        max = Mathf.Min(max, energy.maxKey[id]);
-        max = Mathf.Min(max, speed.maxKey[id]);
-        max = Mathf.Min(max, grow.maxKey[id]);
-        max = Mathf.Min(max, scale.maxKey[id]);
-        max = Mathf.Min(max, size.maxKey[id]);
-        max = Mathf.Min(max, offset.maxKey[id]);
-        max = Mathf.Min(max, logGrow.maxKey[id]);
-
+        float max = emission.maxInput[id];
+        max = Mathf.Max(max, energy.maxInput[id]);
+        max = Mathf.Max(max, speed.maxInput[id]);
+        max = Mathf.Max(max, grow.maxInput[id]);
+        max = Mathf.Max(max, scale.maxInput[id]);
+        max = Mathf.Max(max, size.maxInput[id]);
+        max = Mathf.Max(max, offset.maxInput[id]);
+        max = Mathf.Max(max, logGrow.maxInput[id]);
+        
         return max;
     }
-
-    // TODO : move those to an utility class
-
-
-    //private static string WriteRootNode(ConfigNode node)
-    //{
-    //    string result = "";
-    //    print("node.values.Count " + node.values.Count + " node.nodes.Count " + node.nodes.Count);
-    //    for (int i = 0; i < node.values.Count; i++)
-    //    {
-    //        ConfigNode.Value item = node.values[i];
-    //        result += string.Concat(item.name, " = ", item.@value);
-    //    }
-    //    for (int j = 0; j < node.nodes.Count; j++)
-    //    {
-    //        string.Concat(result, WriteNodeString(node.nodes[j], string.Empty));
-    //    }
-    //    return result;
-    //}
-    //private static string WriteNodeString(ConfigNode node, string indent)
-    //{
-    //    string result = "";
-    //    result += string.Concat(indent, node.name);
-    //    result += string.Concat(indent, "{");
-    //    string str = string.Concat(indent, "\t");
-    //    for (int i = 0; i < node.values.Count; i++)
-    //    {
-    //        ConfigNode.Value item = node.values[i];
-    //        result += string.Concat(str, item.name, " = ", item.@value);
-    //    }
-    //    for (int j = 0; j < node.nodes.Count; j++)
-    //    {
-    //        result += WriteNodeString(node, str);
-    //    }
-    //    result += string.Concat(indent, "}");
-    //    return result;
-    //}
-
-    private static string WriteRootNode(ConfigNode node)
-    {
-        StringBuilder builder = new StringBuilder();
-        print("node.values.Count " + node.values.Count + " node.nodes.Count " + node.nodes.Count);
-        for (int i = 0; i < node.values.Count; i++)
-        {
-            ConfigNode.Value item = node.values[i];
-            builder.AppendLine(string.Concat(item.name, " = ", item.value));
-        }
-        for (int j = 0; j < node.nodes.Count; j++)
-        {
-            WriteNodeString(node.nodes[j], ref builder, string.Empty);
-        }
-        return builder.ToString();
-    }
-    private static void WriteNodeString(ConfigNode node, ref StringBuilder builder, string indent)
-    {
-        builder.AppendLine(string.Concat(indent, node.name));
-        builder.AppendLine(string.Concat(indent, "{"));
-        string str = string.Concat(indent, "\t");
-        for (int i = 0; i < node.values.Count; i++)
-        {
-            ConfigNode.Value item = node.values[i];
-            builder.AppendLine(string.Concat(str, item.name, " = ", item.value));
-        }
-        for (int j = 0; j < node.nodes.Count; j++)
-        {
-            WriteNodeString(node, ref builder, str);
-        }
-        builder.AppendLine(string.Concat(indent, "}"));
-    }
-
-
-
 }
