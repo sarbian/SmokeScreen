@@ -24,15 +24,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+
+using UnityEngine;
 
 namespace SmokeScreen
 {
-    using UnityEngine;
-
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     internal class SmokeScreenConfig : MonoBehaviour
     {
@@ -58,11 +54,12 @@ namespace SmokeScreen
         private static float lastTime = 0;
 
         private int lastHash = 0;
+
         private float lastSave = 0;
 
         public static SmokeScreenConfig Instance;
 
-        SmokeScreenConfig()
+        private SmokeScreenConfig()
         {
             Instance = this;
         }
@@ -80,7 +77,8 @@ namespace SmokeScreen
                     }
                     else
                     {
-                        particleDecimate = -activeParticles / Instance.maximumActiveParticles; // negative we keep each n
+                        particleDecimate = -activeParticles / Instance.maximumActiveParticles;
+                        // negative we keep each n
                     }
                 }
                 else
@@ -93,7 +91,7 @@ namespace SmokeScreen
             }
         }
 
-        void Start()
+        private void Start()
         {
             UrlDir.UrlConfig[] config = GameDatabase.Instance.GetConfigs("SmokeScreen");
 
@@ -110,9 +108,9 @@ namespace SmokeScreen
             lastHash = Hash();
         }
 
-        void Update()
+        private void Update()
         {
-            if (lastHash != Hash() && lastSave + 10f < Time.time )
+            if (lastHash != Hash() && lastSave + 10f < Time.time)
             {
                 lastHash = Hash();
                 lastSave = Time.time;
@@ -125,9 +123,10 @@ namespace SmokeScreen
             return string.Concat(globalCollideDisable, globalPhysicalDisable, maximumActiveParticles).GetHashCode();
         }
 
-        void Save()
+        private void Save()
         {
-            string path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + "/SmokeScreen.cfg";
+            string path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
+                          + "/SmokeScreen.cfg";
 
             MonoBehaviour.print("SmokeScreenConfig saving config");
 
@@ -137,6 +136,5 @@ namespace SmokeScreen
             topNode.AddNode(node);
             topNode.Save(path);
         }
-
     }
 }

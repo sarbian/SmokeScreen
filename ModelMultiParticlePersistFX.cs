@@ -24,12 +24,10 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
+
 using System;
 using System.Collections.Generic;
-using System.Text;
-
 using SmokeScreen;
-
 using UnityEngine;
 
 [EffectDefinition("MODEL_MULTI_PARTICLE_PERSIST")]
@@ -64,7 +62,6 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     [Persistent]
     public Vector3 offsetDirection = Vector3.forward;
 
-
     [Persistent]
     public float fixedScale = 1;
 
@@ -85,7 +82,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     // How much the particles stick to objects they collide with.
     [Persistent]
-    public double stickiness = 0.5;
+    public double stickiness = 0.9;
 
     [Persistent]
     public double dragCoefficient = 0.1;
@@ -110,11 +107,17 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     #endregion Persistent fields
 
     public MultiInputCurve emission;
+
     public MultiInputCurve energy;
+
     public MultiInputCurve speed;
+
     public MultiInputCurve grow;
+
     public MultiInputCurve scale;
+
     public MultiInputCurve size;
+
     public MultiInputCurve offset;
 
     // Logarithmic growth applied to to the particle.
@@ -175,7 +178,6 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     //    list.Remove(this);
     //}
 
-
     private void OnDestroy()
     {
         if (persistentEmitters != null)
@@ -229,7 +231,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     }
 
     private bool addedLaunchPadCollider = false;
-    
+
     public static uint physicsPass = 4;
 
     public static uint activePhysicsPass = 0;
@@ -291,8 +293,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                 if (SmokeScreenConfig.particleDecimate != 0 && particles.Length > SmokeScreenConfig.decimateFloor)
                 {
                     SmokeScreenConfig.particleCounter++;
-                    if ((SmokeScreenConfig.particleDecimate > 0 && (SmokeScreenConfig.particleCounter % SmokeScreenConfig.particleDecimate) == 0)
-                        || (SmokeScreenConfig.particleDecimate < 0 && (SmokeScreenConfig.particleCounter % SmokeScreenConfig.particleDecimate) != 0))
+                    if ((SmokeScreenConfig.particleDecimate > 0
+                         && (SmokeScreenConfig.particleCounter % SmokeScreenConfig.particleDecimate) == 0)
+                        || (SmokeScreenConfig.particleDecimate < 0
+                            && (SmokeScreenConfig.particleCounter % SmokeScreenConfig.particleDecimate) != 0))
                     {
                         particles[j].energy = 0; // energy set to 0 remove the particle, as per Unity doc
                     }
@@ -372,14 +376,16 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                             }
                         }
 
-                        if (physical && !SmokeScreenConfig.Instance.globalPhysicalDisable && (j % physicsPass == activePhysicsPass))
+                        if (physical && !SmokeScreenConfig.Instance.globalPhysicalDisable
+                            && (j % physicsPass == activePhysicsPass))
                         {
                             // There must be a way to keep the actual initial volume, 
                             // but I'm lazy.
                             pVel = ParticlePhysics(particles[j].size, averageSize, pPos, pVel);
                         }
 
-                        if (collide && !SmokeScreenConfig.Instance.globalCollideDisable && particles[j].energy != particles[j].startEnergy
+                        if (collide && !SmokeScreenConfig.Instance.globalCollideDisable
+                            && particles[j].energy != particles[j].startEnergy
                             // Do not collide newly created particles (they collide with the emitter and things look bad).
                             && (j % physicsPass == activePhysicsPass))
                         {
@@ -546,7 +552,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     private void UpdateInputs(float power)
     {
         if (overRideInputs)
+        {
             return;
+        }
 
         float atmDensity = 1;
         float surfaceVelMach = 1;
@@ -578,7 +586,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                 externalTemp = FlightGlobals.getExternalTemperature(hostPart.transform.position);
                 const double magicNumberFromFAR = 1.4 * 8.3145 * 1000 / 28.96;
                 double speedOfSound = Math.Sqrt((externalTemp + 273.15) * magicNumberFromFAR);
-                surfaceVelMach = (float)((hostPart.vel - FlightGlobals.currentMainBody.getRFrmVel(hostPart.transform.position)).magnitude / speedOfSound);
+                surfaceVelMach =
+                    (float)
+                    ((hostPart.vel - FlightGlobals.currentMainBody.getRFrmVel(hostPart.transform.position)).magnitude
+                     / speedOfSound);
             }
         }
 
@@ -621,7 +632,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
             logarithmicGrow = logGrow.Value(inputs);
 
-            pkpe.go.transform.localPosition = localPosition + offsetDirection.normalized * offset.Value(inputs) * fixedScale;
+            pkpe.go.transform.localPosition = localPosition
+                                              + offsetDirection.normalized * offset.Value(inputs) * fixedScale;
+
+            pkpe.go.transform.localRotation = Quaternion.Euler(localRotation);
 
             ////print(atmDensity.ToString("F2") + " " + offset.Value(power).ToString("F2") + " " + offsetFromDensity.Value(atmDensity).ToString("F2") + " " + offsetFromMach.Value(surfaceVelMach).ToString("F2"));
         }
@@ -648,15 +662,15 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         }
     }
 
-
-
     public override void OnInitialize()
     {
         // Restore the Curve config from the node content backup
         // Done because I could not get the serialization of MultiInputCurve to work
-        if (node_backup != string.Empty) Restore();
+        if (node_backup != string.Empty)
+        {
+            Restore();
+        }
 
-        
         // The shader loading require proper testing
         // Unity doc says that "Creating materials this way supports only simple shaders (fixed function ones). 
         // If you need a surface shader, or vertex/pixel shaders, you'll need to create shader asset in the editor and use that."
@@ -721,7 +735,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                     emitterGameObject,
                     childKSPParticleEmitter,
                     templateKspParticleEmitter);
-               
+
                 try
                 {
                     childKSPParticleEmitter.particleRenderMode =
@@ -745,7 +759,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
         list.Add(this);
     }
-    
+
     public void Backup(ConfigNode node)
     {
         node_backup = SmokeScreenUtil.WriteRootNode(node);
@@ -810,11 +824,12 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         MonoBehaviour.print("[ModelMultiParticlePersistFX] " + s);
     }
 
-
     // TODO : move the whole UI stuff to a dedicated class - this is getting way to big
 
     private Rect winPos = new Rect(50, 50, 400, 100);
+
     private static int baseWinID = 512100;
+
     private static int winID = baseWinID;
 
     private string nodeText = "";
@@ -822,7 +837,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     private bool nodeEdit = false;
 
     private Vector2 scrollPosition = new Vector2();
-    
+
     private void OnGUI()
     {
         if (!HighLogic.LoadedSceneIsFlight)
@@ -831,7 +846,12 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         }
         if (showUI)
         {
-            winPos = GUILayout.Window(winID, winPos, windowGUI, hostPart.name + " " + this.effectName + " " + this.instanceName, GUILayout.MinWidth(300));
+            winPos = GUILayout.Window(
+                winID,
+                winPos,
+                windowGUI,
+                hostPart.name + " " + this.effectName + " " + this.instanceName,
+                GUILayout.MinWidth(300));
         }
     }
 
@@ -864,7 +884,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         GUILayout.Space(10);
 
         nodeEdit = GUILayout.Toggle(nodeEdit, "Open Config Editor");
-        
+
         if (nodeEdit)
         {
             GUILayout.BeginHorizontal();
@@ -872,7 +892,6 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             // Set the node with what was in the .cfg
             if (GUILayout.Button("Import"))
             {
-
                 nodeText = string.Copy(node_backup);
                 //print("Displaying node \n " + nodeText.Replace("\n", "\n" + "ModelMultiParticlePersistFX "));
             }
@@ -900,7 +919,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             nodeText = GUILayout.TextArea(nodeText, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
             GUILayout.EndScrollView();
         }
-        
+
         GUILayout.EndVertical();
 
         GUI.DragWindow();
@@ -910,12 +929,11 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     private void GUIInput(int id, string text)
     {
-
         float min = minInput(id);
         float max = maxInput(id);
 
-        GUILayout.Label(text + " Val=" + inputs[id].ToString("F3") + " Min=" + min.ToString("F2") + " Max=" + max.ToString("F2"));
-
+        GUILayout.Label(
+            text + " Val=" + inputs[id].ToString("F3") + " Min=" + min.ToString("F2") + " Max=" + max.ToString("F2"));
 
         if (overRideInputs)
         {
@@ -930,7 +948,11 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             }
             else
             {
-                inputs[id] = GUILayout.HorizontalSlider(inputs[id], minInput(id), maxInput(id), GUILayout.ExpandWidth(true));
+                inputs[id] = GUILayout.HorizontalSlider(
+                    inputs[id],
+                    minInput(id),
+                    maxInput(id),
+                    GUILayout.ExpandWidth(true));
             }
 
             GUILayout.EndHorizontal();
@@ -947,7 +969,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         min = Mathf.Min(min, size.minInput[id]);
         min = Mathf.Min(min, offset.minInput[id]);
         min = Mathf.Min(min, logGrow.minInput[id]);
-        
+
         return min;
     }
 
@@ -961,7 +983,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         max = Mathf.Max(max, size.maxInput[id]);
         max = Mathf.Max(max, offset.maxInput[id]);
         max = Mathf.Max(max, logGrow.maxInput[id]);
-        
+
         return max;
     }
 }

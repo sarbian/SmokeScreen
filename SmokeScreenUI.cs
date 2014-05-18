@@ -24,17 +24,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+
+using UnityEngine;
 
 namespace SmokeScreen
 {
-    using UnityEngine;
-
     [KSPAddon(KSPAddon.Startup.Flight, false)]
-    class SmokeScreenUI : MonoBehaviour
+    internal class SmokeScreenUI : MonoBehaviour
     {
         private const string icon = "SmokeScreen/SmokeScreen";
 
@@ -56,10 +52,7 @@ namespace SmokeScreen
             button = ToolbarManager.Instance.add("SmokeScreen", "main");
             button.TexturePath = icon;
             button.ToolTip = "SmokeScreen";
-            button.OnClick += (e) =>
-                {
-                    this.showUI = !this.showUI;
-                };
+            button.OnClick += (e) => { this.showUI = !this.showUI; };
         }
 
         private void OnDestroy()
@@ -79,15 +72,20 @@ namespace SmokeScreen
         {
             GUILayout.BeginVertical();
 
-            SmokeScreenConfig.Instance.globalCollideDisable = GUILayout.Toggle(SmokeScreenConfig.Instance.globalCollideDisable, "Globally disable Collide");
-            SmokeScreenConfig.Instance.globalPhysicalDisable = GUILayout.Toggle(SmokeScreenConfig.Instance.globalPhysicalDisable, "Globally disable Physical");
+            SmokeScreenConfig.Instance.globalCollideDisable =
+                GUILayout.Toggle(SmokeScreenConfig.Instance.globalCollideDisable, "Globally disable Collide");
+            SmokeScreenConfig.Instance.globalPhysicalDisable =
+                GUILayout.Toggle(SmokeScreenConfig.Instance.globalPhysicalDisable, "Globally disable Physical");
 
             GUILayout.Space(10);
 
             GUILayout.BeginHorizontal();
             GUILayout.Label("maximumActiveParticles", GUILayout.ExpandWidth(true));
             int.TryParse(
-                GUILayout.TextField(SmokeScreenConfig.Instance.maximumActiveParticles.ToString(), GUILayout.ExpandWidth(true), GUILayout.Width(100)),
+                GUILayout.TextField(
+                    SmokeScreenConfig.Instance.maximumActiveParticles.ToString(),
+                    GUILayout.ExpandWidth(true),
+                    GUILayout.Width(100)),
                 out SmokeScreenConfig.Instance.maximumActiveParticles);
             GUILayout.EndHorizontal();
 

@@ -25,38 +25,43 @@
  * 
  */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using UnityEngine;
-
 
 // TODO : handle the relation with PersistentEmitterManager inside the class
 public class PersistentKSPParticleEmitter
 {
     public GameObject go;
+
     public KSPParticleEmitter pe;
+
     public bool fixedEmit = false;
 
     public float timer = 0;
 
     public readonly float minEmissionBase;
+
     public readonly float maxEmissionBase;
 
     public readonly float minEnergyBase;
+
     public readonly float maxEnergyBase;
 
     public readonly float minSizeBase;
+
     public readonly float maxSizeBase;
 
     public readonly float scale1DBase;
+
     public readonly Vector2 scale2DBase;
+
     public readonly Vector3 scale3DBase;
 
-    readonly public Vector3 localVelocityBase;
+    public readonly Vector3 localVelocityBase;
 
-    public PersistentKSPParticleEmitter(GameObject go, KSPParticleEmitter pe, KSPParticleEmitter templateKspParticleEmitter)
+    public PersistentKSPParticleEmitter(
+        GameObject go,
+        KSPParticleEmitter pe,
+        KSPParticleEmitter templateKspParticleEmitter)
     {
         this.go = go;
         this.pe = pe;
@@ -94,5 +99,4 @@ public class PersistentKSPParticleEmitter
         fixedEmit = false;
         pe.emit = false;
     }
-
 }

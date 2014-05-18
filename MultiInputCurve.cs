@@ -24,14 +24,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using SmokeScreen;
-using UnityEngine;
 
+using System;
+using UnityEngine;
 
 // This class Serialization DOES NOT WORK in Unity
 // Life would be so easier if it did.
@@ -202,8 +197,8 @@ public class MultiInputCurve
             if (logCurves[i] != null)
             {
                 result = additive
-                             ? result + logCurves[i].Value(Mathf.Log(input))
-                             : result * logCurves[i].Value(Mathf.Log(input));
+                             ? result + logCurves[i].Value(Mathf.Log10(input))
+                             : result * logCurves[i].Value(Mathf.Log10(input));
             }
         }
         return result;
