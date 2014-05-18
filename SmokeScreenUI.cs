@@ -55,7 +55,7 @@ namespace SmokeScreen
 
             button = ToolbarManager.Instance.add("SmokeScreen", "main");
             button.TexturePath = icon;
-            button.ToolTip = "Toggle This Button's Icon";
+            button.ToolTip = "SmokeScreen";
             button.OnClick += (e) =>
                 {
                     this.showUI = !this.showUI;
