@@ -136,7 +136,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     private Shader shader;
 
-    private string node_backup = string.Empty;
+    public string node_backup = string.Empty;
 
     private bool activated = true;
 
