@@ -120,6 +120,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public MultiInputCurve offset;
 
+    public MultiInputCurve force;
+
     // Logarithmic growth applied to to the particle.
     // The size at time t after emission will be approximately
     // (Log(logarithmicGrowth * t + 1) + 1) * initialSize, assuming grow = 0.
@@ -394,10 +396,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                     }
                     finally
                     {
-                        particles[j].velocity = (persistentEmitters[i].pe.useWorldSpace
-                                                     ? (Vector3)pVel
-                                                     : persistentEmitters[i].pe.transform.InverseTransformDirection(
-                                                         pVel)) - Krakensbane.GetFrameVelocity();
+                        particles[j].velocity = (persistentEmitters[i].pe.useWorldSpace ?
+                                              (Vector3)(pVel - Krakensbane.GetFrameVelocity()) :
+                                              persistentEmitters[i].pe.transform.InverseTransformDirection(pVel - Krakensbane.GetFrameVelocity()));
                         particles[j].position = persistentEmitters[i].pe.useWorldSpace
                                                     ? (Vector3)pPos
                                                     : persistentEmitters[i].pe.transform.InverseTransformPoint(pPos);
@@ -620,8 +621,12 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             pkpe.pe.minEnergy = pkpe.minEnergyBase * energyPower;
             pkpe.pe.maxEnergy = pkpe.maxEnergyBase * energyPower;
 
-            float localVelocityPower = speed.Value(inputs);
-            pkpe.pe.localVelocity = pkpe.localVelocityBase * localVelocityPower;
+            float velocityPower = speed.Value(inputs);
+            pkpe.pe.localVelocity = pkpe.localVelocityBase * velocityPower;
+            pkpe.pe.worldVelocity = pkpe.worldVelocityBase * velocityPower;
+
+            float forcePower = force.Value(inputs);
+            pkpe.pe.force = pkpe.forceBase * forcePower;
 
             pkpe.pe.sizeGrow = grow.Value(inputs);
 
@@ -786,6 +791,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         scale = new MultiInputCurve("scale");
         size = new MultiInputCurve("size");
         offset = new MultiInputCurve("offset", true);
+        force = new MultiInputCurve("force", true);
         logGrow = new MultiInputCurve("logGrow", true);
 
         ConfigNode.LoadObjectFromConfig(this, node);
@@ -796,6 +802,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         scale.Load(node);
         size.Load(node);
         offset.Load(node);
+        force.Load(node);
 
         logGrow.Load(node);
 
@@ -813,6 +820,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         scale.Save(node);
         size.Save(node);
         offset.Save(node);
+        force.Save(node);
         logGrow.Save(node);
 
         angle.Save(node);
@@ -968,6 +976,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         min = Mathf.Min(min, scale.minInput[id]);
         min = Mathf.Min(min, size.minInput[id]);
         min = Mathf.Min(min, offset.minInput[id]);
+        min = Mathf.Min(min, force.minInput[id]);
         min = Mathf.Min(min, logGrow.minInput[id]);
 
         return min;
@@ -982,6 +991,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         max = Mathf.Max(max, scale.maxInput[id]);
         max = Mathf.Max(max, size.maxInput[id]);
         max = Mathf.Max(max, offset.maxInput[id]);
+        max = Mathf.Max(max, force.maxInput[id]);
         max = Mathf.Max(max, logGrow.maxInput[id]);
 
         return max;

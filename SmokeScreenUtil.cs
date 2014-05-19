@@ -38,7 +38,7 @@ namespace SmokeScreen
         public static string WriteRootNode(ConfigNode node)
         {
             StringBuilder builder = new StringBuilder();
-            print("node.values.Count " + node.values.Count + " node.nodes.Count " + node.nodes.Count);
+            //print("node.values.Count " + node.values.Count + " node.nodes.Count " + node.nodes.Count);
             for (int i = 0; i < node.values.Count; i++)
             {
                 ConfigNode.Value item = node.values[i];

@@ -58,6 +58,10 @@ public class PersistentKSPParticleEmitter
 
     public readonly Vector3 localVelocityBase;
 
+    public readonly Vector3 worldVelocityBase;
+
+    public readonly Vector3 forceBase;
+
     public PersistentKSPParticleEmitter(
         GameObject go,
         KSPParticleEmitter pe,
@@ -79,6 +83,9 @@ public class PersistentKSPParticleEmitter
         maxSizeBase = (float)templateKspParticleEmitter.maxSize;
 
         localVelocityBase = templateKspParticleEmitter.localVelocity;
+        worldVelocityBase = templateKspParticleEmitter.worldVelocity;
+
+        forceBase = templateKspParticleEmitter.force;
 
         PersistentEmitterManager.Add(this);
     }
