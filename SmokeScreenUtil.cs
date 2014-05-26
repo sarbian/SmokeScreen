@@ -220,6 +220,81 @@ namespace SmokeScreen
             return strArrays;
         }
 
+
+        // The whole pad object is named "ksp_pad_launchPad"
+        public const string LaunchPadGrateColliderName = "Launch Pad Grate";
+
+        private const string LaunchPadColliderName = "LaunchPadColliderSmokeScreen";
+
+        public static bool AddLaunchPadColliders(RaycastHit hit)
+        {
+            // the Grate Collider size is  (37.70, 20.22, 3.47). Way larger that the actual grate
+            // The current collider do not cover all this area. More are needed
+
+            Transform parentTransform = hit.collider.gameObject.transform;
+
+            ////print("AddLaunchPadColliders col name = " + hit.collider.gameObject.name);
+
+            ////print("AddLaunchPadColliders parent col name = " + hit.collider.gameObject.transform.parent.gameObject.name);
+
+            // Are the collider already here ?
+            if (parentTransform.FindChild(LaunchPadColliderName))
+            {
+                return true;
+            }
+
+            GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = LaunchPadColliderName;
+            cube.renderer.material.color = Color.green;
+            cube.transform.parent = parentTransform;
+            cube.transform.localPosition = new Vector3(8.5f, 0, 2.3f);
+            cube.transform.localRotation = parentTransform.localRotation;
+            cube.transform.localScale = new Vector3(0.1f, 7, 16);
+
+            cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = LaunchPadColliderName;
+            cube.renderer.material.color = Color.green;
+            cube.transform.parent = parentTransform;
+            cube.transform.localPosition = new Vector3(7, 10.5f, 2.3f);
+            cube.transform.localRotation = parentTransform.localRotation * Quaternion.Euler(0, 60, 0);
+            cube.transform.localScale = new Vector3(7f, 7, 0.1f);
+
+            cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = LaunchPadColliderName;
+            cube.renderer.material.color = Color.green;
+            cube.transform.parent = parentTransform;
+            cube.transform.localPosition = new Vector3(7, -10.5f, 2.3f);
+            cube.transform.localRotation = parentTransform.localRotation * Quaternion.Euler(0, -60, 0);
+            cube.transform.localScale = new Vector3(7f, 7, 0.1f);
+
+            cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = LaunchPadColliderName;
+            cube.renderer.material.color = Color.green;
+            cube.transform.parent = parentTransform;
+            cube.transform.localPosition = new Vector3(-8.5f, 0, 2.3f);
+            cube.transform.localRotation = parentTransform.localRotation;
+            cube.transform.localScale = new Vector3(0.1f, 7, 16);
+
+            cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = LaunchPadColliderName;
+            cube.renderer.material.color = Color.green;
+            cube.transform.parent = parentTransform;
+            cube.transform.localPosition = new Vector3(-7, 10.5f, 2.3f);
+            cube.transform.localRotation = parentTransform.localRotation * Quaternion.Euler(0, -60, 0);
+            cube.transform.localScale = new Vector3(7f, 7, 0.1f);
+
+            cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = LaunchPadColliderName;
+            cube.renderer.material.color = Color.green;
+            cube.transform.parent = parentTransform;
+            cube.transform.localPosition = new Vector3(-7, -10.5f, 2.3f);
+            cube.transform.localRotation = parentTransform.localRotation * Quaternion.Euler(0, 60, 0);
+            cube.transform.localScale = new Vector3(7f, 7, 0.1f);
+
+            return true;
+        }
+
+
         private static void print(String s)
         {
             MonoBehaviour.print("[SmokeScreenUtil] " + s);

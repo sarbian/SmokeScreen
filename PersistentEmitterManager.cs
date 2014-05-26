@@ -63,12 +63,17 @@ class PersistentEmitterManager : MonoBehaviour
                 persistentEmittersCopy[i].EmissionStop();
             }
 
-            if (persistentEmittersCopy[i].go == null  || (persistentEmittersCopy[i].go.transform.parent == null && persistentEmittersCopy[i].pe.pe.particles.Count() == 0))
+            if (persistentEmittersCopy[i].go == null  || persistentEmittersCopy[i].go.transform.parent == null)
             {
-                EffectBehaviour.RemoveParticleEmitter(persistentEmittersCopy[i].pe);
-                persistentEmitters.Remove(persistentEmittersCopy[i]);
-                if (persistentEmittersCopy[i].go != null)
-                    Destroy(persistentEmittersCopy[i].go);
+                persistentEmittersCopy[i].EmitterOnUpdate(Vector3.zero);
+
+                if (persistentEmittersCopy[i].pe.pe.particles.Count() == 0)
+                {
+                    EffectBehaviour.RemoveParticleEmitter(persistentEmittersCopy[i].pe);
+                    persistentEmitters.Remove(persistentEmittersCopy[i]);
+                    if (persistentEmittersCopy[i].go != null)
+                        Destroy(persistentEmittersCopy[i].go);
+                }
             }
         }
     }
