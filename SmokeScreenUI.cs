@@ -97,9 +97,12 @@ namespace SmokeScreen
 
             foreach (var mmFX in ModelMultiParticlePersistFX.List)
             {
-                mmFX.showUI = GUILayout.Toggle(
-                    mmFX.showUI,
-                    mmFX.hostPart.name + " " + mmFX.effectName + " " + mmFX.instanceName);
+                if (mmFX.hostPart != null)
+                {
+                    mmFX.showUI = GUILayout.Toggle(
+                        mmFX.showUI,
+                        mmFX.hostPart.name + " " + mmFX.effectName + " " + mmFX.instanceName);
+                }
             }
 
             GUILayout.EndVertical();

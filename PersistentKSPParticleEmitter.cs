@@ -38,6 +38,8 @@ public class PersistentKSPParticleEmitter
 
     public float timer = 0;
 
+    public double fraction = 0;
+
     public readonly float minEmissionBase;
 
     public readonly float maxEmissionBase;
@@ -106,4 +108,10 @@ public class PersistentKSPParticleEmitter
         fixedEmit = false;
         pe.emit = false;
     }
+
+    private void Print(string s)
+    {
+        MonoBehaviour.print(this.GetType().Name + " : " + s);
+    }
+
 }

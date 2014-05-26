@@ -249,8 +249,6 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
         RaycastHit hit = new RaycastHit();
 
-        GameObject pad = GameObject.Find("ksp_pad_launchPad");
-
         //RaycastHit vHit = new RaycastHit();
         //Ray vRay = Camera.main.ScreenPointToRay(Input.mousePosition);
         //if(Physics.Raycast(vRay, out vHit))
@@ -263,34 +261,38 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         // "Default", "TransparentFX", "Local Scenery", "Ignore Raycast"
         int mask = (1 << LayerMask.NameToLayer("Default")) | (1 << LayerMask.NameToLayer("Local Scenery"));
 
-        for (int i = 0; i < persistentEmitters.Count; i++)
+        PersistentKSPParticleEmitter[] persistentKspParticleEmitters = persistentEmitters.ToArray();
+        for (int i = 0; i < persistentKspParticleEmitters.Length; i++)
         {
             // Emit particles on fixedUpdate rather than Update so that we know which particles
             // were just created and should be nudged, should not be collided, etc.
-            if (persistentEmitters[i].fixedEmit)
+            PersistentKSPParticleEmitter persistentKspParticleEmitter = persistentKspParticleEmitters[i];
+            if (persistentKspParticleEmitter.fixedEmit)
             {
                 // Number of particles to emit:
                 double averageEmittedParticles = UnityEngine.Random.Range(
-                    persistentEmitters[i].pe.minEmission,
-                    persistentEmitters[i].pe.maxEmission) * TimeWarp.fixedDeltaTime;
-                int emittedParticles = (int)Math.Floor(averageEmittedParticles)
-                                       + (UnityEngine.Random.value
-                                          < averageEmittedParticles - Math.Floor(averageEmittedParticles)
-                                              ? 1
-                                              : 0);
+                    persistentKspParticleEmitter.pe.minEmission,
+                    persistentKspParticleEmitter.pe.maxEmission) * TimeWarp.fixedDeltaTime;
+                double avgEmittedParticles = averageEmittedParticles + persistentKspParticleEmitter.fraction;
+                double decimalEmittedParticles = Math.Truncate(avgEmittedParticles);
+                persistentKspParticleEmitter.fraction = avgEmittedParticles - decimalEmittedParticles;
+
+                int emittedParticles = (int)decimalEmittedParticles;
                 for (int k = 0; k < emittedParticles; ++k)
                 {
-                    persistentEmitters[i].pe.EmitParticle();
+                    persistentKspParticleEmitter.pe.EmitParticle();
                 }
             }
 
             // This line (and the one that does the oposite at the end) is actally the slowest part of the whole function 
-            Particle[] particles = persistentEmitters[i].pe.pe.particles;
+            Particle[] particles = persistentKspParticleEmitter.pe.pe.particles;
 
-            double averageSize = 0.5 * (persistentEmitters[i].pe.minSize + persistentEmitters[i].pe.maxSize);
+            double averageSize = 0.5 * (persistentKspParticleEmitter.pe.minSize + persistentKspParticleEmitter.pe.maxSize);
 
+            Particle particle;
             for (int j = 0; j < particles.Length; j++)
             {
+                particle = particles[j];
                 // Check if we need to cull the number of particles
                 if (SmokeScreenConfig.particleDecimate != 0 && particles.Length > SmokeScreenConfig.decimateFloor)
                 {
@@ -300,18 +302,18 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                         || (SmokeScreenConfig.particleDecimate < 0
                             && (SmokeScreenConfig.particleCounter % SmokeScreenConfig.particleDecimate) != 0))
                     {
-                        particles[j].energy = 0; // energy set to 0 remove the particle, as per Unity doc
+                        particle.energy = 0; // energy set to 0 remove the particle, as per Unity doc
                     }
                 }
 
-                if (particles[j].energy > 0)
+                if (particle.energy > 0)
                 {
-                    Vector3d pPos = persistentEmitters[i].pe.useWorldSpace
-                                        ? particles[j].position
-                                        : persistentEmitters[i].pe.transform.TransformPoint(particles[j].position);
-                    Vector3d pVel = (persistentEmitters[i].pe.useWorldSpace
-                                         ? particles[j].velocity
-                                         : persistentEmitters[i].pe.transform.TransformDirection(particles[j].velocity))
+                    Vector3d pPos = persistentKspParticleEmitter.pe.useWorldSpace
+                                        ? particle.position
+                                        : persistentKspParticleEmitter.pe.transform.TransformPoint(particle.position);
+                    Vector3d pVel = (persistentKspParticleEmitter.pe.useWorldSpace
+                                         ? particle.velocity
+                                         : persistentKspParticleEmitter.pe.transform.TransformDirection(particle.velocity))
                                     + Krakensbane.GetFrameVelocity();
 
                     // try-finally block to ensure we set the particle velocities correctly in the end.
@@ -324,16 +326,16 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                         {
                             // Euler integration of the derivative of Log(logarithmicGrowth * t + 1) + 1.
                             // This might look weird.
-                            particles[j].size +=
+                            particle.size +=
                                 (float)
                                 (((TimeWarp.fixedDeltaTime * logarithmicGrow)
-                                  / (1 + (particles[j].startEnergy - particles[j].energy) * logarithmicGrow))
+                                  / (1 + (particle.startEnergy - particle.energy) * logarithmicGrow))
                                  * averageSize);
                         }
 
-                        particles[j].size = Mathf.Min(particles[j].size, sizeClamp);
+                        particle.size = Mathf.Min(particle.size, sizeClamp);
 
-                        if (particles[j].energy == particles[j].startEnergy)
+                        if (particle.energy == particle.startEnergy)
                         {
                             if (fixedEmissions)
                             {
@@ -383,11 +385,11 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                         {
                             // There must be a way to keep the actual initial volume, 
                             // but I'm lazy.
-                            pVel = ParticlePhysics(particles[j].size, averageSize, pPos, pVel);
+                            pVel = ParticlePhysics(particle.size, averageSize, pPos, pVel);
                         }
 
                         if (collide && !SmokeScreenConfig.Instance.globalCollideDisable
-                            && particles[j].energy != particles[j].startEnergy
+                            && particle.energy != particle.startEnergy
                             // Do not collide newly created particles (they collide with the emitter and things look bad).
                             && (j % physicsPass == activePhysicsPass))
                         {
@@ -396,18 +398,18 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                     }
                     finally
                     {
-                        particles[j].velocity = (persistentEmitters[i].pe.useWorldSpace ?
+                        particle.velocity = (persistentKspParticleEmitter.pe.useWorldSpace ?
                                               (Vector3)(pVel - Krakensbane.GetFrameVelocity()) :
-                                              persistentEmitters[i].pe.transform.InverseTransformDirection(pVel - Krakensbane.GetFrameVelocity()));
-                        particles[j].position = persistentEmitters[i].pe.useWorldSpace
+                                              persistentKspParticleEmitter.pe.transform.InverseTransformDirection(pVel - Krakensbane.GetFrameVelocity()));
+                        particle.position = persistentKspParticleEmitter.pe.useWorldSpace
                                                     ? (Vector3)pPos
-                                                    : persistentEmitters[i].pe.transform.InverseTransformPoint(pPos);
+                                                    : persistentKspParticleEmitter.pe.transform.InverseTransformPoint(pPos);
                     }
                 }
             }
             activePhysicsPass = ++activePhysicsPass % physicsPass;
-            persistentEmitters[i].pe.pe.particles = particles;
-            SmokeScreenConfig.activeParticles += persistentEmitters[i].pe.pe.particleCount;
+            persistentKspParticleEmitter.pe.pe.particles = particles;
+            SmokeScreenConfig.activeParticles += persistentKspParticleEmitter.pe.pe.particleCount;
         }
     }
 
@@ -852,7 +854,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         {
             return;
         }
-        if (showUI)
+        if (showUI && hostPart != null)
         {
             winPos = GUILayout.Window(
                 winID,
@@ -981,7 +983,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
         return min;
     }
-
+    
     private float maxInput(int id)
     {
         float max = emission.maxInput[id];

@@ -55,17 +55,20 @@ class PersistentEmitterManager : MonoBehaviour
 
     void FixedUpdate()
     {
-        var persistentEmittersCopy = new List<PersistentKSPParticleEmitter>(persistentEmitters);
-        for (int i = 0; i < persistentEmittersCopy.Count; i++)
+        var persistentEmittersCopy = persistentEmitters.ToArray();
+        for (int i = 0; i < persistentEmittersCopy.Length; i++)
         {
             if (persistentEmittersCopy[i].timer > 0 && persistentEmittersCopy[i].timer < Time.fixedTime)
+            {
                 persistentEmittersCopy[i].EmissionStop();
+            }
 
-            if (persistentEmittersCopy[i].go.transform.parent == null && persistentEmittersCopy[i].pe.pe.particles.Count() == 0)
+            if (persistentEmittersCopy[i].go == null  || (persistentEmittersCopy[i].go.transform.parent == null && persistentEmittersCopy[i].pe.pe.particles.Count() == 0))
             {
                 EffectBehaviour.RemoveParticleEmitter(persistentEmittersCopy[i].pe);
                 persistentEmitters.Remove(persistentEmittersCopy[i]);
-                Destroy(persistentEmittersCopy[i].go);
+                if (persistentEmittersCopy[i].go != null)
+                    Destroy(persistentEmittersCopy[i].go);
             }
         }
     }
