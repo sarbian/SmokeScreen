@@ -406,6 +406,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                                                     : persistentKspParticleEmitter.pe.transform.InverseTransformPoint(pPos);
                     }
                 }
+                particles[j] = particle;
             }
             activePhysicsPass = ++activePhysicsPass % physicsPass;
             persistentKspParticleEmitter.pe.pe.particles = particles;
