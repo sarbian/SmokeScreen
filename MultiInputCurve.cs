@@ -26,6 +26,7 @@
  */
 
 using System;
+
 using UnityEngine;
 
 // This class Serialization DOES NOT WORK in Unity

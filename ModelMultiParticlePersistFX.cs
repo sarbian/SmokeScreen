@@ -27,7 +27,9 @@
 
 using System;
 using System.Collections.Generic;
+
 using SmokeScreen;
+
 using UnityEngine;
 
 [EffectDefinition("MODEL_MULTI_PARTICLE_PERSIST")]
@@ -127,7 +129,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     // The size at time t after emission will be approximately
     // (Log(logarithmicGrowth * t + 1) + 1) * initialSize, assuming grow = 0.
     public MultiInputCurve logGrow;
-    
+
+    public MultiInputCurve linGrow;
+
     // Those 2 curve are related to the angle and distance to cam
     public FXCurve angle = new FXCurve("angle", 1f);
 
@@ -146,6 +150,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     private static readonly List<ModelMultiParticlePersistFX> list = new List<ModelMultiParticlePersistFX>();
 
     private float singleTimerEnd = 0;
+
     private float timeModuloDelta = 0;
 
     public static List<ModelMultiParticlePersistFX> List
@@ -199,11 +204,13 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         }
         singleTimerEnd = this.singleEmitTimer + Time.fixedTime;
         timeModuloDelta = singleTimerEnd % timeModulo;
-        UpdateEmitters(1);
-        for (int i = 0; i < persistentEmitters.Count; i++)
-        {
-            persistentEmitters[i].pe.Emit();
-        }
+        // Old version Emitted 1 second of particle in one go
+        // New version set power to 1 for singleEmitTimer seconds
+        //UpdateEmitters(1);
+        //for (int i = 0; i < persistentEmitters.Count; i++)
+        //{
+        //    persistentEmitters[i].pe.Emit();
+        //}
     }
 
     public override void OnEvent(float power)
@@ -213,9 +220,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             return;
         }
 
-
-        //if (power > 0f && activated)
-        if (activated)
+        if ((overRideInputs || power > 0 || Time.deltaTime <= this.singleTimerEnd) && activated)
         {
             UpdateEmitters(power);
             for (int i = 0; i < persistentEmitters.Count; i++)
@@ -243,8 +248,6 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
         SmokeScreenConfig.UpdateParticlesCount();
 
-        
-
         //RaycastHit vHit = new RaycastHit();
         //Ray vRay = Camera.main.ScreenPointToRay(Input.mousePosition);
         //if(Physics.Raycast(vRay, out vHit))
@@ -253,7 +256,6 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         //    if (Physics.Raycast(vHit.point + vHit.normal * 10, -vHit.normal, out vHit2))
         //        Debug.Log(vHit2.collider.name);
         //}
-    
 
         PersistentKSPParticleEmitter[] persistentKspParticleEmitters = persistentEmitters.ToArray();
         for (int i = 0; i < persistentKspParticleEmitters.Length; i++)
@@ -263,8 +265,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             persistentKspParticleEmitter.EmitterOnUpdate(this.hostPart.rb.velocity + Krakensbane.GetFrameVelocity());
         }
     }
-   
-    
+
     private void UpdateInputs(float power)
     {
         if (overRideInputs)
@@ -276,10 +277,18 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         float surfaceVelMach = 1;
         float partTemp = 1;
         float externalTemp = 1;
-        // timeModuloDelta makes the transition between the two state smooth 
-        float time = Time.deltaTime >= singleTimerEnd
-                         ? (Time.deltaTime - timeModuloDelta) % timeModulo
-                         : singleTimerEnd - Time.deltaTime;
+        
+        float time;
+        if (Time.fixedTime > this.singleTimerEnd)
+        {
+            // timeModuloDelta makes the transition between the two state smooth 
+            time = (Time.fixedTime - this.timeModuloDelta) % this.timeModulo;
+        }
+        else
+        {
+            time = singleTimerEnd - Time.fixedTime;
+            power = 1;
+        }
 
         if (hostPart != null)
         {
@@ -320,7 +329,6 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         inputs[(int)MultiInputCurve.Inputs.parttemp] = partTemp;
         inputs[(int)MultiInputCurve.Inputs.externaltemp] = externalTemp;
         inputs[(int)MultiInputCurve.Inputs.time] = time;
-
     }
 
     public void UpdateEmitters(float power)
@@ -357,7 +365,6 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             pkpe.pe.shape2D = pkpe.scale2DBase * currentScale;
             pkpe.pe.shape3D = pkpe.scale3DBase * currentScale;
 
-
             pkpe.sizeClamp = sizeClamp;
             pkpe.randomInitalVelocityOffsetMaxRadius = randomInitalVelocityOffsetMaxRadius;
 
@@ -371,6 +378,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
             pkpe.logarithmicGrow = logGrow.Value(inputs);
 
+            pkpe.linearGrow = linGrow.Value(inputs);
+
             pkpe.go.transform.localPosition = localPosition
                                               + offsetDirection.normalized * offset.Value(inputs) * fixedScale;
 
@@ -379,14 +388,11 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             // Bad code is bad
             try
             {
-                pkpe.pe.particleRenderMode =
-                    (ParticleRenderMode)Enum.Parse(typeof(ParticleRenderMode), renderMode);
+                pkpe.pe.particleRenderMode = (ParticleRenderMode)Enum.Parse(typeof(ParticleRenderMode), renderMode);
             }
             catch (ArgumentException)
             {
             }
-
-            ////print(atmDensity.ToString("F2") + " " + offset.Value(power).ToString("F2") + " " + offsetFromDensity.Value(atmDensity).ToString("F2") + " " + offsetFromMach.Value(surfaceVelMach).ToString("F2"));
         }
     }
 
@@ -534,6 +540,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         offset = new MultiInputCurve("offset", true);
         force = new MultiInputCurve("force", true);
         logGrow = new MultiInputCurve("logGrow", true);
+        linGrow = new MultiInputCurve("linGrow", true);
 
         ConfigNode.LoadObjectFromConfig(this, node);
         emission.Load(node);
@@ -546,6 +553,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         force.Load(node);
 
         logGrow.Load(node);
+        linGrow.Load(node);
 
         angle.Load("angle", node);
         distance.Load("distance", node);
@@ -563,6 +571,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         offset.Save(node);
         force.Save(node);
         logGrow.Save(node);
+        linGrow.Save(node);
 
         angle.Save(node);
         distance.Save(node);
@@ -726,10 +735,11 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         min = Mathf.Min(min, offset.minInput[id]);
         min = Mathf.Min(min, force.minInput[id]);
         min = Mathf.Min(min, logGrow.minInput[id]);
+        min = Mathf.Min(min, linGrow.minInput[id]);
 
         return min;
     }
-    
+
     private float maxInput(int id)
     {
         float max = emission.maxInput[id];
@@ -741,6 +751,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         max = Mathf.Max(max, offset.maxInput[id]);
         max = Mathf.Max(max, force.maxInput[id]);
         max = Mathf.Max(max, logGrow.maxInput[id]);
+        max = Mathf.Max(max, linGrow.maxInput[id]);
 
         return max;
     }
