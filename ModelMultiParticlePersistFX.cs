@@ -202,11 +202,13 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         }
         singleTimerEnd = this.singleEmitTimer + Time.fixedTime;
         timeModuloDelta = singleTimerEnd % timeModulo;
-        UpdateEmitters(1);
-        for (int i = 0; i < persistentEmitters.Count; i++)
-        {
-            persistentEmitters[i].pe.Emit();
-        }
+        // Old version Emitted 1 second of particle in one go
+        // New version set power to 1 for singleEmitTimer seconds
+        //UpdateEmitters(1);
+        //for (int i = 0; i < persistentEmitters.Count; i++)
+        //{
+        //    persistentEmitters[i].pe.Emit();
+        //}
     }
 
     public override void OnEvent(float power)
@@ -216,7 +218,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             return;
         }
 
-        if (activated)
+        if ((overRideInputs || power > 0 || Time.deltaTime <= this.singleTimerEnd) && activated)
         {
             UpdateEmitters(power);
             for (int i = 0; i < persistentEmitters.Count; i++)
@@ -273,10 +275,18 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         float surfaceVelMach = 1;
         float partTemp = 1;
         float externalTemp = 1;
-        // timeModuloDelta makes the transition between the two state smooth 
-        float time = Time.deltaTime >= singleTimerEnd
-                         ? (Time.deltaTime - timeModuloDelta) % timeModulo
-                         : singleTimerEnd - Time.deltaTime;
+        
+        float time;
+        if (Time.fixedTime > this.singleTimerEnd)
+        {
+            // timeModuloDelta makes the transition between the two state smooth 
+            time = (Time.fixedTime - this.timeModuloDelta) % this.timeModulo;
+        }
+        else
+        {
+            time = singleTimerEnd - Time.fixedTime;
+            power = 1;
+        }
 
         if (hostPart != null)
         {
