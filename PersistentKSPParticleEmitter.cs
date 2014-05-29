@@ -44,7 +44,7 @@ public class PersistentKSPParticleEmitter
 
     public float timer = 0;
 
-    public double fraction = 0;
+    public double particleFraction = 0;
 
     public readonly float minEmissionBase;
 
@@ -74,11 +74,6 @@ public class PersistentKSPParticleEmitter
 
     public float sizeClamp = 50;
 
-    /// Whether to nudge particles in order to alleviate the dotted smoke effect.
-    /// Set this to true (default) when using 'Simulate World Space' in Unity,
-    /// false otherwise.
-    //public bool fixedEmissions = true;
-
     // The initial velocity of the particles will be offset by a random amount
     // lying in a disk perpendicular to the mean initial velocity whose radius
     // is randomOffsetMaxRadius. This is similar to Unity's 'Random Velocity'
@@ -102,7 +97,7 @@ public class PersistentKSPParticleEmitter
     public double stickiness = 0.9;
 
     public bool collide = false;
-    
+
     public float collideRatio = 0.0f;
 
     private bool addedLaunchPadCollider = false;
@@ -110,7 +105,7 @@ public class PersistentKSPParticleEmitter
     private static uint physicsPass = 4;
 
     private static uint activePhysicsPass = 0;
-    
+
     public PersistentKSPParticleEmitter(
         GameObject go,
         KSPParticleEmitter pe,
@@ -156,6 +151,7 @@ public class PersistentKSPParticleEmitter
         this.pe.emit = false;
     }
 
+    // Update the particles of the Emitter : Emit, resize, collision and physic
     public void EmitterOnUpdate(Vector3 emitterWorldVelocity)
     {
         RaycastHit hit = new RaycastHit();
@@ -167,15 +163,14 @@ public class PersistentKSPParticleEmitter
         if (this.fixedEmit)
         {
             // Number of particles to emit:
-            double averageEmittedParticles = Random.Range(
-                this.pe.minEmission,
-                this.pe.maxEmission) * TimeWarp.fixedDeltaTime;
-            double avgEmittedParticles = averageEmittedParticles + this.fraction;
-            double decimalEmittedParticles = Math.Truncate(avgEmittedParticles);
-            this.fraction = avgEmittedParticles - decimalEmittedParticles;
+            double averageEmittedParticles = Random.Range(this.pe.minEmission, this.pe.maxEmission)
+                                             * TimeWarp.fixedDeltaTime;
+            double compensatedEmittedParticles = averageEmittedParticles + this.particleFraction;
+            double emittedParticles = Math.Truncate(compensatedEmittedParticles);
+            this.particleFraction = compensatedEmittedParticles - emittedParticles;
 
-            int emittedParticles = (int)decimalEmittedParticles;
-            for (int k = 0; k < emittedParticles; ++k)
+            int emissionCount = (int)emittedParticles;
+            for (int k = 0; k < emissionCount; ++k)
             {
                 this.pe.EmitParticle();
             }
@@ -216,7 +211,8 @@ public class PersistentKSPParticleEmitter
                 // try-finally block to ensure we set the particle velocities correctly in the end.
                 try
                 {
-                    // Fixed update is not the best place to update the size but the particles array copy is slow so doing each frame would be worse
+                    // Fixed update is not the best place to update the size but the particles array copy is 
+                    // slow so doing each frame would be worse
 
                     // No need to waste time doing a division if the result is 0.
                     if (this.logarithmicGrow != 0.0)
@@ -235,10 +231,10 @@ public class PersistentKSPParticleEmitter
                     {
                         if (this.pe.useWorldSpace)
                         {
-                            // Uniformly scatter newly emitted particles along the emitter's trajectory in order to remove the dotted smoke effect.
+                            // Uniformly scatter newly emitted particles along the emitter's trajectory in order to 
+                            // remove the dotted smoke effect.
                             // use variableDeltaTime since the particle are emited on Update anyway.
-                            pPos -= emitterWorldVelocity * Random.value
-                                    * Time.deltaTime;
+                            pPos -= emitterWorldVelocity * Random.value * Time.deltaTime;
                         }
                         if (this.randomInitalVelocityOffsetMaxRadius != 0.0)
                         {
@@ -306,6 +302,7 @@ public class PersistentKSPParticleEmitter
         this.pe.pe.particles = particles;
         SmokeScreenConfig.activeParticles += this.pe.pe.particleCount;
     }
+
     private Vector3 ParticlePhysics(double radius, double initialRadius, Vector3d pPos, Vector3d pVel)
     {
         // N.B.: multiplications rather than Pow, Pow is slow,
@@ -331,7 +328,7 @@ public class PersistentKSPParticleEmitter
         // Euler is good enough for graphics.
         return pVel + acceleration * TimeWarp.fixedDeltaTime * (float)physicsPass;
     }
-    
+
     private Vector3 ParticleCollision(Vector3d pPos, Vector3d pVel, RaycastHit hit, int mask)
     {
         if (Physics.Raycast(
@@ -370,7 +367,6 @@ public class PersistentKSPParticleEmitter
         }
         return pVel;
     }
-
 
     private void Print(string s)
     {

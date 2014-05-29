@@ -213,8 +213,6 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             return;
         }
 
-
-        //if (power > 0f && activated)
         if (activated)
         {
             UpdateEmitters(power);
@@ -385,8 +383,6 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             catch (ArgumentException)
             {
             }
-
-            ////print(atmDensity.ToString("F2") + " " + offset.Value(power).ToString("F2") + " " + offsetFromDensity.Value(atmDensity).ToString("F2") + " " + offsetFromMach.Value(surfaceVelMach).ToString("F2"));
         }
     }
 
