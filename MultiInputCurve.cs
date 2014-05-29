@@ -59,7 +59,9 @@ public class MultiInputCurve
 
         parttemp = 3,
 
-        externaltemp = 4
+        externaltemp = 4,
+
+        time = 5
     }
 
     public static readonly int inputsCount = Enum.GetValues(typeof(Inputs)).Length;

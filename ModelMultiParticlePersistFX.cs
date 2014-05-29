@@ -87,6 +87,15 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     [Persistent]
     public double dragCoefficient = 0.1;
 
+    // Current Time % timeModulo is used as the time input
+    [Persistent]
+    public float timeModulo = 10;
+
+    // For how long the effect will be running after a single Emit()
+    // time input is overridden to be the remaining time while it runs
+    [Persistent]
+    public float singleEmitTimer = 0;
+
     // The initial velocity of the particles will be offset by a random amount
     // lying in a disk perpendicular to the mean initial velocity whose radius
     // is randomOffsetMaxRadius. This is similar to Unity's 'Random Velocity'
@@ -135,6 +144,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     public bool showUI = false;
 
     private static readonly List<ModelMultiParticlePersistFX> list = new List<ModelMultiParticlePersistFX>();
+
+    private float singleTimerEnd = 0;
+    private float timeModuloDelta = 0;
 
     public static List<ModelMultiParticlePersistFX> List
     {
@@ -185,7 +197,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         {
             return;
         }
-
+        singleTimerEnd = this.singleEmitTimer + Time.fixedTime;
+        timeModuloDelta = singleTimerEnd % timeModulo;
         UpdateEmitters(1);
         for (int i = 0; i < persistentEmitters.Count; i++)
         {
@@ -263,6 +276,11 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         float surfaceVelMach = 1;
         float partTemp = 1;
         float externalTemp = 1;
+        // timeModuloDelta makes the transition between the two state smooth 
+        float time = Time.deltaTime >= singleTimerEnd
+                         ? (Time.deltaTime - timeModuloDelta) % timeModulo
+                         : singleTimerEnd - Time.deltaTime;
+
         if (hostPart != null)
         {
             partTemp = hostPart.temperature;
@@ -301,6 +319,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         inputs[(int)MultiInputCurve.Inputs.mach] = surfaceVelMach;
         inputs[(int)MultiInputCurve.Inputs.parttemp] = partTemp;
         inputs[(int)MultiInputCurve.Inputs.externaltemp] = externalTemp;
+        inputs[(int)MultiInputCurve.Inputs.time] = time;
+
     }
 
     public void UpdateEmitters(float power)
@@ -602,6 +622,12 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
         GUILayout.Space(10);
 
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Single Emit Timer"))
+        {
+            this.OnEvent();
+        }
+
         if (GUILayout.Button("Clear Particles"))
         {
             for (int i = 0; i < persistentEmitters.Count; i++)
@@ -609,6 +635,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                 persistentEmitters[i].pe.pe.ClearParticles();
             }
         }
+        GUILayout.EndHorizontal();
 
         GUILayout.Space(10);
 
