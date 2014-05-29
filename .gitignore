@@ -1,3 +1,9 @@
+#Sarbian doesn't like the build scripts:
+*.sln
+*.csproj
+*.vcxproj
+*.vcxproj.filters
+
 #OS junk files
 [Tt]humbs.db
 *.DS_Store
