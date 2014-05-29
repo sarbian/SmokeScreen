@@ -10,17 +10,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+
 using UnityEngine;
 
-
 [KSPAddon(KSPAddon.Startup.EveryScene, false)]
-class PersistentEmitterManager : MonoBehaviour
+internal class PersistentEmitterManager : MonoBehaviour
 {
-
     public static PersistentEmitterManager Instance { get; private set; }
 
     private static List<PersistentKSPParticleEmitter> persistentEmitters;
-
 
     private void Awake()
     {
@@ -36,8 +34,8 @@ class PersistentEmitterManager : MonoBehaviour
         GameEvents.onGameSceneLoadRequested.Remove(new EventData<GameScenes>.OnEvent(this.OnSceneChange));
     }
 
-    static public void Add(PersistentKSPParticleEmitter pkpe)
-    {        
+    public static void Add(PersistentKSPParticleEmitter pkpe)
+    {
         persistentEmitters.Add(pkpe);
         EffectBehaviour.AddParticleEmitter(pkpe.pe);
     }
@@ -48,12 +46,14 @@ class PersistentEmitterManager : MonoBehaviour
         {
             EffectBehaviour.RemoveParticleEmitter(persistentEmitters[i].pe);
             if (persistentEmitters[i].go.transform.parent == null)
+            {
                 Destroy(persistentEmitters[i].go);
+            }
         }
         persistentEmitters = new List<PersistentKSPParticleEmitter>();
     }
 
-    void FixedUpdate()
+    public void FixedUpdate()
     {
         var persistentEmittersCopy = persistentEmitters.ToArray();
         for (int i = 0; i < persistentEmittersCopy.Length; i++)
@@ -63,7 +63,7 @@ class PersistentEmitterManager : MonoBehaviour
                 persistentEmittersCopy[i].EmissionStop();
             }
 
-            if (persistentEmittersCopy[i].go == null  || persistentEmittersCopy[i].go.transform.parent == null)
+            if (persistentEmittersCopy[i].go == null || persistentEmittersCopy[i].go.transform.parent == null)
             {
                 persistentEmittersCopy[i].EmitterOnUpdate(Vector3.zero);
 
@@ -72,7 +72,9 @@ class PersistentEmitterManager : MonoBehaviour
                     EffectBehaviour.RemoveParticleEmitter(persistentEmittersCopy[i].pe);
                     persistentEmitters.Remove(persistentEmittersCopy[i]);
                     if (persistentEmittersCopy[i].go != null)
+                    {
                         Destroy(persistentEmittersCopy[i].go);
+                    }
                 }
             }
         }
@@ -82,8 +84,4 @@ class PersistentEmitterManager : MonoBehaviour
     {
         MonoBehaviour.print(this.GetType().Name + " : " + s);
     }
-
-
 }
-
-

@@ -24,16 +24,16 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace SmokeScreen
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Text;
+
     using UnityEngine;
 
-    static class SmokeScreenUtil
+    internal static class SmokeScreenUtil
     {
         public static string WriteRootNode(ConfigNode node)
         {
@@ -50,6 +50,7 @@ namespace SmokeScreen
             }
             return builder.ToString();
         }
+
         public static void WriteNodeString(ConfigNode node, ref StringBuilder builder, string indent)
         {
             builder.AppendLine(string.Concat(indent, node.name));
@@ -79,7 +80,7 @@ namespace SmokeScreen
         {
             while (index < cfg.Count)
             {
-                if ((int)cfg[index].Length == 2)
+                if (cfg[index].Length == 2)
                 {
                     node.values.Add(new ConfigNode.Value(cfg[index][0], cfg[index][1]));
                     index = index + 1;
@@ -116,7 +117,7 @@ namespace SmokeScreen
         public static bool NextLineIsOpenBrace(List<string[]> cfg, int index)
         {
             int num = index + 1;
-            if (num < cfg.Count && (int)cfg[num].Length == 1 && cfg[num][0] == "{")
+            if (num < cfg.Count && cfg[num].Length == 1 && cfg[num][0] == "{")
             {
                 return true;
             }
@@ -125,7 +126,7 @@ namespace SmokeScreen
 
         public static List<string[]> PreFormatConfig(string[] cfgData)
         {
-            if (cfgData == null || (int)cfgData.Length < 1)
+            if (cfgData == null || cfgData.Length < 1)
             {
                 Debug.LogError("Error: Empty part config file");
                 return null;
@@ -207,10 +208,10 @@ namespace SmokeScreen
             for (int i = 0; i < strs.Count; i++)
             {
                 string item = strs[i];
-                string[] strArrays1 = item.Split(new char[] { '=' }, 2, StringSplitOptions.None);
-                if (strArrays1 != null && (int)strArrays1.Length != 0)
+                string[] strArrays1 = item.Split(new[] { '=' }, 2, StringSplitOptions.None);
+                if (strArrays1 != null && strArrays1.Length != 0)
                 {
-                    for (int j = 0; j < (int)strArrays1.Length; j++)
+                    for (int j = 0; j < strArrays1.Length; j++)
                     {
                         strArrays1[j] = strArrays1[j].Trim();
                     }
@@ -219,7 +220,6 @@ namespace SmokeScreen
             }
             return strArrays;
         }
-
 
         // The whole pad object is named "ksp_pad_launchPad"
         public const string LaunchPadGrateColliderName = "Launch Pad Grate";
@@ -294,11 +294,9 @@ namespace SmokeScreen
             return true;
         }
 
-
         private static void print(String s)
         {
             MonoBehaviour.print("[SmokeScreenUtil] " + s);
         }
-
     }
 }

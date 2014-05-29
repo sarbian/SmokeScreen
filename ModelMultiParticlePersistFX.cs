@@ -27,7 +27,9 @@
 
 using System;
 using System.Collections.Generic;
+
 using SmokeScreen;
+
 using UnityEngine;
 
 [EffectDefinition("MODEL_MULTI_PARTICLE_PERSIST")]
@@ -127,7 +129,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     // The size at time t after emission will be approximately
     // (Log(logarithmicGrowth * t + 1) + 1) * initialSize, assuming grow = 0.
     public MultiInputCurve logGrow;
-    
+
     // Those 2 curve are related to the angle and distance to cam
     public FXCurve angle = new FXCurve("angle", 1f);
 
@@ -146,6 +148,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     private static readonly List<ModelMultiParticlePersistFX> list = new List<ModelMultiParticlePersistFX>();
 
     private float singleTimerEnd = 0;
+
     private float timeModuloDelta = 0;
 
     public static List<ModelMultiParticlePersistFX> List
@@ -241,8 +244,6 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
         SmokeScreenConfig.UpdateParticlesCount();
 
-        
-
         //RaycastHit vHit = new RaycastHit();
         //Ray vRay = Camera.main.ScreenPointToRay(Input.mousePosition);
         //if(Physics.Raycast(vRay, out vHit))
@@ -251,7 +252,6 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         //    if (Physics.Raycast(vHit.point + vHit.normal * 10, -vHit.normal, out vHit2))
         //        Debug.Log(vHit2.collider.name);
         //}
-    
 
         PersistentKSPParticleEmitter[] persistentKspParticleEmitters = persistentEmitters.ToArray();
         for (int i = 0; i < persistentKspParticleEmitters.Length; i++)
@@ -261,8 +261,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             persistentKspParticleEmitter.EmitterOnUpdate(this.hostPart.rb.velocity + Krakensbane.GetFrameVelocity());
         }
     }
-   
-    
+
     private void UpdateInputs(float power)
     {
         if (overRideInputs)
@@ -318,7 +317,6 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         inputs[(int)MultiInputCurve.Inputs.parttemp] = partTemp;
         inputs[(int)MultiInputCurve.Inputs.externaltemp] = externalTemp;
         inputs[(int)MultiInputCurve.Inputs.time] = time;
-
     }
 
     public void UpdateEmitters(float power)
@@ -355,7 +353,6 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             pkpe.pe.shape2D = pkpe.scale2DBase * currentScale;
             pkpe.pe.shape3D = pkpe.scale3DBase * currentScale;
 
-
             pkpe.sizeClamp = sizeClamp;
             pkpe.randomInitalVelocityOffsetMaxRadius = randomInitalVelocityOffsetMaxRadius;
 
@@ -377,8 +374,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             // Bad code is bad
             try
             {
-                pkpe.pe.particleRenderMode =
-                    (ParticleRenderMode)Enum.Parse(typeof(ParticleRenderMode), renderMode);
+                pkpe.pe.particleRenderMode = (ParticleRenderMode)Enum.Parse(typeof(ParticleRenderMode), renderMode);
             }
             catch (ArgumentException)
             {
@@ -725,7 +721,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
         return min;
     }
-    
+
     private float maxInput(int id)
     {
         float max = emission.maxInput[id];
