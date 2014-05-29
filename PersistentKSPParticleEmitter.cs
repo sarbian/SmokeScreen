@@ -72,6 +72,8 @@ public class PersistentKSPParticleEmitter
 
     public float logarithmicGrow;
 
+    public float linearGrow;
+
     public float sizeClamp = 50;
 
     // The initial velocity of the particles will be offset by a random amount
@@ -223,6 +225,10 @@ public class PersistentKSPParticleEmitter
                             (float)
                             (((TimeWarp.fixedDeltaTime * this.logarithmicGrow)
                               / (1 + (particle.startEnergy - particle.energy) * this.logarithmicGrow)) * averageSize);
+                    }
+                    if (this.linearGrow != 0.0)
+                    {
+                        particle.size += (float)(TimeWarp.fixedDeltaTime * this.linearGrow * averageSize);
                     }
 
                     particle.size = Mathf.Min(particle.size, this.sizeClamp);

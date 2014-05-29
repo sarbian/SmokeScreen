@@ -130,6 +130,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     // (Log(logarithmicGrowth * t + 1) + 1) * initialSize, assuming grow = 0.
     public MultiInputCurve logGrow;
 
+    public MultiInputCurve linGrow;
+
     // Those 2 curve are related to the angle and distance to cam
     public FXCurve angle = new FXCurve("angle", 1f);
 
@@ -376,6 +378,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
             pkpe.logarithmicGrow = logGrow.Value(inputs);
 
+            pkpe.linearGrow = linGrow.Value(inputs);
+
             pkpe.go.transform.localPosition = localPosition
                                               + offsetDirection.normalized * offset.Value(inputs) * fixedScale;
 
@@ -536,6 +540,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         offset = new MultiInputCurve("offset", true);
         force = new MultiInputCurve("force", true);
         logGrow = new MultiInputCurve("logGrow", true);
+        linGrow = new MultiInputCurve("linGrow", true);
 
         ConfigNode.LoadObjectFromConfig(this, node);
         emission.Load(node);
@@ -548,6 +553,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         force.Load(node);
 
         logGrow.Load(node);
+        linGrow.Load(node);
 
         angle.Load("angle", node);
         distance.Load("distance", node);
@@ -565,6 +571,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         offset.Save(node);
         force.Save(node);
         logGrow.Save(node);
+        linGrow.Save(node);
 
         angle.Save(node);
         distance.Save(node);
@@ -728,6 +735,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         min = Mathf.Min(min, offset.minInput[id]);
         min = Mathf.Min(min, force.minInput[id]);
         min = Mathf.Min(min, logGrow.minInput[id]);
+        min = Mathf.Min(min, linGrow.minInput[id]);
 
         return min;
     }
@@ -743,6 +751,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         max = Mathf.Max(max, offset.maxInput[id]);
         max = Mathf.Max(max, force.maxInput[id]);
         max = Mathf.Max(max, logGrow.maxInput[id]);
+        max = Mathf.Max(max, linGrow.maxInput[id]);
 
         return max;
     }
