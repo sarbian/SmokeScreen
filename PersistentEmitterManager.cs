@@ -58,12 +58,17 @@ internal class PersistentEmitterManager : MonoBehaviour
         var persistentEmittersCopy = persistentEmitters.ToArray();
         for (int i = 0; i < persistentEmittersCopy.Length; i++)
         {
-            if (persistentEmittersCopy[i].timer > 0 && persistentEmittersCopy[i].timer < Time.fixedTime)
+            if (persistentEmittersCopy[i].endTime > 0 && persistentEmittersCopy[i].endTime < Time.fixedTime)
             {
                 persistentEmittersCopy[i].EmissionStop();
             }
 
-            if (persistentEmittersCopy[i].go == null || persistentEmittersCopy[i].go.transform.parent == null)
+            // If the gameObject is null ( when ? I forgot ... )
+            // or the tranform parent is null ( Emitter detached from part so the particle are not removed instantly )
+            // then the emitter won't be updated by the effect FixedUpdate Call. So update it here
+            if (persistentEmittersCopy[i].go == null 
+                || persistentEmittersCopy[i].go.transform == null 
+                || persistentEmittersCopy[i].go.transform.parent == null)
             {
                 persistentEmittersCopy[i].EmitterOnUpdate(Vector3.zero);
 

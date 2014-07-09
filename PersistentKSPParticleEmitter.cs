@@ -42,7 +42,7 @@ public class PersistentKSPParticleEmitter
 
     public bool fixedEmit = false;
 
-    public float timer = 0;
+    public float endTime = 0;
 
     public double particleFraction = 0;
 
@@ -139,7 +139,7 @@ public class PersistentKSPParticleEmitter
     // Detach the emitter from its parent gameobject and stop its emmission in timer seconds
     public void Detach(float timer)
     {
-        this.timer = Time.fixedTime + timer;
+        this.endTime = Time.fixedTime + timer;
         if (this.go != null && this.go.transform.parent != null)
         {
             // detach from the parent so the emmitter(and its particle) don't get removed instantly
