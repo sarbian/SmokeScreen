@@ -66,19 +66,32 @@ internal class PersistentEmitterManager : MonoBehaviour
             // If the gameObject is null ( when ? I forgot ... )
             // or the tranform parent is null ( Emitter detached from part so the particle are not removed instantly )
             // then the emitter won't be updated by the effect FixedUpdate Call. So update it here
-            if (persistentEmittersCopy[i].go == null 
-                || persistentEmittersCopy[i].go.transform == null 
-                || persistentEmittersCopy[i].go.transform.parent == null)
+            if (persistentEmittersCopy[i].go == null)
             {
-                persistentEmittersCopy[i].EmitterOnUpdate(Vector3.zero);
-
-                if (persistentEmittersCopy[i].pe.pe.particles.Count() == 0)
+                Transform pecTransform = null;
+                
+                try
                 {
-                    EffectBehaviour.RemoveParticleEmitter(persistentEmittersCopy[i].pe);
-                    persistentEmitters.Remove(persistentEmittersCopy[i]);
-                    if (persistentEmittersCopy[i].go != null)
+                    pecTransform = persistentEmittersCopy[i].go.transform;
+                }
+                catch (NullReferenceException)
+                {
+                    // Destroy the gameobject so avoid exception handling in the future?
+                    continue;
+                }
+                
+                if (persistentEmittersCopy[i].go.transform.parent == null)
+                {
+                    persistentEmittersCopy[i].EmitterOnUpdate(Vector3.zero);
+
+                    if (persistentEmittersCopy[i].pe.pe.particles.Count() == 0)
                     {
-                        Destroy(persistentEmittersCopy[i].go);
+                        EffectBehaviour.RemoveParticleEmitter(persistentEmittersCopy[i].pe);
+                        persistentEmitters.Remove(persistentEmittersCopy[i]);
+                        if (persistentEmittersCopy[i].go != null)
+                        {
+                            Destroy(persistentEmittersCopy[i].go);
+                        }
                     }
                 }
             }
