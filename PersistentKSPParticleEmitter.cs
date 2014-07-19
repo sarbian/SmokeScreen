@@ -139,6 +139,7 @@ public class PersistentKSPParticleEmitter
     // Detach the emitter from its parent gameobject and stop its emmission in timer seconds
     public void Detach(float timer)
     {
+        //Print("Detach");
         this.endTime = Time.fixedTime + timer;
         if (this.go != null && this.go.transform.parent != null)
         {
@@ -376,6 +377,6 @@ public class PersistentKSPParticleEmitter
 
     private void Print(string s)
     {
-        MonoBehaviour.print(this.GetType().Name + " : " + s);
+        MonoBehaviour.print("[SmokeScreen " + this.GetType().Name + "] : " + s);
     }
 }

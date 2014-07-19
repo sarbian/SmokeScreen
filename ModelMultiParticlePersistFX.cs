@@ -176,6 +176,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     public ModelMultiParticlePersistFX()
     {
         winID = baseWinID++;
+        //Print("Constructor");
     }
 
     //~ModelMultiParticlePersistFX()
@@ -184,10 +185,23 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     //    list.Remove(this);
     //}
 
+
+    // if Die() is called for a debrit of vessel then all the 
+    // vessel gameobject are removed without an OnDestroy call
+    // But an OnVesselDie message is send before, so we can 
+    // Catch in time
+    public void OnVesselDie()
+    {
+        //Print("OnVesselDie : EJECT EJECT EJECT !");
+        this.OnDestroy();
+    }
+
     private void OnDestroy()
     {
+        //Print("OnDestroy");
         if (persistentEmitters != null)
         {
+            //Print("OnDestroy is GO !");
             for (int i = 0; i < persistentEmitters.Count; i++)
             {
                 persistentEmitters[i].Detach(0);
@@ -198,6 +212,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public override void OnEvent()
     {
+        //Print("OnEvent");
         if (!activated || persistentEmitters == null)
         {
             return;
@@ -215,6 +230,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public override void OnEvent(float power)
     {
+        //Print("OnEvent " + power);
         if (persistentEmitters == null)
         {
             return;
@@ -241,7 +257,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public void FixedUpdate()
     {
-        if (persistentEmitters == null)
+        //Print("FixedUpdate");
+        if (persistentEmitters == null || this.hostPart == null || this.hostPart.rb == null)
         {
             return;
         }
@@ -398,6 +415,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public void Update()
     {
+        //Print("Update");
         if (persistentEmitters == null)
         {
             return;
@@ -418,6 +436,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public override void OnInitialize()
     {
+        //Print("Init");
+
         // Restore the Curve config from the node content backup
         // Done because I could not get the serialization of MultiInputCurve to work
         if (node_backup != string.Empty)
@@ -440,20 +460,20 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             }
             catch (Exception e)
             {
-                print("unable to load shader " + shaderFileName + " : " + e.ToString());
+                Print("unable to load shader " + shaderFileName + " : " + e.ToString());
             }
         }
 
         List<Transform> transforms = new List<Transform>(hostPart.FindModelTransforms(transformName));
         if (transforms.Count == 0)
         {
-            print("Cannot find transform " + transformName);
+            Print("Cannot find transform " + transformName);
             return;
         }
         GameObject model = GameDatabase.Instance.GetModel(modelName);
         if (model == null)
         {
-            print("Cannot find model " + modelName);
+            Print("Cannot find model " + modelName);
             return;
         }
         model.SetActive(true);
@@ -461,7 +481,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
         if (templateKspParticleEmitter == null)
         {
-            print("Cannot find particle emitter on " + modelName);
+            Print("Cannot find particle emitter on " + modelName);
             UnityEngine.Object.Destroy(model);
             return;
         }
@@ -495,7 +515,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                 }
                 catch (ArgumentException)
                 {
-                    print("ModelMultiParticleFXExt: " + renderMode + " is not a valid ParticleRenderMode");
+                    Print("ModelMultiParticleFXExt: " + renderMode + " is not a valid ParticleRenderMode");
                 }
 
                 persistentEmitters.Add(pkpe);
@@ -528,7 +548,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public override void OnLoad(ConfigNode node)
     {
-        //print("OnLoad");
+        //Print("OnLoad");
         Backup(node);
 
         emission = new MultiInputCurve("emission");
@@ -561,6 +581,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public override void OnSave(ConfigNode node)
     {
+        //Print("OnSave");
         ConfigNode.CreateConfigFromObject(this, node);
         emission.Save(node);
         energy.Save(node);
@@ -577,9 +598,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         distance.Save(node);
     }
 
-    private static void print(String s)
+    private static void Print(String s)
     {
-        MonoBehaviour.print("[ModelMultiParticlePersistFX] " + s);
+        MonoBehaviour.print("[SmokeScreen ModelMultiParticlePersistFX] " + s);
     }
 
     // TODO : move the whole UI stuff to a dedicated class - this is getting way to big

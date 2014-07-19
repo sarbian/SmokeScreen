@@ -296,7 +296,7 @@ namespace SmokeScreen
 
         private static void print(String s)
         {
-            MonoBehaviour.print("[SmokeScreenUtil] " + s);
+            MonoBehaviour.print("[SmokeScreen SmokeScreenUtil] " + s);
         }
     }
 }

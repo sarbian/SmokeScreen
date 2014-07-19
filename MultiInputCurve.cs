@@ -225,6 +225,6 @@ public class MultiInputCurve
 
     private static void print(String s)
     {
-        MonoBehaviour.print("[MultiInputCurve] " + s);
+        MonoBehaviour.print("[SmokeScreen MultiInputCurve] " + s);
     }
 }

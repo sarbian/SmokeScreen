@@ -16,13 +16,13 @@ using UnityEngine;
 [KSPAddon(KSPAddon.Startup.EveryScene, false)]
 internal class PersistentEmitterManager : MonoBehaviour
 {
-    public static PersistentEmitterManager Instance { get; private set; }
+    //public static PersistentEmitterManager Instance { get; private set; }
 
-    private static List<PersistentKSPParticleEmitter> persistentEmitters;
+    public static List<PersistentKSPParticleEmitter> persistentEmitters;
 
     private void Awake()
     {
-        PersistentEmitterManager.Instance = this;
+        //PersistentEmitterManager.Instance = this;
 
         persistentEmitters = new List<PersistentKSPParticleEmitter>();
 
@@ -31,6 +31,7 @@ internal class PersistentEmitterManager : MonoBehaviour
 
     private void OnDestroy()
     {
+        //Print("OnDestroy");
         GameEvents.onGameSceneLoadRequested.Remove(new EventData<GameScenes>.OnEvent(this.OnSceneChange));
     }
 
@@ -38,14 +39,25 @@ internal class PersistentEmitterManager : MonoBehaviour
     {
         persistentEmitters.Add(pkpe);
         EffectBehaviour.AddParticleEmitter(pkpe.pe);
+        //print("[SmokeScreen PersistentEmitterManager]: Added 1 PersistentKSPParticleEmitter. Count = " + persistentEmitters.Count);
+    }
+
+    public static void Remove(PersistentKSPParticleEmitter pkpe)
+    {
+        EffectBehaviour.RemoveParticleEmitter(pkpe.pe);
+        persistentEmitters.Remove(pkpe);
+        //print("[SmokeScreen PersistentEmitterManager]: Removed 1 PersistentKSPParticleEmitter. Count = " + persistentEmitters.Count);
     }
 
     private void OnSceneChange(GameScenes scene)
     {
+        //Print("OnSceneChange");
         for (int i = 0; i < persistentEmitters.Count; i++)
         {
             EffectBehaviour.RemoveParticleEmitter(persistentEmitters[i].pe);
-            if (persistentEmitters[i].go.transform.parent == null)
+            //Print(" go is " + persistentEmitters[i].go);
+            //Destroy(persistentEmitters[i].go);
+            if (persistentEmitters[i].go != null)
             {
                 Destroy(persistentEmitters[i].go);
             }
@@ -62,37 +74,26 @@ internal class PersistentEmitterManager : MonoBehaviour
             {
                 persistentEmittersCopy[i].EmissionStop();
             }
-
-            // If the gameObject is null ( when ? I forgot ... )
-            // or the tranform parent is null ( Emitter detached from part so the particle are not removed instantly )
-            // then the emitter won't be updated by the effect FixedUpdate Call. So update it here
+                        
+            // If the gameObject is null clean up the emitter 
             if (persistentEmittersCopy[i].go == null)
             {
-                Transform pecTransform = null;
-                
-                try
-                {
-                    pecTransform = persistentEmittersCopy[i].go.transform;
-                }
-                catch (NullReferenceException)
-                {
-                    // Destroy the gameobject so avoid exception handling in the future?
-                    continue;
-                }
-                
-                if (persistentEmittersCopy[i].go.transform.parent == null)
-                {
-                    persistentEmittersCopy[i].EmitterOnUpdate(Vector3.zero);
+                //Print("FixedUpdate cleanning null go");
+                Remove(persistentEmittersCopy[i]);
+                // Make sure
+                Destroy(persistentEmittersCopy[i].go); 
+            }
+            // if not and the tranform parent is null ( Emitter detached from part so the particle are not removed instantly )
+            // then the emitter won't be updated by the effect FixedUpdate Call. So update it here
+            else if (persistentEmittersCopy[i].go.transform.parent == null)
+            {
+                persistentEmittersCopy[i].EmitterOnUpdate(Vector3.zero);
 
-                    if (persistentEmittersCopy[i].pe.pe.particles.Count() == 0)
-                    {
-                        EffectBehaviour.RemoveParticleEmitter(persistentEmittersCopy[i].pe);
-                        persistentEmitters.Remove(persistentEmittersCopy[i]);
-                        if (persistentEmittersCopy[i].go != null)
-                        {
-                            Destroy(persistentEmittersCopy[i].go);
-                        }
-                    }
+                if (persistentEmittersCopy[i].pe.pe.particles.Count() == 0)
+                {
+                    //Print("FixedUpdate cleanning parent go");
+                    Remove(persistentEmittersCopy[i]);
+                    Destroy(persistentEmittersCopy[i].go);
                 }
             }
         }
@@ -100,6 +101,6 @@ internal class PersistentEmitterManager : MonoBehaviour
 
     private void Print(string s)
     {
-        MonoBehaviour.print(this.GetType().Name + " : " + s);
+        MonoBehaviour.print("[SmokeScreen " + this.GetType().Name + "] : " + s);
     }
 }
