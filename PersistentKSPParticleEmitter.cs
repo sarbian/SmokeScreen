@@ -74,6 +74,12 @@ public class PersistentKSPParticleEmitter
 
     public float linearGrow;
 
+    public float initialAlpha;
+
+    public float linAlphaDecay;
+
+    public float logAlphaDecay;
+
     public float sizeClamp = 50;
 
     // The initial velocity of the particles will be offset by a random amount
@@ -290,6 +296,27 @@ public class PersistentKSPParticleEmitter
                         && (j % physicsPass == activePhysicsPass))
                     {
                         pVel = this.ParticleCollision(pPos, pVel, hit, mask);
+                    }
+
+                    if (this.linAlphaDecay != 0.0 || this.logAlphaDecay != 0)
+                    {
+                        float alpha = particle.color.a;
+
+                        if (this.logAlphaDecay != 0.0)
+                        {
+                            // Euler integration of the derivative of Log(logarithmicGrowth * t + 1) + 1.
+                            // This might look weird.
+                            alpha -=
+                                (float)
+                                (((TimeWarp.fixedDeltaTime * this.logAlphaDecay)
+                                  / (1 + (particle.startEnergy - particle.energy) * this.logAlphaDecay)) * initialAlpha);
+                        }
+                        if (this.linAlphaDecay != 0.0)
+                        {
+                            alpha -= (float)(TimeWarp.fixedDeltaTime * this.linAlphaDecay * initialAlpha);
+                        }
+
+                        particle.color = new Color(particle.color.r, particle.color.g, particle.color.b, alpha);
                     }
                 }
                 finally

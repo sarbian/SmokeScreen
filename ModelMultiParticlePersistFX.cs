@@ -132,6 +132,12 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public MultiInputCurve linGrow;
 
+    public MultiInputCurve alpha;
+
+    public MultiInputCurve logAlphaDecay;
+
+    public MultiInputCurve linAlphaDecay;
+
     // Those 2 curve are related to the angle and distance to cam
     public FXCurve angle = new FXCurve("angle", 1f);
 
@@ -397,6 +403,12 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
             pkpe.linearGrow = linGrow.Value(inputs);
 
+            pkpe.initialAlpha = alpha.Value(inputs);
+            pkpe.pe.color = new Color(pkpe.pe.color.r, pkpe.pe.color.g, pkpe.pe.color.b, pkpe.initialAlpha);
+
+            pkpe.linAlphaDecay = linAlphaDecay.Value(inputs);
+            pkpe.logAlphaDecay = logAlphaDecay.Value(inputs);
+
             pkpe.go.transform.localPosition = localPosition
                                               + offsetDirection.normalized * offset.Value(inputs) * fixedScale;
 
@@ -561,6 +573,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         force = new MultiInputCurve("force", true);
         logGrow = new MultiInputCurve("logGrow", true);
         linGrow = new MultiInputCurve("linGrow", true);
+        alpha = new MultiInputCurve("alpha");
+        linAlphaDecay = new MultiInputCurve("linAlphaDecay", true);
+        logAlphaDecay = new MultiInputCurve("logAlphaDecay", true);
 
         ConfigNode.LoadObjectFromConfig(this, node);
         emission.Load(node);
@@ -574,6 +589,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
         logGrow.Load(node);
         linGrow.Load(node);
+
+        alpha.Load(node);
+        linAlphaDecay.Load(node);
+        logAlphaDecay.Load(node);
 
         angle.Load("angle", node);
         distance.Load("distance", node);
@@ -593,6 +612,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         force.Save(node);
         logGrow.Save(node);
         linGrow.Save(node);
+
+        alpha.Save(node);
+        linAlphaDecay.Save(node);
+        logAlphaDecay.Save(node);
 
         angle.Save(node);
         distance.Save(node);
@@ -758,6 +781,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         min = Mathf.Min(min, logGrow.minInput[id]);
         min = Mathf.Min(min, linGrow.minInput[id]);
 
+        min = Mathf.Min(min, alpha.minInput[id]);
+        min = Mathf.Min(min, linAlphaDecay.minInput[id]);
+        min = Mathf.Min(min, logAlphaDecay.minInput[id]);
+
         return min;
     }
 
@@ -773,6 +800,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         max = Mathf.Max(max, force.maxInput[id]);
         max = Mathf.Max(max, logGrow.maxInput[id]);
         max = Mathf.Max(max, linGrow.maxInput[id]);
+
+        max = Mathf.Max(max, alpha.maxInput[id]);
+        max = Mathf.Max(max, linAlphaDecay.maxInput[id]);
+        max = Mathf.Max(max, logAlphaDecay.maxInput[id]);
 
         return max;
     }
