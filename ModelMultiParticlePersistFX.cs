@@ -125,6 +125,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public MultiInputCurve force;
 
+    public MultiInputCurve logGrowScale;
+
     // Logarithmic growth applied to to the particle.
     // The size at time t after emission will be approximately
     // (Log(logarithmicGrowth * t + 1) + 1) * initialSize, assuming grow = 0.
@@ -394,6 +396,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             pkpe.collideRatio = collideRatio;
 
             pkpe.logarithmicGrow = logGrow.Value(inputs);
+            pkpe.logarithmicGrowScale = logGrowScale.Value(inputs);
 
             pkpe.linearGrow = linGrow.Value(inputs);
 
@@ -561,6 +564,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         force = new MultiInputCurve("force", true);
         logGrow = new MultiInputCurve("logGrow", true);
         linGrow = new MultiInputCurve("linGrow", true);
+        logGrowScale = new MultiInputCurve("logGrowScale");
 
         ConfigNode.LoadObjectFromConfig(this, node);
         emission.Load(node);
@@ -593,6 +597,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         force.Save(node);
         logGrow.Save(node);
         linGrow.Save(node);
+        logGrowScale.Save(node);
 
         angle.Save(node);
         distance.Save(node);
@@ -757,6 +762,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         min = Mathf.Min(min, force.minInput[id]);
         min = Mathf.Min(min, logGrow.minInput[id]);
         min = Mathf.Min(min, linGrow.minInput[id]);
+        min = Mathf.Min(min, logGrowScale.minInput[id]);
 
         return min;
     }
@@ -773,6 +779,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         max = Mathf.Max(max, force.maxInput[id]);
         max = Mathf.Max(max, logGrow.maxInput[id]);
         max = Mathf.Max(max, linGrow.maxInput[id]);
+        max = Mathf.Max(max, logGrowScale.maxInput[id]);
 
         return max;
     }

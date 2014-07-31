@@ -72,6 +72,8 @@ public class PersistentKSPParticleEmitter
 
     public float logarithmicGrow;
 
+    public float logarithmicGrowScale;
+
     public float linearGrow;
 
     public float sizeClamp = 50;
@@ -224,7 +226,7 @@ public class PersistentKSPParticleEmitter
                         // This might look weird.
                         particle.size +=
                             (float)
-                            (((TimeWarp.fixedDeltaTime * this.logarithmicGrow)
+                            (((TimeWarp.fixedDeltaTime * this.logarithmicGrow * this.logarithmicGrowScale)
                               / (1 + (particle.startEnergy - particle.energy) * this.logarithmicGrow)) * averageSize);
                     }
                     if (this.linearGrow != 0.0)
