@@ -575,7 +575,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         size.Load(node);
         offset.Load(node);
         force.Load(node);
-
+        logGrowScale.Load(node);
         logGrow.Load(node);
         linGrow.Load(node);
 
