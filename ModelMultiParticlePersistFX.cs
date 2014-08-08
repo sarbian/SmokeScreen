@@ -403,11 +403,19 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
             pkpe.linearGrow = linGrow.Value(inputs);
 
-            pkpe.initialAlpha = alpha.Value(inputs);
-            pkpe.pe.color = new Color(pkpe.pe.color.r, pkpe.pe.color.g, pkpe.pe.color.b, pkpe.initialAlpha);
+            if (this.linAlphaDecay.Value(inputs) != 0.0 || this.logAlphaDecay.Value(inputs) != 0)
+            {
+                Color[] cols = new Color[5];
 
-            pkpe.linAlphaDecay = linAlphaDecay.Value(inputs);
-            pkpe.logAlphaDecay = logAlphaDecay.Value(inputs);
+                for (int t = 0; t < 5; t++)
+                {
+                    float a = Mathf.Clamp01(alpha.Value(inputs) * (1 - linAlphaDecay.Value(inputs) * (t / 4) - Mathf.Log(logAlphaDecay.Value(inputs) * (t / 4) + 1)));
+                    cols[t] = new Color(a, a, a, a);
+                }
+
+                pkpe.pe.colorAnimation = cols;
+                pkpe.pe.doesAnimateColor = true;
+            }
 
             pkpe.go.transform.localPosition = localPosition
                                               + offsetDirection.normalized * offset.Value(inputs) * fixedScale;
@@ -512,6 +520,12 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         {
             GameObject emitterGameObject = UnityEngine.Object.Instantiate(model) as GameObject;
             KSPParticleEmitter childKSPParticleEmitter = emitterGameObject.GetComponentInChildren<KSPParticleEmitter>();
+
+            if (shader != null)
+            {
+                childKSPParticleEmitter.material.shader = shader;
+                childKSPParticleEmitter.pr.material.shader = shader;
+            }
 
             if (childKSPParticleEmitter != null)
             {
@@ -672,6 +686,11 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         GUIInput((int)MultiInputCurve.Inputs.mach, "Mach Speed");
         GUIInput((int)MultiInputCurve.Inputs.parttemp, "Part Temperature");
         GUIInput((int)MultiInputCurve.Inputs.externaltemp, "External Temperature");
+
+        if (persistentEmitters.Count > 0)
+        {
+            GUILayout.Label("Shader: " + persistentEmitters[0].pe.pr.material.shader.name);
+        }
 
         GUILayout.Space(10);
 
