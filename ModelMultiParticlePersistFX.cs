@@ -403,7 +403,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
             pkpe.linearGrow = linGrow.Value(inputs);
 
-            if (this.linAlphaDecay.Value(inputs) != 0.0 || this.logAlphaDecay.Value(inputs) != 0)
+            if (this.alpha.Value(inputs) != 1 || this.linAlphaDecay.Value(inputs) != 0 || this.logAlphaDecay.Value(inputs) != 0)
             {
                 Color[] cols = new Color[5];
 
