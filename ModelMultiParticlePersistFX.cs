@@ -134,6 +134,12 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public MultiInputCurve linGrow;
 
+    public MultiInputCurve alpha;
+
+    public MultiInputCurve logAlphaDecay;
+
+    public MultiInputCurve linAlphaDecay;
+
     // Those 2 curve are related to the angle and distance to cam
     public FXCurve angle = new FXCurve("angle", 1f);
 
@@ -400,6 +406,20 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
             pkpe.linearGrow = linGrow.Value(inputs);
 
+            if (this.alpha.Value(inputs) != 1 || this.linAlphaDecay.Value(inputs) != 0 || this.logAlphaDecay.Value(inputs) != 0)
+            {
+                Color[] cols = new Color[5];
+
+                for (int t = 0; t < 5; t++)
+                {
+                    float a = Mathf.Clamp01(alpha.Value(inputs) * (1 - linAlphaDecay.Value(inputs) * (t / 4) - Mathf.Log(logAlphaDecay.Value(inputs) * (t / 4) + 1)));
+                    cols[t] = new Color(a, a, a, a);
+                }
+
+                pkpe.pe.colorAnimation = cols;
+                pkpe.pe.doesAnimateColor = true;
+            }
+
             pkpe.go.transform.localPosition = localPosition
                                               + offsetDirection.normalized * offset.Value(inputs) * fixedScale;
 
@@ -504,6 +524,12 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             GameObject emitterGameObject = UnityEngine.Object.Instantiate(model) as GameObject;
             KSPParticleEmitter childKSPParticleEmitter = emitterGameObject.GetComponentInChildren<KSPParticleEmitter>();
 
+            if (shader != null)
+            {
+                childKSPParticleEmitter.material.shader = shader;
+                childKSPParticleEmitter.pr.material.shader = shader;
+            }
+
             if (childKSPParticleEmitter != null)
             {
                 PersistentKSPParticleEmitter pkpe = new PersistentKSPParticleEmitter(
@@ -565,6 +591,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         logGrow = new MultiInputCurve("logGrow", true);
         linGrow = new MultiInputCurve("linGrow", true);
         logGrowScale = new MultiInputCurve("logGrowScale");
+		alpha = new MultiInputCurve("alpha");
+        linAlphaDecay = new MultiInputCurve("linAlphaDecay", true);
+        logAlphaDecay = new MultiInputCurve("logAlphaDecay", true);
 
         ConfigNode.LoadObjectFromConfig(this, node);
         emission.Load(node);
@@ -578,6 +607,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         logGrowScale.Load(node);
         logGrow.Load(node);
         linGrow.Load(node);
+        alpha.Load(node);
+        linAlphaDecay.Load(node);
+        logAlphaDecay.Load(node);
 
         angle.Load("angle", node);
         distance.Load("distance", node);
@@ -598,6 +630,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         logGrow.Save(node);
         linGrow.Save(node);
         logGrowScale.Save(node);
+		alpha.Save(node);
+        linAlphaDecay.Save(node);
+        logAlphaDecay.Save(node);
 
         angle.Save(node);
         distance.Save(node);
@@ -654,6 +689,11 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         GUIInput((int)MultiInputCurve.Inputs.mach, "Mach Speed");
         GUIInput((int)MultiInputCurve.Inputs.parttemp, "Part Temperature");
         GUIInput((int)MultiInputCurve.Inputs.externaltemp, "External Temperature");
+
+        if (persistentEmitters.Count > 0)
+        {
+            GUILayout.Label("Shader: " + persistentEmitters[0].pe.pr.material.shader.name);
+        }
 
         GUILayout.Space(10);
 
@@ -764,6 +804,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         min = Mathf.Min(min, linGrow.minInput[id]);
         min = Mathf.Min(min, logGrowScale.minInput[id]);
 
+        min = Mathf.Min(min, alpha.minInput[id]);
+        min = Mathf.Min(min, linAlphaDecay.minInput[id]);
+        min = Mathf.Min(min, logAlphaDecay.minInput[id]);
+
         return min;
     }
 
@@ -780,6 +824,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         max = Mathf.Max(max, logGrow.maxInput[id]);
         max = Mathf.Max(max, linGrow.maxInput[id]);
         max = Mathf.Max(max, logGrowScale.maxInput[id]);
+
+        max = Mathf.Max(max, alpha.maxInput[id]);
+        max = Mathf.Max(max, linAlphaDecay.maxInput[id]);
+        max = Mathf.Max(max, logAlphaDecay.maxInput[id]);
 
         return max;
     }
