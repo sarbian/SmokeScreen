@@ -549,6 +549,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
                 persistentEmitters.Add(pkpe);
 
+                disableCollider(pkpe.go);
+
                 emitterGameObject.transform.SetParent(transforms[i]);
 
                 emitterGameObject.transform.localPosition = localPosition;
@@ -559,6 +561,24 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         UnityEngine.Object.Destroy(templateKspParticleEmitter);
 
         list.Add(this);
+    }
+
+
+    private static void disableCollider(GameObject go)
+    {
+        if (go.collider != null)
+        {
+            //Print("Found one collider and disabled it");
+            go.collider.enabled = false;
+        }
+
+        for (int i = 0; i < go.transform.childCount; i++)
+        {
+            if (go.transform.GetChild(i) != null)
+            {
+                disableCollider(go.transform.GetChild(i).gameObject);
+            }
+        }
     }
 
     public void Backup(ConfigNode node)
