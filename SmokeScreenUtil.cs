@@ -1,17 +1,17 @@
 ﻿/*
  * Copyright (c) 2014, Sébastien GAGGINI AKA Sarbian, France
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -22,7 +22,7 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
 namespace SmokeScreen
@@ -30,7 +30,6 @@ namespace SmokeScreen
     using System;
     using System.Collections.Generic;
     using System.Text;
-
     using UnityEngine;
 
     internal static class SmokeScreenUtil
@@ -38,6 +37,7 @@ namespace SmokeScreen
         public static string WriteRootNode(ConfigNode node)
         {
             StringBuilder builder = new StringBuilder();
+
             //print("node.values.Count " + node.values.Count + " node.nodes.Count " + node.nodes.Count);
             for (int i = 0; i < node.values.Count; i++)
             {
@@ -209,7 +209,7 @@ namespace SmokeScreen
             {
                 string item = strs[i];
                 string[] strArrays1 = item.Split(new[] { '=' }, 2, StringSplitOptions.None);
-                if (strArrays1 != null && strArrays1.Length != 0)
+                if (strArrays1.Length != 0)
                 {
                     for (int j = 0; j < strArrays1.Length; j++)
                     {

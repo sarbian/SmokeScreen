@@ -1,17 +1,17 @@
 ﻿/*
  * Copyright (c) 2014, Sébastien GAGGINI AKA Sarbian, France
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -22,14 +22,13 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
+using SmokeScreen;
 using System;
 using System.Collections.Generic;
-
-using SmokeScreen;
-
+using System.IO;
 using UnityEngine;
 
 [EffectDefinition("MODEL_MULTI_PARTICLE_PERSIST")]
@@ -37,66 +36,49 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 {
     #region Persistent fields
 
-    [Persistent]
-    public string modelName = string.Empty;
+    [Persistent] public string modelName = string.Empty;
 
-    [Persistent]
-    public string transformName = string.Empty;
+    [Persistent] public string transformName = string.Empty;
 
-    [Persistent]
-    public string shaderFileName = string.Empty;
+    [Persistent] public string shaderFileName = string.Empty;
 
-    [Persistent]
-    public string renderMode = "Billboard";
+    [Persistent] public string renderMode = "Billboard";
 
-    [Persistent]
-    public bool collide = false;
+    [Persistent] public bool collide = false;
 
-    [Persistent]
-    public float collideRatio = 0.0f;
+    [Persistent] public float collideRatio = 0.0f;
 
-    [Persistent]
-    public Vector3 localRotation = Vector3.zero;
+    [Persistent] public Vector3 localRotation = Vector3.zero;
 
-    [Persistent]
-    public Vector3 localPosition = Vector3.zero;
+    [Persistent] public Vector3 localPosition = Vector3.zero;
 
-    [Persistent]
-    public Vector3 offsetDirection = Vector3.forward;
+    [Persistent] public Vector3 offsetDirection = Vector3.forward;
 
-    [Persistent]
-    public float fixedScale = 1;
+    [Persistent] public float fixedScale = 1;
 
-    [Persistent]
-    public float sizeClamp = 50;
+    [Persistent] public float sizeClamp = 50;
 
-    // Initial density of the particle seen as sphere of radius size of perfect 
-    // gas. We then assume (only true for ideally expanded exhaust) that the 
+    // Initial density of the particle seen as sphere of radius size of perfect
+    // gas. We then assume (only true for ideally expanded exhaust) that the
     // expansion is isobaric (by mixing with the atmosphere) in order to compute
     // the density afterwards. Units (SI): kg / m^3.
-    [Persistent]
-    public double initialDensity = .6;
+    [Persistent] public double initialDensity = .6;
 
-    // Whether to apply Archimedes' force, gravity and other things to the 
+    // Whether to apply Archimedes' force, gravity and other things to the
     // particle.
-    [Persistent]
-    public bool physical = false;
+    [Persistent] public bool physical = false;
 
     // How much the particles stick to objects they collide with.
-    [Persistent]
-    public double stickiness = 0.9;
+    [Persistent] public double stickiness = 0.9;
 
-    [Persistent]
-    public double dragCoefficient = 0.1;
+    [Persistent] public double dragCoefficient = 0.1;
 
     // Current Time % timeModulo is used as the time input
-    [Persistent]
-    public float timeModulo = 10;
+    [Persistent] public float timeModulo = 10;
 
     // For how long the effect will be running after a single Emit()
     // time input is overridden to be the remaining time while it runs
-    [Persistent]
-    public float singleEmitTimer = 0;
+    [Persistent] public float singleEmitTimer = 0;
 
     // The initial velocity of the particles will be offset by a random amount
     // lying in a disk perpendicular to the mean initial velocity whose radius
@@ -104,8 +86,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     // Setting, except it will sample the offset from a (normal) disk rather
     // than from a cube. Units (SI): m/s.
     // TODO Sarbian : have the init auto fill this one
-    [Persistent]
-    public float randomInitalVelocityOffsetMaxRadius = 0.0f;
+    [Persistent] public float randomInitalVelocityOffsetMaxRadius = 0.0f;
 
     #endregion Persistent fields
 
@@ -163,10 +144,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public static List<ModelMultiParticlePersistFX> List
     {
-        get
-        {
-            return list;
-        }
+        get { return list; }
     }
 
     public bool overRideInputs = false;
@@ -175,15 +153,13 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public List<ModelMultiParticlePersistFX> Instances
     {
-        get
-        {
-            return list;
-        }
+        get { return list; }
     }
 
     public ModelMultiParticlePersistFX()
     {
         winID = baseWinID++;
+
         //Print("Constructor");
     }
 
@@ -193,23 +169,22 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     //    list.Remove(this);
     //}
 
-
-    // if Die() is called for a debrit of vessel then all the 
+    // if Die() is called for a debrit of vessel then all the
     // vessel gameobject are removed without an OnDestroy call
-    // But an OnVesselDie message is send before, so we can 
+    // But an OnVesselDie message is send before, so we can
     // Catch in time
     public void OnVesselDie()
     {
-        //Print("OnVesselDie : EJECT EJECT EJECT !");
-        this.OnDestroy();
+        Print("OnVesselDie");
+        OnDestroy();
     }
 
     private void OnDestroy()
     {
-        //Print("OnDestroy");
+        Print("OnDestroy");
         if (persistentEmitters != null)
         {
-            //Print("OnDestroy is GO !");
+            Print("OnDestroy Detach");
             for (int i = 0; i < persistentEmitters.Count; i++)
             {
                 persistentEmitters[i].Detach(0);
@@ -225,8 +200,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         {
             return;
         }
-        singleTimerEnd = this.singleEmitTimer + Time.fixedTime;
+        singleTimerEnd = singleEmitTimer + Time.fixedTime;
         timeModuloDelta = singleTimerEnd % timeModulo;
+
         // Old version Emitted 1 second of particle in one go
         // New version set power to 1 for singleEmitTimer seconds
         //UpdateEmitters(1);
@@ -244,7 +220,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             return;
         }
 
-        if ((overRideInputs || power > 0 || Time.deltaTime <= this.singleTimerEnd) && activated)
+        if ((overRideInputs || power > 0 || Time.deltaTime <= singleTimerEnd) && activated)
         {
             UpdateEmitters(power);
             for (int i = 0; i < persistentEmitters.Count; i++)
@@ -266,7 +242,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     public void FixedUpdate()
     {
         //Print("FixedUpdate");
-        if (persistentEmitters == null || this.hostPart == null || this.hostPart.rb == null)
+        if (persistentEmitters == null || hostPart == null || hostPart.rb == null)
         {
             return;
         }
@@ -287,7 +263,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         {
             PersistentKSPParticleEmitter persistentKspParticleEmitter = persistentKspParticleEmitters[i];
 
-            persistentKspParticleEmitter.EmitterOnUpdate(this.hostPart.rb.velocity + Krakensbane.GetFrameVelocity());
+            persistentKspParticleEmitter.EmitterOnUpdate(hostPart.rb.velocity + Krakensbane.GetFrameVelocity());
         }
     }
 
@@ -302,12 +278,12 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         float surfaceVelMach = 1;
         float partTemp = 1;
         float externalTemp = 1;
-        
+
         float time;
-        if (Time.fixedTime > this.singleTimerEnd)
+        if (Time.fixedTime > singleTimerEnd)
         {
-            // timeModuloDelta makes the transition between the two state smooth 
-            time = (Time.fixedTime - this.timeModuloDelta) % this.timeModulo;
+            // timeModuloDelta makes the transition between the two state smooth
+            time = (Time.fixedTime - timeModuloDelta) % timeModulo;
         }
         else
         {
@@ -326,7 +302,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
                 externalTemp = vessel.flightIntegrator.getExternalTemperature();
 
-                // FAR use a nice config file to get the atmo info for each body. 
+                // FAR use a nice config file to get the atmo info for each body.
                 // For now I'll just use Air for all.
                 const double magicNumberFromFAR = 1.4 * 8.3145 * 1000 / 28.96;
                 double speedOfSound = Math.Sqrt((externalTemp + 273.15) * magicNumberFromFAR);
@@ -336,15 +312,16 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             {
                 atmDensity =
                     (float)
-                    FlightGlobals.getAtmDensity(
-                        FlightGlobals.getStaticPressure(hostPart.transform.position, FlightGlobals.currentMainBody));
+                        FlightGlobals.getAtmDensity(
+                            FlightGlobals.getStaticPressure(hostPart.transform.position, FlightGlobals.currentMainBody));
                 externalTemp = FlightGlobals.getExternalTemperature(hostPart.transform.position);
                 const double magicNumberFromFAR = 1.4 * 8.3145 * 1000 / 28.96;
                 double speedOfSound = Math.Sqrt((externalTemp + 273.15) * magicNumberFromFAR);
                 surfaceVelMach =
                     (float)
-                    ((hostPart.vel - FlightGlobals.currentMainBody.getRFrmVel(hostPart.transform.position)).magnitude
-                     / speedOfSound);
+                        ((hostPart.vel - FlightGlobals.currentMainBody.getRFrmVel(hostPart.transform.position))
+                            .magnitude
+                         / speedOfSound);
             }
         }
 
@@ -363,6 +340,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         for (int i = 0; i < persistentEmitters.Count; i++)
         {
             PersistentKSPParticleEmitter pkpe = persistentEmitters[i];
+
+            //pkpe.pe.useWorldSpace
 
             float sizePower = size.Value(inputs) * fixedScale;
             pkpe.pe.minSize = Mathf.Min(pkpe.minSizeBase * sizePower, sizeClamp);
@@ -406,13 +385,16 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
             pkpe.linearGrow = linGrow.Value(inputs);
 
-            if (this.alpha.Value(inputs) != 1 || this.linAlphaDecay.Value(inputs) != 0 || this.logAlphaDecay.Value(inputs) != 0)
+            if (alpha.Value(inputs) != 1 || linAlphaDecay.Value(inputs) != 0 || logAlphaDecay.Value(inputs) != 0)
             {
                 Color[] cols = new Color[5];
 
                 for (int t = 0; t < 5; t++)
                 {
-                    float a = Mathf.Clamp01(alpha.Value(inputs) * (1 - linAlphaDecay.Value(inputs) * (t / 4) - Mathf.Log(logAlphaDecay.Value(inputs) * (t / 4) + 1)));
+                    float a =
+                        Mathf.Clamp01(alpha.Value(inputs) *
+                                      (1 - linAlphaDecay.Value(inputs) * (t / 4) -
+                                       Mathf.Log(logAlphaDecay.Value(inputs) * (t / 4) + 1)));
                     cols[t] = new Color(a, a, a, a);
                 }
 
@@ -428,7 +410,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             // Bad code is bad
             try
             {
-                pkpe.pe.particleRenderMode = (ParticleRenderMode)Enum.Parse(typeof(ParticleRenderMode), renderMode);
+                pkpe.pe.particleRenderMode = (ParticleRenderMode)Enum.Parse(typeof (ParticleRenderMode), renderMode);
             }
             catch (ArgumentException)
             {
@@ -469,21 +451,21 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         }
 
         // The shader loading require proper testing
-        // Unity doc says that "Creating materials this way supports only simple shaders (fixed function ones). 
+        // Unity doc says that "Creating materials this way supports only simple shaders (fixed function ones).
         // If you need a surface shader, or vertex/pixel shaders, you'll need to create shader asset in the editor and use that."
         // But importing the same shader that the one used in the editor seems to work
         string filename = KSPUtil.ApplicationRootPath + "GameData/" + shaderFileName;
-        if (shaderFileName != string.Empty && System.IO.File.Exists(filename))
+        if (shaderFileName != string.Empty && File.Exists(filename))
         {
             try
             {
-                System.IO.TextReader shaderFile = new System.IO.StreamReader(filename);
+                TextReader shaderFile = new StreamReader(filename);
                 string shaderText = shaderFile.ReadToEnd();
                 shader = new Material(shaderText).shader;
             }
             catch (Exception e)
             {
-                Print("unable to load shader " + shaderFileName + " : " + e.ToString());
+                Print("unable to load shader " + shaderFileName + " : " + e);
             }
         }
 
@@ -505,7 +487,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         if (templateKspParticleEmitter == null)
         {
             Print("Cannot find particle emitter on " + modelName);
-            UnityEngine.Object.Destroy(model);
+            Destroy(model);
             return;
         }
 
@@ -521,7 +503,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
         for (int i = 0; i < transforms.Count; i++)
         {
-            GameObject emitterGameObject = UnityEngine.Object.Instantiate(model) as GameObject;
+            GameObject emitterGameObject = Instantiate(model) as GameObject;
             KSPParticleEmitter childKSPParticleEmitter = emitterGameObject.GetComponentInChildren<KSPParticleEmitter>();
 
             if (shader != null)
@@ -540,7 +522,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                 try
                 {
                     childKSPParticleEmitter.particleRenderMode =
-                        (ParticleRenderMode)Enum.Parse(typeof(ParticleRenderMode), renderMode);
+                        (ParticleRenderMode)Enum.Parse(typeof (ParticleRenderMode), renderMode);
                 }
                 catch (ArgumentException)
                 {
@@ -549,7 +531,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
                 persistentEmitters.Add(pkpe);
 
-                disableCollider(pkpe.go);
+                DisableCollider(pkpe.go);
 
                 emitterGameObject.transform.SetParent(transforms[i]);
 
@@ -558,13 +540,12 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             }
         }
 
-        UnityEngine.Object.Destroy(templateKspParticleEmitter);
+        Destroy(templateKspParticleEmitter);
 
         list.Add(this);
     }
 
-
-    private static void disableCollider(GameObject go)
+    private static void DisableCollider(GameObject go)
     {
         if (go.collider != null)
         {
@@ -576,7 +557,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         {
             if (go.transform.GetChild(i) != null)
             {
-                disableCollider(go.transform.GetChild(i).gameObject);
+                DisableCollider(go.transform.GetChild(i).gameObject);
             }
         }
     }
@@ -584,15 +565,16 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     public void Backup(ConfigNode node)
     {
         node_backup = SmokeScreenUtil.WriteRootNode(node);
+
         //print("Backup node_backup is\n " + node_backup.Replace(Environment.NewLine, Environment.NewLine + "ModelMultiParticlePersistFX "));
     }
 
     public void Restore()
     {
         //print("Restore node_backup is\n " + node_backup.Replace(Environment.NewLine, Environment.NewLine + "ModelMultiParticlePersistFX "));
-        string[] text = node_backup.Split(new string[] { "\n" }, StringSplitOptions.None);
+        string[] text = node_backup.Split(new[] {"\n"}, StringSplitOptions.None);
         ConfigNode node = SmokeScreenUtil.RecurseFormat(SmokeScreenUtil.PreFormatConfig(text));
-        this.OnLoad(node);
+        OnLoad(node);
     }
 
     public override void OnLoad(ConfigNode node)
@@ -611,7 +593,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         logGrow = new MultiInputCurve("logGrow", true);
         linGrow = new MultiInputCurve("linGrow", true);
         logGrowScale = new MultiInputCurve("logGrowScale");
-		alpha = new MultiInputCurve("alpha");
+        alpha = new MultiInputCurve("alpha");
         linAlphaDecay = new MultiInputCurve("linAlphaDecay", true);
         logAlphaDecay = new MultiInputCurve("logAlphaDecay", true);
 
@@ -650,7 +632,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         logGrow.Save(node);
         linGrow.Save(node);
         logGrowScale.Save(node);
-		alpha.Save(node);
+        alpha.Save(node);
         linAlphaDecay.Save(node);
         logAlphaDecay.Save(node);
 
@@ -660,7 +642,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     private static void Print(String s)
     {
-        MonoBehaviour.print("[SmokeScreen ModelMultiParticlePersistFX] " + s);
+        print("[SmokeScreen ModelMultiParticlePersistFX] " + s);
     }
 
     // TODO : move the whole UI stuff to a dedicated class - this is getting way to big
@@ -689,7 +671,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                 winID,
                 winPos,
                 windowGUI,
-                hostPart.name + " " + this.effectName + " " + this.instanceName,
+                hostPart.name + " " + effectName + " " + instanceName,
                 GUILayout.MinWidth(300));
         }
     }
@@ -720,7 +702,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("Single Emit Timer"))
         {
-            this.OnEvent();
+            OnEvent();
         }
 
         if (GUILayout.Button("Clear Particles"))
@@ -744,6 +726,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             if (GUILayout.Button("Import"))
             {
                 nodeText = string.Copy(node_backup);
+
                 //print("Displaying node \n " + nodeText.Replace("\n", "\n" + "ModelMultiParticlePersistFX "));
             }
 
@@ -751,16 +734,16 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             if (GUILayout.Button("Rebuild"))
             {
                 ConfigNode node = new ConfigNode();
-                this.OnSave(node);
+                OnSave(node);
                 nodeText = SmokeScreenUtil.WriteRootNode(node);
             }
 
             // Apply the text
             if (GUILayout.Button("Apply"))
             {
-                string[] text = nodeText.Split(new string[] { "\n" }, StringSplitOptions.None);
+                string[] text = nodeText.Split(new[] {"\n"}, StringSplitOptions.None);
                 ConfigNode node = SmokeScreenUtil.RecurseFormat(SmokeScreenUtil.PreFormatConfig(text));
-                this.OnLoad(node);
+                OnLoad(node);
             }
 
             GUILayout.EndHorizontal();
@@ -784,7 +767,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         float max = maxInput(id);
 
         GUILayout.Label(
-            text + " Val=" + inputs[id].ToString("F3") + " Min=" + min.ToString("F2") + " Max=" + max.ToString("F2"));
+            text + " Val=" + inputs[id].ToString("F4") + " Min=" + min.ToString("F4") + " Max=" + max.ToString("F4"));
 
         if (overRideInputs)
         {
@@ -794,7 +777,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             if (boxInput[id])
             {
                 float.TryParse(
-                    GUILayout.TextField(inputs[id].ToString("F2"), GUILayout.ExpandWidth(true), GUILayout.Width(100)),
+                    GUILayout.TextField(inputs[id].ToString("F4"), GUILayout.ExpandWidth(true), GUILayout.Width(100)),
                     out inputs[id]);
             }
             else

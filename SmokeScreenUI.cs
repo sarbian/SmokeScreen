@@ -1,17 +1,17 @@
 ﻿/*
  * Copyright (c) 2014, Sébastien GAGGINI AKA Sarbian, France
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -22,7 +22,7 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
 using UnityEngine;
@@ -34,13 +34,13 @@ namespace SmokeScreen
     {
         private const string icon = "SmokeScreen/SmokeScreen";
 
-        private IButton button;
+        private readonly IButton button;
 
         private bool showUI = false;
 
         private Rect winPos = new Rect(450, 50, 400, 100);
 
-        private int winID = 512099;
+        private const int winID = 512099;
 
         private SmokeScreenUI()
         {
@@ -52,12 +52,15 @@ namespace SmokeScreen
             button = ToolbarManager.Instance.add("SmokeScreen", "main");
             button.TexturePath = icon;
             button.ToolTip = "SmokeScreen";
-            button.OnClick += (e) => { this.showUI = !this.showUI; };
+            button.OnClick += e => { showUI = !showUI; };
         }
 
         private void OnDestroy()
         {
-            button.Destroy();
+            if (button != null)
+            {
+                button.Destroy();
+            }
         }
 
         private void OnGUI()
