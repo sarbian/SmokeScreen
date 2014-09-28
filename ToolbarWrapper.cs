@@ -23,20 +23,17 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-﻿using System;
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using UnityEngine;
 
-
 // TODO: Change to your plugin's namespace here.
+
 namespace SmokeScreen
 {
-
-
-
     /**********************************************************\
     *          --- DO NOT EDIT BELOW THIS COMMENT ---          *
     *                                                          *
@@ -48,8 +45,6 @@ namespace SmokeScreen
     *                                                          *
     *          --- DO NOT EDIT BELOW THIS COMMENT ---          *
     \**********************************************************/
-
-
 
     /// <summary>
     /// The global tool bar manager.
@@ -83,7 +78,8 @@ namespace SmokeScreen
                     Type type = ToolbarTypes.getType("Toolbar.ToolbarManager");
                     if (type != null)
                     {
-                        object realToolbarManager = ToolbarTypes.getStaticProperty(type, "Instance").GetValue(null, null);
+                        object realToolbarManager = ToolbarTypes.getStaticProperty(type, "Instance")
+                            .GetValue(null, null);
                         instance_ = new ToolbarManager(realToolbarManager);
                     }
                 }
@@ -125,11 +121,7 @@ namespace SmokeScreen
         /// modify the button's size, this feature should be used sparingly, if at all.
         /// </remarks>
         /// <seealso cref="TexturePath"/>
-        string Text
-        {
-            set;
-            get;
-        }
+        string Text { set; get; }
 
         /// <summary>
         /// The color the button text is displayed with. Defaults to Color.white.
@@ -137,11 +129,7 @@ namespace SmokeScreen
         /// <remarks>
         /// The text color can be changed at any time to modify the button's appearance.
         /// </remarks>
-        Color TextColor
-        {
-            set;
-            get;
-        }
+        Color TextColor { set; get; }
 
         /// <summary>
         /// The path of a texture file to display an icon on the button. Set to null to hide icon.
@@ -163,11 +151,7 @@ namespace SmokeScreen
         /// </para>
         /// </remarks>
         /// <seealso cref="Text"/>
-        string TexturePath
-        {
-            set;
-            get;
-        }
+        string TexturePath { set; get; }
 
         /// <summary>
         /// The button's tool tip text. Set to null if no tool tip is desired.
@@ -175,11 +159,7 @@ namespace SmokeScreen
         /// <remarks>
         /// Tool Tip Text Should Always Use Headline Style Like This.
         /// </remarks>
-        string ToolTip
-        {
-            set;
-            get;
-        }
+        string ToolTip { set; get; }
 
         /// <summary>
         /// Whether this button is currently visible or not. Can be used in addition to or as a replacement for <see cref="Visibility"/>.
@@ -188,11 +168,7 @@ namespace SmokeScreen
         /// Setting this property to true does not affect the player's ability to hide the button using the configuration.
         /// Conversely, setting this property to false does not enable the player to show the button using the configuration.
         /// </remarks>
-        bool Visible
-        {
-            set;
-            get;
-        }
+        bool Visible { set; get; }
 
         /// <summary>
         /// Determines this button's visibility. Can be used in addition to or as a replacement for <see cref="Visible"/>.
@@ -201,11 +177,7 @@ namespace SmokeScreen
         /// The return value from IVisibility.Visible is subject to the same rules as outlined for
         /// <see cref="Visible"/>.
         /// </remarks>
-        IVisibility Visibility
-        {
-            set;
-            get;
-        }
+        IVisibility Visibility { set; get; }
 
         /// <summary>
         /// Whether this button is currently effectively visible or not. This is a combination of
@@ -216,20 +188,13 @@ namespace SmokeScreen
         /// does not reflect button invisibility in those scenes. In addition, this property does not reflect the
         /// player's configuration of the button's visibility.
         /// </remarks>
-        bool EffectivelyVisible
-        {
-            get;
-        }
+        bool EffectivelyVisible { get; }
 
         /// <summary>
         /// Whether this button is currently enabled (clickable) or not. This does not affect the player's ability to
         /// position the button on their toolbar.
         /// </summary>
-        bool Enabled
-        {
-            set;
-            get;
-        }
+        bool Enabled { set; get; }
 
         /// <summary>
         /// Whether this button is currently "important." Set to false to return to normal button behaviour.
@@ -253,21 +218,13 @@ namespace SmokeScreen
         /// screen even when it normally wouldn't.
         /// </para>
         /// </remarks>
-        bool Important
-        {
-            set;
-            get;
-        }
+        bool Important { set; get; }
 
         /// <summary>
         /// A drawable that is tied to the current button. This can be anything from a popup menu to
         /// an informational window. Set to null to hide the drawable.
         /// </summary>
-        IDrawable Drawable
-        {
-            set;
-            get;
-        }
+        IDrawable Drawable { set; get; }
 
         /// <summary>
         /// Event handler that can be registered with to receive "on click" events.
@@ -339,7 +296,7 @@ namespace SmokeScreen
         Vector2 Draw(Vector2 position);
     }
 
-    #endregion
+    #endregion interfaces
 
     #region events
 
@@ -405,7 +362,7 @@ namespace SmokeScreen
     /// <param name="e">An event describing the mouse pointer leaving.</param>
     public delegate void MouseLeaveHandler(MouseLeaveEvent e);
 
-    #endregion
+    #endregion events
 
     #region visibility
 
@@ -419,10 +376,7 @@ namespace SmokeScreen
         /// Whether a button is currently visible or not.
         /// </summary>
         /// <seealso cref="IButton.Visible"/>
-        bool Visible
-        {
-            get;
-        }
+        bool Visible { get; }
     }
 
     /// <summary>
@@ -441,10 +395,7 @@ namespace SmokeScreen
 
         public bool Visible
         {
-            get
-            {
-                return (bool)visibleProperty.GetValue(realGameScenesVisibility, null);
-            }
+            get { return (bool)visibleProperty.GetValue(realGameScenesVisibility, null); }
         }
 
         private object realGameScenesVisibility;
@@ -459,28 +410,22 @@ namespace SmokeScreen
         }
     }
 
-    #endregion
+    #endregion visibility
 
     #region drawable
 
     /// <summary>
     /// A drawable that draws a popup menu.
     /// </summary>
-    public partial class PopupMenuDrawable : IDrawable
+    public class PopupMenuDrawable : IDrawable
     {
         /// <summary>
         /// Event handler that can be registered with to receive "any menu option clicked" events.
         /// </summary>
         public event Action OnAnyOptionClicked
         {
-            add
-            {
-                onAnyOptionClickedEvent.AddEventHandler(realPopupMenuDrawable, value);
-            }
-            remove
-            {
-                onAnyOptionClickedEvent.RemoveEventHandler(realPopupMenuDrawable, value);
-            }
+            add { onAnyOptionClickedEvent.AddEventHandler(realPopupMenuDrawable, value); }
+            remove { onAnyOptionClickedEvent.RemoveEventHandler(realPopupMenuDrawable, value); }
         }
 
         private object realPopupMenuDrawable;
@@ -541,7 +486,7 @@ namespace SmokeScreen
         }
     }
 
-    #endregion
+    #endregion drawable
 
     #region private implementations
 
@@ -599,62 +544,32 @@ namespace SmokeScreen
 
         public string Text
         {
-            set
-            {
-                types.button.textProperty.SetValue(realButton, value, null);
-            }
-            get
-            {
-                return (string)types.button.textProperty.GetValue(realButton, null);
-            }
+            set { types.button.textProperty.SetValue(realButton, value, null); }
+            get { return (string)types.button.textProperty.GetValue(realButton, null); }
         }
 
         public Color TextColor
         {
-            set
-            {
-                types.button.textColorProperty.SetValue(realButton, value, null);
-            }
-            get
-            {
-                return (Color)types.button.textColorProperty.GetValue(realButton, null);
-            }
+            set { types.button.textColorProperty.SetValue(realButton, value, null); }
+            get { return (Color)types.button.textColorProperty.GetValue(realButton, null); }
         }
 
         public string TexturePath
         {
-            set
-            {
-                types.button.texturePathProperty.SetValue(realButton, value, null);
-            }
-            get
-            {
-                return (string)types.button.texturePathProperty.GetValue(realButton, null);
-            }
+            set { types.button.texturePathProperty.SetValue(realButton, value, null); }
+            get { return (string)types.button.texturePathProperty.GetValue(realButton, null); }
         }
 
         public string ToolTip
         {
-            set
-            {
-                types.button.toolTipProperty.SetValue(realButton, value, null);
-            }
-            get
-            {
-                return (string)types.button.toolTipProperty.GetValue(realButton, null);
-            }
+            set { types.button.toolTipProperty.SetValue(realButton, value, null); }
+            get { return (string)types.button.toolTipProperty.GetValue(realButton, null); }
         }
 
         public bool Visible
         {
-            set
-            {
-                types.button.visibleProperty.SetValue(realButton, value, null);
-            }
-            get
-            {
-                return (bool)types.button.visibleProperty.GetValue(realButton, null);
-            }
+            set { types.button.visibleProperty.SetValue(realButton, value, null); }
+            get { return (bool)types.button.visibleProperty.GetValue(realButton, null); }
         }
 
         public IVisibility Visibility
@@ -664,48 +579,32 @@ namespace SmokeScreen
                 object functionVisibility = null;
                 if (value != null)
                 {
-                    functionVisibility = Activator.CreateInstance(types.functionVisibilityType, new object[] { new Func<bool>(() => value.Visible) });
+                    functionVisibility = Activator.CreateInstance(types.functionVisibilityType,
+                        new object[] { new Func<bool>(() => value.Visible) });
                 }
                 types.button.visibilityProperty.SetValue(realButton, functionVisibility, null);
                 visibility_ = value;
             }
-            get
-            {
-                return visibility_;
-            }
+            get { return visibility_; }
         }
+
         private IVisibility visibility_;
 
         public bool EffectivelyVisible
         {
-            get
-            {
-                return (bool)types.button.effectivelyVisibleProperty.GetValue(realButton, null);
-            }
+            get { return (bool)types.button.effectivelyVisibleProperty.GetValue(realButton, null); }
         }
 
         public bool Enabled
         {
-            set
-            {
-                types.button.enabledProperty.SetValue(realButton, value, null);
-            }
-            get
-            {
-                return (bool)types.button.enabledProperty.GetValue(realButton, null);
-            }
+            set { types.button.enabledProperty.SetValue(realButton, value, null); }
+            get { return (bool)types.button.enabledProperty.GetValue(realButton, null); }
         }
 
         public bool Important
         {
-            set
-            {
-                types.button.importantProperty.SetValue(realButton, value, null);
-            }
-            get
-            {
-                return (bool)types.button.importantProperty.GetValue(realButton, null);
-            }
+            set { types.button.importantProperty.SetValue(realButton, value, null); }
+            get { return (bool)types.button.importantProperty.GetValue(realButton, null); }
         }
 
         public IDrawable Drawable
@@ -715,19 +614,18 @@ namespace SmokeScreen
                 object functionDrawable = null;
                 if (value != null)
                 {
-                    functionDrawable = Activator.CreateInstance(types.functionDrawableType, new object[] {
-						new Action(() => value.Update()),
-						new Func<Vector2, Vector2>((pos) => value.Draw(pos))
-					});
+                    functionDrawable = Activator.CreateInstance(types.functionDrawableType, new object[]
+                    {
+                        new Action(() => value.Update()),
+                        new Func<Vector2, Vector2>(pos => value.Draw(pos))
+                    });
                 }
                 types.button.drawableProperty.SetValue(realButton, functionDrawable, null);
                 drawable_ = value;
             }
-            get
-            {
-                return drawable_;
-            }
+            get { return drawable_; }
         }
+
         private IDrawable drawable_;
 
         public event ClickHandler OnClick;
@@ -781,7 +679,8 @@ namespace SmokeScreen
         {
             Type type = realEvent.GetType();
             Button = button;
-            MouseButton = (int)type.GetField("MouseButton", BindingFlags.Public | BindingFlags.Instance).GetValue(realEvent);
+            MouseButton =
+                (int)type.GetField("MouseButton", BindingFlags.Public | BindingFlags.Instance).GetValue(realEvent);
         }
     }
 
@@ -893,5 +792,5 @@ namespace SmokeScreen
         }
     }
 
-    #endregion
+    #endregion private implementations
 }

@@ -1,17 +1,17 @@
 ﻿/*
  * Copyright (c) 2014, Sébastien GAGGINI AKA Sarbian, France
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -22,9 +22,11 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
+using System.IO;
+using System.Reflection;
 using UnityEngine;
 
 namespace SmokeScreen
@@ -32,14 +34,11 @@ namespace SmokeScreen
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     internal class SmokeScreenConfig : MonoBehaviour
     {
-        [Persistent]
-        public int maximumActiveParticles = 8000; // The engine won't spawn more than 10k anyway
+        [Persistent] public int maximumActiveParticles = 8000; // The engine won't spawn more than 10k anyway
 
-        [Persistent]
-        public bool globalCollideDisable = false;
+        [Persistent] public bool globalCollideDisable = false;
 
-        [Persistent]
-        public bool globalPhysicalDisable = false;
+        [Persistent] public bool globalPhysicalDisable = false;
 
         public static int activeParticles = 0;
 
@@ -78,6 +77,7 @@ namespace SmokeScreen
                     else
                     {
                         particleDecimate = -activeParticles / Instance.maximumActiveParticles;
+
                         // negative we keep each n
                     }
                 }
@@ -97,13 +97,13 @@ namespace SmokeScreen
 
             if (config.Length > 0)
             {
-                MonoBehaviour.print("SmokeScreenConfig loading config");
+                print("SmokeScreenConfig loading config");
                 ConfigNode node = config[0].config;
                 ConfigNode.LoadObjectFromConfig(this, node);
             }
             else
             {
-                MonoBehaviour.print("SmokeScreenConfig could not load config");
+                print("SmokeScreenConfig could not load config");
             }
             lastHash = Hash();
         }
@@ -114,7 +114,7 @@ namespace SmokeScreen
             {
                 lastHash = Hash();
                 lastSave = Time.time;
-                this.Save();
+                Save();
             }
         }
 
@@ -125,10 +125,10 @@ namespace SmokeScreen
 
         private void Save()
         {
-            string path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
+            string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
                           + "/SmokeScreen.cfg";
 
-            MonoBehaviour.print("SmokeScreenConfig saving config");
+            print("SmokeScreenConfig saving config");
 
             ConfigNode topNode = new ConfigNode("SmokeScreen");
             ConfigNode node = new ConfigNode("SmokeScreen");

@@ -1,17 +1,17 @@
 ﻿/*
  * Copyright (c) 2014, Sébastien GAGGINI AKA Sarbian, France
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -22,7 +22,7 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
 using System;
@@ -47,7 +47,7 @@ public class MultiInputCurve
 
     public float maxOutput;
 
-    private bool additive;
+    private readonly bool additive;
 
     public enum Inputs
     {
@@ -59,7 +59,9 @@ public class MultiInputCurve
 
         parttemp = 3,
 
-        externaltemp = 4
+        externaltemp = 4,
+
+        time = 5
     }
 
     public static readonly int inputsCount = Enum.GetValues(typeof(Inputs)).Length;
@@ -71,6 +73,7 @@ public class MultiInputCurve
         //print("Constructor for " + name + " backup_node is null = " + (node_backup == null).ToString());
         this.name = name;
         this.additive = additive;
+
         //if (node_backup != null)
         //    print("node_backup is\n " + node_backup.Replace(Environment.NewLine, Environment.NewLine + "MultiInputCurve "));
     }
@@ -81,12 +84,13 @@ public class MultiInputCurve
         for (int i = 0; i < inputsCount; i++)
         {
             string key = Enum.GetName(typeof(Inputs), i);
+
             //print("Resetting " + key);
             curves[i] = new FXCurve(key, additive ? 0f : 1f) { valueName = key };
 
             // FXCurve constructor does not set the value name
 
-            this.minOutput = this.maxOutput = additive ? 0f : 1f;
+            minOutput = maxOutput = additive ? 0f : 1f;
         }
     }
 
@@ -97,12 +101,14 @@ public class MultiInputCurve
         {
             print("Test curve[0] is " + curves[0].valueName);
         }
+
         //print("Test for " + name + " backup_node is null = " + (backup_node == null).ToString());
     }
 
     public void Load(ConfigNode node)
     {
         Reset();
+
         // For backward compat load the power curve as the one with the same name
         // it will get overwritten if a power is defined in the subnode
         curves[(int)Inputs.power].Load(name, node);
@@ -116,8 +122,10 @@ public class MultiInputCurve
             for (int i = 0; i < inputsCount; i++)
             {
                 string key = Enum.GetName(typeof(Inputs), i);
+
                 //print("Loading " + key);
                 curves[i].Load(key, node.GetNode(name));
+
                 //print(
                 //    "Loaded " + key + " in " + curves[i].valueName + " " + curves[i].keyFrames.Count() + " should be "
                 //    + node.GetNode(name).GetValues(key).Length);
@@ -126,12 +134,14 @@ public class MultiInputCurve
                 if (node.GetNode(name).HasValue(logKey))
                 {
                     logCurves[i] = new FXCurve(logKey, additive ? 0f : 1f) { valueName = logKey };
+
                     // FXCurve constructor does not set the value name
                     logCurves[i].Load(logKey, node.GetNode(name));
                 }
             }
         }
         UpdateMinMax();
+
         //isLoaded = true;
     }
 
@@ -150,8 +160,8 @@ public class MultiInputCurve
                     float key = curves[i].fCurve.keys[j].time;
                     float val = curves[i].fCurve.keys[j].value;
 
-                    this.minInput[i] = Mathf.Min(this.minInput[i], key);
-                    this.maxInput[i] = Mathf.Max(this.maxInput[i], key);
+                    minInput[i] = Mathf.Min(minInput[i], key);
+                    maxInput[i] = Mathf.Max(maxInput[i], key);
 
                     minValue = Mathf.Min(minValue, val);
                     maxValue = Mathf.Max(maxValue, val);
@@ -166,8 +176,8 @@ public class MultiInputCurve
                     float key = logCurves[i].fCurve.keys[j].time;
                     float val = logCurves[i].fCurve.keys[j].value;
 
-                    this.minInput[i] = Mathf.Min(this.minInput[i], key);
-                    this.maxInput[i] = Mathf.Max(this.maxInput[i], key);
+                    minInput[i] = Mathf.Min(minInput[i], key);
+                    maxInput[i] = Mathf.Max(maxInput[i], key);
 
                     minValue = Mathf.Min(minValue, val);
                     maxValue = Mathf.Max(maxValue, val);
@@ -197,8 +207,8 @@ public class MultiInputCurve
             if (logCurves[i] != null)
             {
                 result = additive
-                             ? result + logCurves[i].Value(Mathf.Log10(input))
-                             : result * logCurves[i].Value(Mathf.Log10(input));
+                    ? result + logCurves[i].Value(Mathf.Log10(input))
+                    : result * logCurves[i].Value(Mathf.Log10(input));
             }
         }
         return result;
@@ -222,6 +232,6 @@ public class MultiInputCurve
 
     private static void print(String s)
     {
-        MonoBehaviour.print("[MultiInputCurve] " + s);
+        MonoBehaviour.print("[SmokeScreen MultiInputCurve] " + s);
     }
 }

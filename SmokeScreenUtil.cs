@@ -1,17 +1,17 @@
 ﻿/*
  * Copyright (c) 2014, Sébastien GAGGINI AKA Sarbian, France
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this
  *    list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -22,22 +22,22 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace SmokeScreen
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Text;
     using UnityEngine;
 
-    static class SmokeScreenUtil
+    internal static class SmokeScreenUtil
     {
         public static string WriteRootNode(ConfigNode node)
         {
             StringBuilder builder = new StringBuilder();
+
             //print("node.values.Count " + node.values.Count + " node.nodes.Count " + node.nodes.Count);
             for (int i = 0; i < node.values.Count; i++)
             {
@@ -50,6 +50,7 @@ namespace SmokeScreen
             }
             return builder.ToString();
         }
+
         public static void WriteNodeString(ConfigNode node, ref StringBuilder builder, string indent)
         {
             builder.AppendLine(string.Concat(indent, node.name));
@@ -79,7 +80,7 @@ namespace SmokeScreen
         {
             while (index < cfg.Count)
             {
-                if ((int)cfg[index].Length == 2)
+                if (cfg[index].Length == 2)
                 {
                     node.values.Add(new ConfigNode.Value(cfg[index][0], cfg[index][1]));
                     index = index + 1;
@@ -116,7 +117,7 @@ namespace SmokeScreen
         public static bool NextLineIsOpenBrace(List<string[]> cfg, int index)
         {
             int num = index + 1;
-            if (num < cfg.Count && (int)cfg[num].Length == 1 && cfg[num][0] == "{")
+            if (num < cfg.Count && cfg[num].Length == 1 && cfg[num][0] == "{")
             {
                 return true;
             }
@@ -125,7 +126,7 @@ namespace SmokeScreen
 
         public static List<string[]> PreFormatConfig(string[] cfgData)
         {
-            if (cfgData == null || (int)cfgData.Length < 1)
+            if (cfgData == null || cfgData.Length < 1)
             {
                 Debug.LogError("Error: Empty part config file");
                 return null;
@@ -207,10 +208,10 @@ namespace SmokeScreen
             for (int i = 0; i < strs.Count; i++)
             {
                 string item = strs[i];
-                string[] strArrays1 = item.Split(new char[] { '=' }, 2, StringSplitOptions.None);
-                if (strArrays1 != null && (int)strArrays1.Length != 0)
+                string[] strArrays1 = item.Split(new[] { '=' }, 2, StringSplitOptions.None);
+                if (strArrays1.Length != 0)
                 {
-                    for (int j = 0; j < (int)strArrays1.Length; j++)
+                    for (int j = 0; j < strArrays1.Length; j++)
                     {
                         strArrays1[j] = strArrays1[j].Trim();
                     }
@@ -220,10 +221,82 @@ namespace SmokeScreen
             return strArrays;
         }
 
-        private static void print(String s)
+        // The whole pad object is named "ksp_pad_launchPad"
+        public const string LaunchPadGrateColliderName = "Launch Pad Grate";
+
+        private const string LaunchPadColliderName = "LaunchPadColliderSmokeScreen";
+
+        public static bool AddLaunchPadColliders(RaycastHit hit)
         {
-            MonoBehaviour.print("[SmokeScreenUtil] " + s);
+            // the Grate Collider size is  (37.70, 20.22, 3.47). Way larger that the actual grate
+            // The current collider do not cover all this area. More are needed
+
+            Transform parentTransform = hit.collider.gameObject.transform;
+
+            ////print("AddLaunchPadColliders col name = " + hit.collider.gameObject.name);
+
+            ////print("AddLaunchPadColliders parent col name = " + hit.collider.gameObject.transform.parent.gameObject.name);
+
+            // Are the collider already here ?
+            if (parentTransform.FindChild(LaunchPadColliderName))
+            {
+                return true;
+            }
+
+            GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = LaunchPadColliderName;
+            cube.renderer.material.color = Color.green;
+            cube.transform.parent = parentTransform;
+            cube.transform.localPosition = new Vector3(8.5f, 0, 2.3f);
+            cube.transform.localRotation = parentTransform.localRotation;
+            cube.transform.localScale = new Vector3(0.1f, 7, 16);
+
+            cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = LaunchPadColliderName;
+            cube.renderer.material.color = Color.green;
+            cube.transform.parent = parentTransform;
+            cube.transform.localPosition = new Vector3(7, 10.5f, 2.3f);
+            cube.transform.localRotation = parentTransform.localRotation * Quaternion.Euler(0, 60, 0);
+            cube.transform.localScale = new Vector3(7f, 7, 0.1f);
+
+            cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = LaunchPadColliderName;
+            cube.renderer.material.color = Color.green;
+            cube.transform.parent = parentTransform;
+            cube.transform.localPosition = new Vector3(7, -10.5f, 2.3f);
+            cube.transform.localRotation = parentTransform.localRotation * Quaternion.Euler(0, -60, 0);
+            cube.transform.localScale = new Vector3(7f, 7, 0.1f);
+
+            cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = LaunchPadColliderName;
+            cube.renderer.material.color = Color.green;
+            cube.transform.parent = parentTransform;
+            cube.transform.localPosition = new Vector3(-8.5f, 0, 2.3f);
+            cube.transform.localRotation = parentTransform.localRotation;
+            cube.transform.localScale = new Vector3(0.1f, 7, 16);
+
+            cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = LaunchPadColliderName;
+            cube.renderer.material.color = Color.green;
+            cube.transform.parent = parentTransform;
+            cube.transform.localPosition = new Vector3(-7, 10.5f, 2.3f);
+            cube.transform.localRotation = parentTransform.localRotation * Quaternion.Euler(0, -60, 0);
+            cube.transform.localScale = new Vector3(7f, 7, 0.1f);
+
+            cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = LaunchPadColliderName;
+            cube.renderer.material.color = Color.green;
+            cube.transform.parent = parentTransform;
+            cube.transform.localPosition = new Vector3(-7, -10.5f, 2.3f);
+            cube.transform.localRotation = parentTransform.localRotation * Quaternion.Euler(0, 60, 0);
+            cube.transform.localScale = new Vector3(7f, 7, 0.1f);
+
+            return true;
         }
 
+        private static void print(String s)
+        {
+            MonoBehaviour.print("[SmokeScreen SmokeScreenUtil] " + s);
+        }
     }
 }
