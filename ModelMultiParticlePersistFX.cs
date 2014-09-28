@@ -134,6 +134,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     private bool activated = true;
 
+    private bool loaded = false;
+
     public bool showUI = false;
 
     private static readonly List<ModelMultiParticlePersistFX> list = new List<ModelMultiParticlePersistFX>();
@@ -169,7 +171,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     //    list.Remove(this);
     //}
 
-    // if Die() is called for a debrit of vessel then all the
+    // if Die() is called for a debris of vessel then all the
     // vessel gameobject are removed without an OnDestroy call
     // But an OnVesselDie message is send before, so we can
     // Catch in time
@@ -615,29 +617,150 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
         angle.Load("angle", node);
         distance.Load("distance", node);
+        loaded = true;
     }
 
     public override void OnSave(ConfigNode node)
     {
+        if (!loaded)
+        {
+            Print("OnSave called before any OnLoad");
+            return;
+        }
+
+        // All those ugly null check are most likely superfluous after the loaded check
+        // but I'll keep it until I m sure don't get NRE new report
+
         //Print("OnSave");
         ConfigNode.CreateConfigFromObject(this, node);
-        emission.Save(node);
-        energy.Save(node);
-        speed.Save(node);
-        grow.Save(node);
-        scale.Save(node);
-        size.Save(node);
-        offset.Save(node);
-        force.Save(node);
-        logGrow.Save(node);
-        linGrow.Save(node);
-        logGrowScale.Save(node);
-        alpha.Save(node);
-        linAlphaDecay.Save(node);
-        logAlphaDecay.Save(node);
-
-        angle.Save(node);
-        distance.Save(node);
+        if (emission != null)
+        {
+            emission.Save(node);
+        }
+        else
+        {
+            Print("OnSave emission is null");
+        }
+        if (energy != null)
+        {
+            energy.Save(node);
+        }
+        else
+        {
+            Print("OnSave energy is null");
+        }
+        if (speed != null)
+        {
+            speed.Save(node);
+        }
+        else
+        {
+            Print("OnSave speed is null");
+        }
+        if (grow != null)
+        {
+            grow.Save(node);
+        }
+        else
+        {
+            Print("OnSave grow is null");
+        }
+        if (scale != null)
+        {
+            scale.Save(node);
+        }
+        else
+        {
+            Print("OnSave scale is null");
+        }
+        if (size != null)
+        {
+            size.Save(node);
+        }
+        else
+        {
+            Print("OnSave size is null");
+        }
+        if (offset != null)
+        {
+            offset.Save(node);
+        }
+        else
+        {
+            Print("OnSave offset is null");
+        }
+        if (force != null)
+        {
+            force.Save(node);
+        }
+        else
+        {
+            Print("OnSave force is null");
+        }
+        if (logGrow != null)
+        {
+            logGrow.Save(node);
+        }
+        else
+        {
+            Print("OnSave logGrow is null");
+        }
+        if (linGrow != null)
+        {
+            linGrow.Save(node);
+        }
+        else
+        {
+            Print("OnSave linGrow is null");
+        }
+        if (logGrowScale != null)
+        {
+            logGrowScale.Save(node);
+        }
+        else
+        {
+            Print("OnSave logGrowScale is null");
+        }
+        if (alpha != null)
+        {
+            alpha.Save(node);
+        }
+        else
+        {
+            Print("OnSave alpha is null");
+        }
+        if (linAlphaDecay != null)
+        {
+            linAlphaDecay.Save(node);
+        }
+        else
+        {
+            Print("OnSave linAlphaDecay is null");
+        }
+        if (logAlphaDecay != null)
+        {
+            logAlphaDecay.Save(node);
+        }
+        else
+        {
+            Print("OnSave logAlphaDecay is null");
+        }
+        if (angle != null)
+        {
+            angle.Save(node);
+        }
+        else
+        {
+            Print("OnSave angle is null");
+        }
+        if (distance != null)
+        {
+            distance.Save(node);
+        }
+        else
+        {
+            Print("OnSave distance is null");
+        }
     }
 
     private static void Print(String s)
