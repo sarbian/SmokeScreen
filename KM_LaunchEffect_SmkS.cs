@@ -29,13 +29,13 @@
  */
 
 
-using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = System.Random;
 
 namespace SmokeScreen
 {
-    public class KM_LaunchEffect : PartModule
+    public class KM_LaunchEffect_SmkS : PartModule
     {
 
         [KSPField(isPersistant = false)]
@@ -140,7 +140,7 @@ namespace SmokeScreen
             UI_Toggle(disabledText = "Disabled", enabledText = "Enabled")]
         public bool isActive = true;
 
-        protected static System.Random rnd = new System.Random();
+        protected static Random rnd = new Random();
 
 
         private int performanceLimiter = rnd.Next();
@@ -186,7 +186,7 @@ namespace SmokeScreen
 
 
             // Loads the effectModel manually. Avoids the need for a MODEL node
-            // But may add a effectModel more than once if more than 1 KM_LaunchEffect
+            // But may add a effectModel more than once if more than 1 KM_LaunchEffect_SmkS
             // module is added with that uses the same effectModel. 
             if (model != string.Empty)
             {
@@ -198,15 +198,16 @@ namespace SmokeScreen
                 }
                 effectModel.SetActive(true);
                 Transform parentTransform = part.transform.Find(parent);
-                print("ParentTransform Null = " + (parentTransform==null));
+                //print("ParentTransform Null = " + (parentTransform==null));
                 effectModel.transform.SetParent(parentTransform ?? part.transform);
                 effectModel.transform.localPosition = position;
-                print("position = " + position.ToString("F2"));
+                //print("position = " + position.ToString("F2"));
                 effectModel.transform.localScale = scale;
-                print("scale = " + scale.ToString("F2"));
+                //print("scale = " + scale.ToString("F2"));
                 effectModel.transform.localRotation = Quaternion.Euler(rotation);
-                print("rotation = " + rotation.ToString("F2"));
+                //print("rotation = " + rotation.ToString("F2"));
             }
+
 
             if (xOffset != 0 || yOffset != 0 || zOffset != 0)
                 offset = new Vector3(xOffset, yOffset, zOffset);
@@ -243,7 +244,7 @@ namespace SmokeScreen
             //print ("DBG: OnEditorAttach");
             if (state == StartState.Editor)
             {
-                print("Placement is " + editorPlacementOptionsActive);
+                //print("Placement is " + editorPlacementOptionsActive);
                 this.part.OnEditorAttach += OnEditorAttach;
                 this.part.OnEditorDetach += OnEditorDetach;
                 this.part.OnEditorDestroy += OnEditorDestroy;
@@ -386,13 +387,13 @@ namespace SmokeScreen
         {
 
             RenderingManager.RemoveFromPostDrawQueue(99, updateEditor);
-            print("OnEditorDetach");
+            //print("OnEditorDetach");
         }
 
         private void OnEditorDestroy()
         {
             RenderingManager.RemoveFromPostDrawQueue(99, updateEditor);
-            print("OnEditorDestroy");
+            //print("OnEditorDestroy");
 
         }
 
@@ -401,37 +402,14 @@ namespace SmokeScreen
             foreach (KeyValuePair<int, KSPParticleEmitter> pair in effectsList)
             {
                 KSPParticleEmitter launchEffect = pair.Value;
-                int key = pair.Key;
                 //print ("Found Effect: " + launchEffect.name+" state"+state);
                 launchEffect.emit = state;
                 if (state)
                 {
-
-                    //launchEffect.shape2D = new Vector2(width, width);
-
-                    //if (height != 0)
-                    //    launchEffect.maxEnergy = height;
-                    //if (height != 0)
-                    //    launchEffect.minEnergy = height / 2;
-                    //launchEffect.transform.localPosition = locationList[key];
-
-
-                    //launchEffect.transform.Translate(offset, Space.Self);
-
                     if (numP != 0)
                         launchEffect.maxEmission = (int)(numP);
                     if (numP != 0)
                         launchEffect.minEmission = (int)(numP / 2);
-                    //if (size != 0)
-                    //    launchEffect.minSize = size;
-                    //if (size != 0)
-                    //    launchEffect.minSize = size / 2;
-
-                    //launchEffect.localVelocity = speed;
-
-                    //if (rndVelocity != 0)
-                    //    launchEffect.rndVelocity = new Vector3(rndVelocity, rndVelocity, rndVelocity);
-
                 }
             }
             foreach (Light launchEffectLight in lightList.Values)
@@ -444,7 +422,7 @@ namespace SmokeScreen
 
 
 
-    public class KM_PreLaunchEffect : KM_LaunchEffect
+    public class KM_PreLaunchEffect_SmkS : KM_LaunchEffect_SmkS
     {
 
 
@@ -481,7 +459,7 @@ namespace SmokeScreen
         }
     }
 
-    public class KM_PostLaunchEffect : KM_LaunchEffect
+    public class KM_PostLaunchEffect_SmkS : KM_LaunchEffect_SmkS
     {
         private int performanceLimiterUpdate = 0;
         private int performanceThreshold = 15;
