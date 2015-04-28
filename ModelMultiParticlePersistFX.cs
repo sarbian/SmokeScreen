@@ -295,14 +295,14 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
         if (hostPart != null)
         {
-            partTemp = hostPart.temperature;
+            partTemp = (float)hostPart.temperature;
 
             if (hostPart.vessel != null)
             {
                 Vessel vessel = hostPart.vessel;
                 atmDensity = (float)vessel.atmDensity;
 
-                externalTemp = vessel.flightIntegrator.getExternalTemperature();
+                externalTemp = (float)vessel.externalTemperature;
 
                 // FAR use a nice config file to get the atmo info for each body.
                 // For now I'll just use Air for all.
@@ -315,8 +315,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                 atmDensity =
                     (float)
                         FlightGlobals.getAtmDensity(
-                            FlightGlobals.getStaticPressure(hostPart.transform.position, FlightGlobals.currentMainBody));
-                externalTemp = FlightGlobals.getExternalTemperature(hostPart.transform.position);
+                            FlightGlobals.getStaticPressure(hostPart.transform.position, FlightGlobals.currentMainBody), FlightGlobals.getExternalTemperature(hostPart.transform.position, FlightGlobals.currentMainBody));
+                externalTemp = (float)FlightGlobals.getExternalTemperature(hostPart.transform.position);
                 const double magicNumberFromFAR = 1.4 * 8.3145 * 1000 / 28.96;
                 double speedOfSound = Math.Sqrt((externalTemp + 273.15) * magicNumberFromFAR);
                 surfaceVelMach =

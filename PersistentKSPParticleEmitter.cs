@@ -319,7 +319,7 @@ public class PersistentKSPParticleEmitter
         double estimatedInitialVolume = 0.75 * Math.PI * initialRadius * initialRadius * initialRadius;
         double currentVolume = 0.75 * Math.PI * radius * radius * radius;
         double volumeChange = currentVolume - estimatedInitialVolume;
-        double atmosphericDensity = FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(pPos, mainBody));
+        double atmosphericDensity = FlightGlobals.getAtmDensity(FlightGlobals.getStaticPressure(pPos, mainBody), FlightGlobals.getExternalTemperature(pPos, FlightGlobals.currentMainBody), FlightGlobals.currentMainBody);
         double density = (estimatedInitialVolume * initialDensity + volumeChange * atmosphericDensity) / currentVolume;
         double mass = density * currentVolume;
 
