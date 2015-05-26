@@ -177,16 +177,16 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     // Catch in time
     public void OnVesselDie()
     {
-        Print("OnVesselDie");
+        //Print("OnVesselDie");
         OnDestroy();
     }
 
     private void OnDestroy()
     {
-        Print("OnDestroy");
+        //Print("OnDestroy");
         if (persistentEmitters != null)
         {
-            Print("OnDestroy Detach");
+            //Print("OnDestroy Detach");
             for (int i = 0; i < persistentEmitters.Count; i++)
             {
                 persistentEmitters[i].Detach(0);
@@ -204,7 +204,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         }
         singleTimerEnd = singleEmitTimer + Time.fixedTime;
         timeModuloDelta = singleTimerEnd % timeModulo;
-
+        
         // Old version Emitted 1 second of particle in one go
         // New version set power to 1 for singleEmitTimer seconds
         //UpdateEmitters(1);
@@ -216,13 +216,12 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public override void OnEvent(float power)
     {
-        //Print("OnEvent " + power);
         if (persistentEmitters == null)
         {
             return;
         }
 
-        if ((overRideInputs || power > 0 || Time.deltaTime <= singleTimerEnd) && activated)
+        if ((overRideInputs || power > 0) && activated)
         {
             UpdateEmitters(power);
             for (int i = 0; i < persistentEmitters.Count; i++)
@@ -249,6 +248,18 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             return;
         }
 
+        if (singleTimerEnd > 0)
+        {
+            if (Time.fixedTime <= singleTimerEnd)
+            {
+                OnEvent(1);
+            }
+            else
+            {
+                OnEvent(0);
+                singleTimerEnd = 0;
+            }
+        }
         SmokeScreenConfig.UpdateParticlesCount();
 
         //RaycastHit vHit = new RaycastHit();
@@ -290,7 +301,6 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         else
         {
             time = singleTimerEnd - Time.fixedTime;
-            power = 1;
         }
 
         if (hostPart != null)
@@ -427,6 +437,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         {
             return;
         }
+        
         for (int i = 0; i < persistentEmitters.Count; i++)
         {
             // using Camera.main will mess up anything multi cam but using current require adding a OnWillRenderObject() to the ksp particle emitter GameObject (? not tested)
@@ -545,6 +556,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         Destroy(templateKspParticleEmitter);
 
         list.Add(this);
+
+        // 1.0 don't seems to properly do this for engines.
+        OnEvent(0);
+
     }
 
     private static void DisableCollider(GameObject go)
