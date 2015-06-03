@@ -144,6 +144,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     private float timeModuloDelta = 0;
 
+    private string lastRenderMode = "";
+
     public static List<ModelMultiParticlePersistFX> List
     {
         get { return list; }
@@ -419,13 +421,16 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
             pkpe.go.transform.localRotation = Quaternion.Euler(localRotation);
 
+
+            if (renderMode != lastRenderMode)
+            {
             // Bad code is bad
             try
             {
                 pkpe.pe.particleRenderMode = (ParticleRenderMode)Enum.Parse(typeof (ParticleRenderMode), renderMode);
             }
-            catch (ArgumentException)
-            {
+                catch (ArgumentException) { }
+                lastRenderMode = renderMode;
             }
         }
     }
