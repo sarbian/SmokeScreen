@@ -121,6 +121,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public MultiInputCurve linAlphaDecay;
 
+    public MultiInputCurve lengthScale;
+
+    public MultiInputCurve velocityScale;
+
     // Those 2 curve are related to the angle and distance to cam
     public FXCurve angle = new FXCurve("angle", 1f);
 
@@ -383,6 +387,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             pkpe.pe.shape2D = pkpe.scale2DBase * currentScale;
             pkpe.pe.shape3D = pkpe.scale3DBase * currentScale;
 
+            pkpe.pe.pr.lengthScale = lengthScale.Value(inputs);
+            pkpe.pe.pr.velocityScale = velocityScale.Value(inputs);
+
             pkpe.sizeClamp = sizeClamp;
             pkpe.randomInitalVelocityOffsetMaxRadius = randomInitalVelocityOffsetMaxRadius;
 
@@ -424,11 +431,11 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
             if (renderMode != lastRenderMode)
             {
-            // Bad code is bad
-            try
-            {
-                pkpe.pe.particleRenderMode = (ParticleRenderMode)Enum.Parse(typeof (ParticleRenderMode), renderMode);
-            }
+                // Bad code is bad
+                try
+                {
+                    pkpe.pe.particleRenderMode = (ParticleRenderMode)Enum.Parse(typeof (ParticleRenderMode), renderMode);
+                }
                 catch (ArgumentException) { }
                 lastRenderMode = renderMode;
             }
@@ -618,6 +625,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         alpha = new MultiInputCurve("alpha");
         linAlphaDecay = new MultiInputCurve("linAlphaDecay", true);
         logAlphaDecay = new MultiInputCurve("logAlphaDecay", true);
+        lengthScale = new MultiInputCurve("lengthScale");
+        velocityScale = new MultiInputCurve("velocityScale");
 
         ConfigNode.LoadObjectFromConfig(this, node);
         emission.Load(node);
@@ -634,6 +643,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         alpha.Load(node);
         linAlphaDecay.Load(node);
         logAlphaDecay.Load(node);
+        lengthScale.Load(node);
+        velocityScale.Load(node);
 
         angle.Load("angle", node);
         distance.Load("distance", node);
@@ -764,6 +775,23 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         else
         {
             Print("OnSave logAlphaDecay is null");
+        }
+        if (lengthScale != null)
+        {
+            lengthScale.Save(node);
+        }
+        else
+        {
+            Print("OnSave lengthScale is null");
+        }
+
+        if (velocityScale != null)
+        {
+            velocityScale.Save(node);
+        }
+        else
+        {
+            Print("OnSave velocityScale is null");
         }
         if (angle != null)
         {
@@ -953,6 +981,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         min = Mathf.Min(min, alpha.minInput[id]);
         min = Mathf.Min(min, linAlphaDecay.minInput[id]);
         min = Mathf.Min(min, logAlphaDecay.minInput[id]);
+        min = Mathf.Min(min, lengthScale.minInput[id]);
+        min = Mathf.Min(min, velocityScale.minInput[id]);
 
         return min;
     }
@@ -974,6 +1004,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         max = Mathf.Max(max, alpha.maxInput[id]);
         max = Mathf.Max(max, linAlphaDecay.maxInput[id]);
         max = Mathf.Max(max, logAlphaDecay.maxInput[id]);
+        max = Mathf.Max(max, lengthScale.maxInput[id]);
+        max = Mathf.Max(max, velocityScale.maxInput[id]);
 
         return max;
     }
