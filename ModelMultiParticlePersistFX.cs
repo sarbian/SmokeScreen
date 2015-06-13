@@ -371,7 +371,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             pkpe.pe.shape3D = pkpe.scale3DBase * currentScale;
 
             pkpe.sizeClamp = sizeClamp;
-            pkpe.randomInitalVelocityOffsetMaxRadius = randomInitalVelocityOffsetMaxRadius + InitalVelocityOffsetMaxRadius.Value(inputs);
+            pkpe.randomInitalVelocityOffsetMaxRadius = randomInitalVelocityOffsetMaxRadius + initalVelocityOffsetMaxRadius.Value(inputs);
 
             pkpe.physical = physical && !SmokeScreenConfig.Instance.globalPhysicalDisable;
             pkpe.initialDensity = initialDensity;
@@ -613,7 +613,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         alpha = new MultiInputCurve("alpha");
         linAlphaDecay = new MultiInputCurve("linAlphaDecay", true);
         logAlphaDecay = new MultiInputCurve("logAlphaDecay", true);
-        InitalVelocityOffsetMaxRadius = new MultiInputCurve("InitalVelocityOffsetMaxRadius", true);
+        initalVelocityOffsetMaxRadius = new MultiInputCurve("initalVelocityOffsetMaxRadius", true);
 
         ConfigNode.LoadObjectFromConfig(this, node);
         emission.Load(node);
@@ -630,7 +630,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         alpha.Load(node);
         linAlphaDecay.Load(node);
         logAlphaDecay.Load(node);
-        InitalVelocityOffsetMaxRadius.Load(node);
+        initalVelocityOffsetMaxRadius.Load(node);
 
         angle.Load("angle", node);
         distance.Load("distance", node);
@@ -762,13 +762,13 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         {
             Print("OnSave logAlphaDecay is null");
         }
-        if (InitalVelocityOffsetMaxRadius != null)
+        if (initalVelocityOffsetMaxRadius != null)
         {
-            InitalVelocityOffsetMaxRadius.Save(node);
+            initalVelocityOffsetMaxRadius.Save(node);
         }
         else
         {
-            Print("OnSave InitalVelocityOffsetMaxRadius is null");
+            Print("OnSave initalVelocityOffsetMaxRadius is null");
         }
 
         if (angle != null)
@@ -959,7 +959,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         min = Mathf.Min(min, alpha.minInput[id]);
         min = Mathf.Min(min, linAlphaDecay.minInput[id]);
         min = Mathf.Min(min, logAlphaDecay.minInput[id]);
-        min = Mathf.Min(min, InitalVelocityOffsetMaxRadius.minInput[id]);
+        min = Mathf.Min(min, initalVelocityOffsetMaxRadius.minInput[id]);
 
         return min;
     }
@@ -981,7 +981,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         max = Mathf.Max(max, alpha.maxInput[id]);
         max = Mathf.Max(max, linAlphaDecay.maxInput[id]);
         max = Mathf.Max(max, logAlphaDecay.maxInput[id]);
-        max = Mathf.Max(max, InitalVelocityOffsetMaxRadius.maxInput[id]);
+        max = Mathf.Max(max, initalVelocityOffsetMaxRadius.maxInput[id]);
 
         return max;
     }
