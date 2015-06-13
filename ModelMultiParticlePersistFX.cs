@@ -144,6 +144,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     private static readonly List<ModelMultiParticlePersistFX> list = new List<ModelMultiParticlePersistFX>();
 
+    public float specialScale = 1;
+
     private float singleTimerEnd = 0;
 
     private float timeModuloDelta = 0;
@@ -342,8 +344,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             PersistentKSPParticleEmitter pkpe = persistentEmitters[i];
 
             //pkpe.pe.useWorldSpace
+            float finalScale = fixedScale * specialScale;
 
-            float sizePower = size.Value(inputs) * fixedScale;
+            float sizePower = size.Value(inputs) * finalScale;
             pkpe.pe.minSize = Mathf.Min(pkpe.minSizeBase * sizePower, sizeClamp);
             pkpe.pe.maxSize = Mathf.Min(pkpe.maxSizeBase * sizePower, sizeClamp);
 
@@ -364,7 +367,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
             pkpe.pe.sizeGrow = grow.Value(inputs);
 
-            float currentScale = scale.Value(inputs) * fixedScale;
+            float currentScale = scale.Value(inputs) * finalScale;
             pkpe.pe.shape1D = pkpe.scale1DBase * currentScale;
             pkpe.pe.shape2D = pkpe.scale2DBase * currentScale;
             pkpe.pe.shape3D = pkpe.scale3DBase * currentScale;
@@ -406,7 +409,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             }
 
             pkpe.go.transform.localPosition = localPosition
-                                              + offsetDirection.normalized * offset.Value(inputs) * fixedScale;
+                                              + offsetDirection.normalized * offset.Value(inputs) * finalScale;
 
             pkpe.go.transform.localRotation = Quaternion.Euler(localRotation);
 
@@ -506,6 +509,14 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         if (persistentEmitters == null)
         {
             persistentEmitters = new List<PersistentKSPParticleEmitter>();
+        }
+
+        if (hostPart.Modules.Contains("ProceduralSRB"))
+        {
+            PartModule pm = hostPart.Modules["ProceduralSRB"];
+
+            specialScale = pm.Fields.GetValue<float>("bellScale");
+            Print("Found ProceduralSRB. Rescaling by " + specialScale.ToString("F3") + " final scale " + (fixedScale * specialScale).ToString("F3"));
         }
 
         for (int i = 0; i < transforms.Count; i++)
