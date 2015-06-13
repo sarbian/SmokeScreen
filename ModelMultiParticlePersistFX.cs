@@ -356,7 +356,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             pkpe.pe.minEnergy = pkpe.minEnergyBase * energyPower;
             pkpe.pe.maxEnergy = pkpe.maxEnergyBase * energyPower;
 
-            float velocityPower = speed.Value(inputs);
+            float velocityPower = speed.Value(inputs) * finalScale;
             pkpe.pe.localVelocity = pkpe.localVelocityBase * velocityPower;
             pkpe.pe.worldVelocity = pkpe.worldVelocityBase * velocityPower;
 
