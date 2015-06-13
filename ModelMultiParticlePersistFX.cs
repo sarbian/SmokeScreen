@@ -210,7 +210,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         }
         singleTimerEnd = singleEmitTimer + Time.fixedTime;
         timeModuloDelta = singleTimerEnd % timeModulo;
-        
+
         // Old version Emitted 1 second of particle in one go
         // New version set power to 1 for singleEmitTimer seconds
         //UpdateEmitters(1);
@@ -429,7 +429,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         {
             return;
         }
-        
+
         for (int i = 0; i < persistentEmitters.Count; i++)
         {
             // using Camera.main will mess up anything multi cam but using current require adding a OnWillRenderObject() to the ksp particle emitter GameObject (? not tested)
@@ -641,7 +641,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     {
         if (!loaded)
         {
-            Print("OnSave called before any OnLoad");
+            //Print("OnSave called before any OnLoad");
             return;
         }
 

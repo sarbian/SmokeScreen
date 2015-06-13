@@ -28,7 +28,7 @@ internal class PersistentEmitterManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        Print("OnDestroy");
+        //Print("OnDestroy");
         GameEvents.onGameSceneLoadRequested.Remove(OnSceneChange);
     }
 
@@ -50,11 +50,11 @@ internal class PersistentEmitterManager : MonoBehaviour
 
     private void OnSceneChange(GameScenes scene)
     {
-        Print("OnSceneChange");
+        //Print("OnSceneChange");
         for (int i = 0; i < persistentEmitters.Count; i++)
         {
             EffectBehaviour.RemoveParticleEmitter(persistentEmitters[i].pe);
-            Print(" go is " + persistentEmitters[i].go);
+            //Print(" go is " + persistentEmitters[i].go);
 
             //Destroy(persistentEmitters[i].go);
             if (persistentEmitters[i].go != null && persistentEmitters[i].go.transform.parent != null)
@@ -78,7 +78,7 @@ internal class PersistentEmitterManager : MonoBehaviour
             // If the gameObject is null clean up the emitter
             if (persistentEmittersCopy[i].go == null)
             {
-                Print("FixedUpdate cleaning null go");
+                //Print("FixedUpdate cleaning null go");
                 Remove(persistentEmittersCopy[i]);
 
                 // Make sure
@@ -93,7 +93,7 @@ internal class PersistentEmitterManager : MonoBehaviour
 
                 if (persistentEmittersCopy[i].pe.pe.particles.Count() == 0)
                 {
-                    Print("FixedUpdate cleaning parent go");
+                    //Print("FixedUpdate cleaning parent go");
                     Remove(persistentEmittersCopy[i]);
                     Destroy(persistentEmittersCopy[i].go);
                 }
