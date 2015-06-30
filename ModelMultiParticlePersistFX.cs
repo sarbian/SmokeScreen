@@ -123,6 +123,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public MultiInputCurve initalVelocityOffsetMaxRadius;
 
+    public MultiInputCurve sizeClampCurve;
+
     // Those 2 curve are related to the angle and distance to cam
     public FXCurve angle = new FXCurve("angle", 1f);
 
@@ -344,9 +346,11 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             //pkpe.pe.useWorldSpace
             float finalScale = fixedScale * specialScale;
 
+            float finalSizeClamp = sizeClamp + sizeClampCurve.Value(inputs);
+
             float sizePower = size.Value(inputs) * finalScale;
-            pkpe.pe.minSize = Mathf.Min(pkpe.minSizeBase * sizePower, sizeClamp);
-            pkpe.pe.maxSize = Mathf.Min(pkpe.maxSizeBase * sizePower, sizeClamp);
+            pkpe.pe.minSize = Mathf.Min(pkpe.minSizeBase * sizePower, finalSizeClamp);
+            pkpe.pe.maxSize = Mathf.Min(pkpe.maxSizeBase * sizePower, finalSizeClamp);
 
             float emissionPower = emission.Value(inputs);
             pkpe.pe.minEmission = Mathf.FloorToInt(pkpe.minEmissionBase * emissionPower);
@@ -370,7 +374,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             pkpe.pe.shape2D = pkpe.scale2DBase * currentScale;
             pkpe.pe.shape3D = pkpe.scale3DBase * currentScale;
 
-            pkpe.sizeClamp = sizeClamp;
+            pkpe.sizeClamp = finalSizeClamp;
             pkpe.randomInitalVelocityOffsetMaxRadius = randomInitalVelocityOffsetMaxRadius + initalVelocityOffsetMaxRadius.Value(inputs);
 
             pkpe.physical = physical && !SmokeScreenConfig.Instance.globalPhysicalDisable;
@@ -614,6 +618,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         linAlphaDecay = new MultiInputCurve("linAlphaDecay", true);
         logAlphaDecay = new MultiInputCurve("logAlphaDecay", true);
         initalVelocityOffsetMaxRadius = new MultiInputCurve("initalVelocityOffsetMaxRadius", true);
+        sizeClampCurve = new MultiInputCurve("sizeClamp", true);
 
         ConfigNode.LoadObjectFromConfig(this, node);
         emission.Load(node);
@@ -631,6 +636,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         linAlphaDecay.Load(node);
         logAlphaDecay.Load(node);
         initalVelocityOffsetMaxRadius.Load(node);
+        sizeClampCurve.Load(node);
 
         angle.Load("angle", node);
         distance.Load("distance", node);
@@ -769,6 +775,15 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         else
         {
             Print("OnSave initalVelocityOffsetMaxRadius is null");
+        }
+
+        if (sizeClampCurve != null)
+        {
+            sizeClampCurve.Save(node);
+        }
+        else
+        {
+            Print("OnSave sizeClampCurve is null");
         }
 
         if (angle != null)
@@ -960,6 +975,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         min = Mathf.Min(min, linAlphaDecay.minInput[id]);
         min = Mathf.Min(min, logAlphaDecay.minInput[id]);
         min = Mathf.Min(min, initalVelocityOffsetMaxRadius.minInput[id]);
+        min = Mathf.Min(min, sizeClampCurve.minInput[id]);
 
         return min;
     }
@@ -982,6 +998,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         max = Mathf.Max(max, linAlphaDecay.maxInput[id]);
         max = Mathf.Max(max, logAlphaDecay.maxInput[id]);
         max = Mathf.Max(max, initalVelocityOffsetMaxRadius.maxInput[id]);
+        max = Mathf.Max(max, sizeClampCurve.maxInput[id]);
 
         return max;
     }
