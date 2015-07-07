@@ -123,6 +123,12 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     public MultiInputCurve initalVelocityOffsetMaxRadius;
 
+    public MultiInputCurve randConeEmit;
+
+    public MultiInputCurve xyForce;
+
+    public MultiInputCurve zForce;
+    
     public MultiInputCurve sizeClampCurve;
 
     // Those 2 curve are related to the angle and distance to cam
@@ -377,6 +383,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             pkpe.sizeClamp = finalSizeClamp;
             pkpe.randomInitalVelocityOffsetMaxRadius = randomInitalVelocityOffsetMaxRadius + initalVelocityOffsetMaxRadius.Value(inputs);
 
+            pkpe.randConeEmit = randConeEmit.Value(inputs);
+            pkpe.xyForce = xyForce.Value(inputs);
+            pkpe.zForce = zForce.Value(inputs);
+
             pkpe.physical = physical && !SmokeScreenConfig.Instance.globalPhysicalDisable;
             pkpe.initialDensity = initialDensity;
             pkpe.dragCoefficient = dragCoefficient;
@@ -619,6 +629,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         logAlphaDecay = new MultiInputCurve("logAlphaDecay", true);
         initalVelocityOffsetMaxRadius = new MultiInputCurve("initalVelocityOffsetMaxRadius", true);
         sizeClampCurve = new MultiInputCurve("sizeClamp", true);
+        randConeEmit = new MultiInputCurve("randConeEmit", true);
+        xyForce = new MultiInputCurve("xyForce", true);
+        zForce = new MultiInputCurve("zForce", true);
 
         ConfigNode.LoadObjectFromConfig(this, node);
         emission.Load(node);
@@ -637,6 +650,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         logAlphaDecay.Load(node);
         initalVelocityOffsetMaxRadius.Load(node);
         sizeClampCurve.Load(node);
+        randConeEmit.Load(node);
+        xyForce.Load(node);
+        zForce.Load(node);
 
         angle.Load("angle", node);
         distance.Load("distance", node);
@@ -784,6 +800,33 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         else
         {
             Print("OnSave sizeClampCurve is null");
+        }
+
+        if (randConeEmit != null)
+        {
+            randConeEmit.Save(node);
+        }
+        else
+        {
+            Print("OnSave randConeEmit is null");
+        }
+
+        if (xyForce != null)
+        {
+            xyForce.Save(node);
+        }
+        else
+        {
+            Print("OnSave xyForce is null");
+        }
+
+        if (zForce != null)
+        {
+            zForce.Save(node);
+        }
+        else
+        {
+            Print("OnSave zForce is null");
         }
 
         if (angle != null)
@@ -976,6 +1019,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         min = Mathf.Min(min, logAlphaDecay.minInput[id]);
         min = Mathf.Min(min, initalVelocityOffsetMaxRadius.minInput[id]);
         min = Mathf.Min(min, sizeClampCurve.minInput[id]);
+        min = Mathf.Min(min, randConeEmit.minInput[id]);
+        min = Mathf.Min(min, xyForce.minInput[id]);
+        min = Mathf.Min(min, zForce.minInput[id]);
 
         return min;
     }
@@ -999,6 +1045,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         max = Mathf.Max(max, logAlphaDecay.maxInput[id]);
         max = Mathf.Max(max, initalVelocityOffsetMaxRadius.maxInput[id]);
         max = Mathf.Max(max, sizeClampCurve.maxInput[id]);
+        max = Mathf.Max(max, randConeEmit.minInput[id]);
+        max = Mathf.Max(max, xyForce.minInput[id]);
+        max = Mathf.Max(max, zForce.minInput[id]);
 
         return max;
     }

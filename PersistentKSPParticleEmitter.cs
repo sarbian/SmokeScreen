@@ -82,6 +82,16 @@ public class PersistentKSPParticleEmitter
     // than from a cube. Units (SI): m/s.
     public float randomInitalVelocityOffsetMaxRadius = 0.0f;
 
+    //Similar to randomInitalVelocityOffsetMaxRadius, cleaned a little 
+    public float randConeEmit = 0.0f;
+
+    //xyForce multiplicatively damps non-axis (x,y) motion, leaving axis 
+    //motion (z) untouched.
+    public float xyForce = 1.0f;
+
+    //zForce is like xyForce, but directly adjusts in the direction of motion,
+    public float zForce = 1.0f;
+
     // Whether to apply Archimedes' force, gravity and other things to the
     // particle.
     public bool physical = false;
@@ -181,7 +191,13 @@ public class PersistentKSPParticleEmitter
         Particle[] particles = pe.pe.particles;
 
         double averageSize = 0.5 * (pe.minSize + pe.maxSize);
+        
+        //For randConeEmit:
+        //Only generate a random vector on every other particle, for the in-between particles, negate the disk.
+        bool coneToggle = true;
+        Vector2 disk = new Vector2 (0,0);
 
+        //Step through all the particles:
         for (int j = 0; j < particles.Length; j++)
         {
             Particle particle = particles[j];
@@ -204,11 +220,54 @@ public class PersistentKSPParticleEmitter
                 Vector3d pPos = pe.useWorldSpace
                     ? particle.position
                     : pe.transform.TransformPoint(particle.position);
-                Vector3d pVel = (pe.useWorldSpace
-                    ? particle.velocity
-                    : pe.transform.TransformDirection(particle.velocity))
-                                + Krakensbane.GetFrameVelocity();
+                
+                //Slight methodology change to avoid duplicating if statements:
+                Vector3d pVel;
+                if (pe.useWorldSpace)
+                {
+                    pVel = particle.velocity;
+                }
+                else if (!pe.useWorldSpace && particle.energy == particle.startEnergy && (randConeEmit != 0))
+                {
+                    Vector3 lVel = new Vector3(0, 0, 1); ;
+                    if (randConeEmit != 0)
+                    {
+                        // Adjust initial velocity to make a cone.  Only perform if pe.useWorldSpace
+                        // is true, and we have a randConeEmit set.
+                        //Produce a random vector within "angle" of the original vector.
+                        //The maximum producible cone is 90 degrees when randConeEmit is very large.
+                        //Could open up more if we used trig, but it'd be less efficient.
+                        if (coneToggle)
+                        {
+                            disk = Random.insideUnitCircle * randConeEmit;
+                            coneToggle = false;
+                        }
+                        else
+                        {
+                            disk *= -1;
+                            coneToggle = true;
+                        }
+                        lVel.x = disk.x;
+                        lVel.y = disk.y;
+                        lVel = Vector3.Normalize(lVel);
+                        lVel *= Vector3.Magnitude(particle.velocity);
+                    }
 
+                    pVel = pe.transform.TransformDirection(lVel)
+                                + Krakensbane.GetFrameVelocity();
+                }
+                else if (!pe.useWorldSpace && particle.energy != particle.startEnergy)
+                {
+                    pVel = pe.transform.TransformDirection(particle.velocity.x * xyForce,
+                                                           particle.velocity.y * xyForce,
+                                                           particle.velocity.z * zForce)
+                                + Krakensbane.GetFrameVelocity();
+                }
+                else
+                {
+                    pVel = pe.transform.TransformDirection(particle.velocity)
+                                + Krakensbane.GetFrameVelocity();
+                }
                 // try-finally block to ensure we set the particle velocities correctly in the end.
                 try
                 {
@@ -241,6 +300,7 @@ public class PersistentKSPParticleEmitter
                             // use variableDeltaTime since the particle are emited on Update anyway.
                             pPos -= emitterWorldVelocity * Random.value * Time.deltaTime;
                         }
+
                         if (randomInitalVelocityOffsetMaxRadius != 0.0)
                         {
                             Vector2 diskPoint = Random.insideUnitCircle * randomInitalVelocityOffsetMaxRadius;
@@ -274,6 +334,7 @@ public class PersistentKSPParticleEmitter
                                         -(x * diskPoint.x + y * diskPoint.y) * inverseNorm);
                             }
                             pVel += offset;
+
                         }
                     }
 
@@ -291,6 +352,7 @@ public class PersistentKSPParticleEmitter
                     {
                         pVel = ParticleCollision(pPos, pVel, mask);
                     }
+
                 }
                 finally
                 {
@@ -375,7 +437,17 @@ public class PersistentKSPParticleEmitter
         }
         return pVel;
     }
-
+    private Vector3 RandomConeVector(float angle)
+    {
+        //Performed in the transform's frame, default output should be 0,0,1
+        Vector3 unit = new Vector3(0,0,1);
+        //Produce a random vector within "angle" of the original vector.
+        Vector2 disk = Random.insideUnitCircle*angle;
+        unit.x = disk.x;
+        unit.y = disk.y;
+        unit = Vector3.Normalize(unit);
+        return unit;
+    }
     private void Print(string s)
     {
         MonoBehaviour.print("[SmokeScreen " + GetType().Name + "] : " + s);
