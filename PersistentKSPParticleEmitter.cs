@@ -230,28 +230,25 @@ public class PersistentKSPParticleEmitter
                 else if (!pe.useWorldSpace && particle.energy == particle.startEnergy && (randConeEmit != 0))
                 {
                     Vector3 lVel = new Vector3(0, 0, 1); ;
-                    if (randConeEmit != 0)
+                    // Adjust initial velocity to make a cone.  Only perform if pe.useWorldSpace
+                    // is true, and we have a randConeEmit set.
+                    //Produce a random vector within "angle" of the original vector.
+                    //The maximum producible cone is 90 degrees when randConeEmit is very large.
+                    //Could open up more if we used trig, but it'd be less efficient.
+                    if (coneToggle)
                     {
-                        // Adjust initial velocity to make a cone.  Only perform if pe.useWorldSpace
-                        // is true, and we have a randConeEmit set.
-                        //Produce a random vector within "angle" of the original vector.
-                        //The maximum producible cone is 90 degrees when randConeEmit is very large.
-                        //Could open up more if we used trig, but it'd be less efficient.
-                        if (coneToggle)
-                        {
-                            disk = Random.insideUnitCircle * randConeEmit;
-                            coneToggle = false;
-                        }
-                        else
-                        {
-                            disk *= -1;
-                            coneToggle = true;
-                        }
-                        lVel.x = disk.x;
-                        lVel.y = disk.y;
-                        lVel = Vector3.Normalize(lVel);
-                        lVel *= Vector3.Magnitude(particle.velocity);
+                        disk = Random.insideUnitCircle * randConeEmit;
+                        coneToggle = false;
                     }
+                    else
+                    {
+                        disk *= -1;
+                        coneToggle = true;
+                    }
+                    lVel.x = disk.x;
+                    lVel.y = disk.y;
+                    lVel = Vector3.Normalize(lVel);
+                    lVel *= Vector3.Magnitude(particle.velocity);
 
                     pVel = pe.transform.TransformDirection(lVel)
                                 + Krakensbane.GetFrameVelocity();

@@ -630,8 +630,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         initalVelocityOffsetMaxRadius = new MultiInputCurve("initalVelocityOffsetMaxRadius", true);
         sizeClampCurve = new MultiInputCurve("sizeClamp", true);
         randConeEmit = new MultiInputCurve("randConeEmit", true);
-        xyForce = new MultiInputCurve("xyForce", true);
-        zForce = new MultiInputCurve("zForce", true);
+        xyForce = new MultiInputCurve("xyForce", false);
+        zForce = new MultiInputCurve("zForce", false);
 
         ConfigNode.LoadObjectFromConfig(this, node);
         emission.Load(node);
