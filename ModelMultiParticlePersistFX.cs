@@ -349,6 +349,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         {
             PersistentKSPParticleEmitter pkpe = persistentEmitters[i];
 
+            if (pkpe.go == null)
+                continue;
+
             //pkpe.pe.useWorldSpace
             float finalScale = fixedScale * specialScale;
 
@@ -446,6 +449,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
         for (int i = 0; i < persistentEmitters.Count; i++)
         {
+            if (persistentEmitters[i].go == null)
+                continue;
+
             // using Camera.main will mess up anything multi cam but using current require adding a OnWillRenderObject() to the ksp particle emitter GameObject (? not tested)
             float currentAngle = Vector3.Angle(
                 -Camera.main.transform.forward,
