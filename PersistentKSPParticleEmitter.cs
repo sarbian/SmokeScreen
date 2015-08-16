@@ -234,13 +234,6 @@ public class PersistentKSPParticleEmitter
             
             if (particle.energy > 0)
             {
-<<<<<<< HEAD
-=======
-                Vector3d pPos = pe.useWorldSpace
-                    ? particle.position
-                    : peTransform.TransformPoint(particle.position);
->>>>>>> sarbian/master
-                
                 //Slight methodology change to avoid duplicating if statements:
                 Vector3d pVel;
                 Vector3d pPos;
@@ -275,7 +268,6 @@ public class PersistentKSPParticleEmitter
                     lVel = Vector3.Normalize(lVel);
                     lVel *= Vector3.Magnitude(particle.velocity);
 
-<<<<<<< HEAD
                     //Adjust initial position back along its position, if required.
                     //Apply a random offset if vRandOffset != 0, else apply zero.
                     float randoff = (vRandPosOffset != 0)? Random.Range(0, vRandPosOffset) : 0;
@@ -289,27 +281,15 @@ public class PersistentKSPParticleEmitter
                 else if (!pe.useWorldSpace && particle.energy != particle.startEnergy)
                 {
                     pPos = pe.transform.TransformPoint(particle.position);
-                    pVel = pe.transform.TransformDirection(particle.velocity.x * xyForce,
-=======
-                    pVel = peTransform.TransformDirection(lVel) + frameVel;
-                }
-                else if (!pe.useWorldSpace && particle.energy != particle.startEnergy)
-                {
                     pVel = peTransform.TransformDirection(particle.velocity.x * xyForce,
->>>>>>> sarbian/master
                                                            particle.velocity.y * xyForce,
                                                            particle.velocity.z * zForce)
                                 + frameVel;
                 }
                 else
                 {
-<<<<<<< HEAD
                     pPos = pe.transform.TransformPoint(particle.position);
-                    pVel = pe.transform.TransformDirection(particle.velocity)
-                                + Krakensbane.GetFrameVelocity();
-=======
                     pVel = peTransform.TransformDirection(particle.velocity) + frameVel;
->>>>>>> sarbian/master
                 }
                 
                 // try-finally block to ensure we set the particle velocities correctly in the end.
