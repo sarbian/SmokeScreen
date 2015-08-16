@@ -36,6 +36,8 @@ namespace SmokeScreen
     {
         [Persistent] public int maximumActiveParticles = 8000; // The engine won't spawn more than 10k anyway
 
+        [Persistent] public float atmDensityExp = 1; //Atmospheric multiplier for scaling growth.  Intended as a global RealPlume parameter.
+
         [Persistent] public bool globalCollideDisable = false;
 
         [Persistent] public bool globalPhysicalDisable = false;

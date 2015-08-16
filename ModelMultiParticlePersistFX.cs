@@ -56,6 +56,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     [Persistent] public float fixedScale = 1;
 
+    [Persistent] public float emissionMult = 1;
+
     [Persistent] public float sizeClamp = 50;
 
     // Initial density of the particle seen as sphere of radius size of perfect
@@ -124,6 +126,10 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     public MultiInputCurve initalVelocityOffsetMaxRadius;
 
     public MultiInputCurve randConeEmit;
+
+    public MultiInputCurve vRandPosOffset;
+
+    public MultiInputCurve vPosOffset;
 
     public MultiInputCurve xyForce;
 
@@ -334,7 +340,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         }
 
         inputs[(int)MultiInputCurve.Inputs.power] = power;
-        inputs[(int)MultiInputCurve.Inputs.density] = atmDensity;
+        inputs[(int)MultiInputCurve.Inputs.density] = (float)Math.Pow(atmDensity,SmokeScreenConfig.Instance.atmDensityExp);
         inputs[(int)MultiInputCurve.Inputs.mach] = surfaceVelMach;
         inputs[(int)MultiInputCurve.Inputs.parttemp] = partTemp;
         inputs[(int)MultiInputCurve.Inputs.externaltemp] = externalTemp;
@@ -361,7 +367,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             pkpe.pe.minSize = Mathf.Min(pkpe.minSizeBase * sizePower, finalSizeClamp);
             pkpe.pe.maxSize = Mathf.Min(pkpe.maxSizeBase * sizePower, finalSizeClamp);
 
-            float emissionPower = emission.Value(inputs);
+            float emissionPower = emission.Value(inputs) * emissionMult;
             pkpe.pe.minEmission = Mathf.FloorToInt(pkpe.minEmissionBase * emissionPower);
             pkpe.pe.maxEmission = Mathf.FloorToInt(pkpe.maxEmissionBase * emissionPower);
 
@@ -389,6 +395,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             pkpe.randConeEmit = randConeEmit.Value(inputs);
             pkpe.xyForce = xyForce.Value(inputs);
             pkpe.zForce = zForce.Value(inputs);
+
+            pkpe.vRandPosOffset = vRandPosOffset.Value(inputs);
+            pkpe.vPosOffset = vPosOffset.Value(inputs);
 
             pkpe.physical = physical && !SmokeScreenConfig.Instance.globalPhysicalDisable;
             pkpe.initialDensity = initialDensity;
@@ -636,6 +645,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         initalVelocityOffsetMaxRadius = new MultiInputCurve("initalVelocityOffsetMaxRadius", true);
         sizeClampCurve = new MultiInputCurve("sizeClamp", true);
         randConeEmit = new MultiInputCurve("randConeEmit", true);
+        vRandPosOffset = new MultiInputCurve("vRandPosOffset", true);
+        vPosOffset = new MultiInputCurve("vPosOffset", true);
         xyForce = new MultiInputCurve("xyForce", false);
         zForce = new MultiInputCurve("zForce", false);
 
@@ -657,6 +668,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         initalVelocityOffsetMaxRadius.Load(node);
         sizeClampCurve.Load(node);
         randConeEmit.Load(node);
+        vRandPosOffset.Load(node);
+        vPosOffset.Load(node);
         xyForce.Load(node);
         zForce.Load(node);
 
@@ -815,6 +828,24 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         else
         {
             Print("OnSave randConeEmit is null");
+        }
+
+        if (vRandPosOffset != null)
+        {
+            vRandPosOffset.Save(node);
+        }
+        else
+        {
+            Print("OnSave vRandPosOffset is null");
+        }
+
+        if (vPosOffset != null)
+        {
+            vPosOffset.Save(node);
+        }
+        else
+        {
+            Print("OnSave vPosOffset is null");
         }
 
         if (xyForce != null)
@@ -1026,6 +1057,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         min = Mathf.Min(min, initalVelocityOffsetMaxRadius.minInput[id]);
         min = Mathf.Min(min, sizeClampCurve.minInput[id]);
         min = Mathf.Min(min, randConeEmit.minInput[id]);
+        min = Mathf.Min(min, vRandPosOffset.minInput[id]);
+        min = Mathf.Min(min, vPosOffset.minInput[id]);
         min = Mathf.Min(min, xyForce.minInput[id]);
         min = Mathf.Min(min, zForce.minInput[id]);
 
@@ -1052,6 +1085,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         max = Mathf.Max(max, initalVelocityOffsetMaxRadius.maxInput[id]);
         max = Mathf.Max(max, sizeClampCurve.maxInput[id]);
         max = Mathf.Max(max, randConeEmit.minInput[id]);
+        max = Mathf.Max(max, vRandPosOffset.minInput[id]);
+        max = Mathf.Max(max, vPosOffset.minInput[id]);
         max = Mathf.Max(max, xyForce.minInput[id]);
         max = Mathf.Max(max, zForce.minInput[id]);
 
