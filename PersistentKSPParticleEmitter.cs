@@ -274,13 +274,13 @@ public class PersistentKSPParticleEmitter
                     lPos += Vector3.Normalize(lVel) * (randoff + vPosOffset);
 
                     //Finalize position and velocity
-                    pPos = pe.transform.TransformPoint(lPos);
-                    pVel = pe.transform.TransformDirection(lVel)
+                    pPos = peTransform.TransformPoint(lPos);
+                    pVel = peTransform.TransformDirection(lVel)
                                 + Krakensbane.GetFrameVelocity();
                 }
                 else if (!pe.useWorldSpace && particle.energy != particle.startEnergy)
                 {
-                    pPos = pe.transform.TransformPoint(particle.position);
+                    pPos = peTransform.TransformPoint(particle.position);
                     pVel = peTransform.TransformDirection(particle.velocity.x * xyForce,
                                                            particle.velocity.y * xyForce,
                                                            particle.velocity.z * zForce)
@@ -288,7 +288,7 @@ public class PersistentKSPParticleEmitter
                 }
                 else
                 {
-                    pPos = pe.transform.TransformPoint(particle.position);
+                    pPos = peTransform.TransformPoint(particle.position);
                     pVel = peTransform.TransformDirection(particle.velocity) + frameVel;
                 }
                 
