@@ -197,6 +197,13 @@ public class PersistentKSPParticleEmitter
         bool coneToggle = true;
         Vector2 disk = new Vector2 (0,0);
 
+        double logGrowConst = TimeWarp.fixedDeltaTime * logarithmicGrow * logarithmicGrowScale;
+        float linGrowConst = (float)(TimeWarp.fixedDeltaTime * linearGrow * averageSize);
+
+        Transform peTransform = pe.transform;
+
+        Vector3d frameVel = Krakensbane.GetFrameVelocity();
+
         //Step through all the particles:
         for (int j = 0; j < particles.Length; j++)
         {
@@ -215,11 +222,12 @@ public class PersistentKSPParticleEmitter
                 }
             }
 
+            
             if (particle.energy > 0)
             {
                 Vector3d pPos = pe.useWorldSpace
                     ? particle.position
-                    : pe.transform.TransformPoint(particle.position);
+                    : peTransform.TransformPoint(particle.position);
                 
                 //Slight methodology change to avoid duplicating if statements:
                 Vector3d pVel;
@@ -250,46 +258,44 @@ public class PersistentKSPParticleEmitter
                     lVel = Vector3.Normalize(lVel);
                     lVel *= Vector3.Magnitude(particle.velocity);
 
-                    pVel = pe.transform.TransformDirection(lVel)
-                                + Krakensbane.GetFrameVelocity();
+                    pVel = peTransform.TransformDirection(lVel) + frameVel;
                 }
                 else if (!pe.useWorldSpace && particle.energy != particle.startEnergy)
                 {
-                    pVel = pe.transform.TransformDirection(particle.velocity.x * xyForce,
+                    pVel = peTransform.TransformDirection(particle.velocity.x * xyForce,
                                                            particle.velocity.y * xyForce,
                                                            particle.velocity.z * zForce)
-                                + Krakensbane.GetFrameVelocity();
+                                + frameVel;
                 }
                 else
                 {
-                    pVel = pe.transform.TransformDirection(particle.velocity)
-                                + Krakensbane.GetFrameVelocity();
+                    pVel = peTransform.TransformDirection(particle.velocity) + frameVel;
                 }
+                
                 // try-finally block to ensure we set the particle velocities correctly in the end.
                 try
                 {
                     // Fixed update is not the best place to update the size but the particles array copy is
                     // slow so doing each frame would be worse
-
+                    
                     // No need to waste time doing a division if the result is 0.
                     if (logarithmicGrow != 0.0)
                     {
                         // Euler integration of the derivative of Log(logarithmicGrowth * t + 1) + 1.
                         // This might look weird.
-                        particle.size +=
-                            (float)
-                                (((TimeWarp.fixedDeltaTime * logarithmicGrow * logarithmicGrowScale)
-                                  / (1 + (particle.startEnergy - particle.energy) * logarithmicGrow)) * averageSize);
+                        
+                        particle.size += (float) ((logGrowConst / (1 + (particle.startEnergy - particle.energy) * logarithmicGrow)) * averageSize);
                     }
                     if (linearGrow != 0.0)
                     {
-                        particle.size += (float)(TimeWarp.fixedDeltaTime * linearGrow * averageSize);
+                        particle.size += linGrowConst;
                     }
-
+                    
                     particle.size = Mathf.Min(particle.size, sizeClamp);
 
                     if (particle.energy == particle.startEnergy)
                     {
+                        
                         if (pe.useWorldSpace)
                         {
                             // Uniformly scatter newly emitted particles along the emitter's trajectory in order to
@@ -354,12 +360,11 @@ public class PersistentKSPParticleEmitter
                 finally
                 {
                     particle.velocity = (pe.useWorldSpace
-                        ? (Vector3)(pVel - Krakensbane.GetFrameVelocity())
-                        : pe.transform.InverseTransformDirection(
-                            pVel - Krakensbane.GetFrameVelocity()));
+                        ? (Vector3)(pVel - frameVel)
+                        : peTransform.InverseTransformDirection(pVel - frameVel));
                     particle.position = pe.useWorldSpace
                         ? (Vector3)pPos
-                        : pe.transform.InverseTransformPoint(pPos);
+                        : peTransform.InverseTransformPoint(pPos);
                 }
             }
             particles[j] = particle;
