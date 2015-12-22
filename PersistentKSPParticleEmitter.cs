@@ -436,8 +436,8 @@ public class PersistentKSPParticleEmitter
             {
                 Vector3 unitTangent = (hit.normal.x == 0 && hit.normal.y == 0)
                     ? new Vector3(1, 0, 0)
-                    : Vector3.Exclude(hit.normal, new Vector3(0, 0, 1)).normalized;
-                Vector3 hVel = Vector3.Exclude(hit.normal, pVel);
+                    : Vector3.ProjectOnPlane(new Vector3(0, 0, 1), hit.normal).normalized;
+                 Vector3 hVel = Vector3.ProjectOnPlane(pVel, hit.normal);
                 Vector3 reflectedNormalVelocity = hVel - pVel;
                 float residualFlow = reflectedNormalVelocity.magnitude * (1 - collideRatio);
 
