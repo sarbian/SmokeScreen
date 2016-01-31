@@ -55,6 +55,12 @@ namespace SmokeScreen
             button.OnClick += e => { showUI = !showUI; };
         }
 
+        internal void Update()
+        {
+            if (GameSettings.MODIFIER_KEY.GetKey() && Input.GetKeyDown(KeyCode.P))
+                showUI = !showUI;
+        }
+
         private void OnDestroy()
         {
             if (button != null)
