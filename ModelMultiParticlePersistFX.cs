@@ -608,18 +608,17 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         }
     }
 
+    // TODO : I learned to do proper serialization since then. I might want to do it instead of that mess
     public void Backup(ConfigNode node)
     {
         node_backup = SmokeScreenUtil.WriteRootNode(node);
-
         //print("Backup node_backup is\n " + node_backup.Replace(Environment.NewLine, Environment.NewLine + "ModelMultiParticlePersistFX "));
     }
 
     public void Restore()
     {
         //print("Restore node_backup is\n " + node_backup.Replace(Environment.NewLine, Environment.NewLine + "ModelMultiParticlePersistFX "));
-        string[] text = node_backup.Split(new[] {"\n"}, StringSplitOptions.None);
-        ConfigNode node = SmokeScreenUtil.RecurseFormat(SmokeScreenUtil.PreFormatConfig(text));
+        ConfigNode node = ConfigNode.Parse(node_backup);
         OnLoad(node);
     }
 
@@ -985,8 +984,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             // Apply the text
             if (GUILayout.Button("Apply"))
             {
-                string[] text = nodeText.Split(new[] {"\n"}, StringSplitOptions.None);
-                ConfigNode node = SmokeScreenUtil.RecurseFormat(SmokeScreenUtil.PreFormatConfig(text));
+                ConfigNode node = ConfigNode.Parse(nodeText);
                 OnLoad(node);
             }
 
