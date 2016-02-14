@@ -239,7 +239,7 @@ public class PersistentKSPParticleEmitter
                 Vector3d pPos;
                 if (pe.useWorldSpace)
                 {
-                    pVel = particle.velocity;
+                    pVel = particle.velocity + frameVel;
                     pPos = particle.position;
                 }
                 else if (!pe.useWorldSpace && particle.energy == particle.startEnergy)
@@ -276,7 +276,7 @@ public class PersistentKSPParticleEmitter
                     //Finalize position and velocity
                     pPos = peTransform.TransformPoint(lPos);
                     pVel = peTransform.TransformDirection(lVel)
-                                + Krakensbane.GetFrameVelocity();
+                                + frameVel;
                 }
                 else if (!pe.useWorldSpace && particle.energy != particle.startEnergy)
                 {
