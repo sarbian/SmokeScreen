@@ -241,16 +241,6 @@ namespace SmokeScreen
                 this.Fields["softDecrease"].guiActiveEditor = false;
                 if (Events["toggle"] != null) Events["toggle"].guiActiveEditor = false;
             }
-            //print ("DBG: OnEditorAttach");
-            if (state == StartState.Editor)
-            {
-                //print("Placement is " + editorPlacementOptionsActive);
-                this.part.OnEditorAttach += OnEditorAttach;
-                this.part.OnEditorDetach += OnEditorDetach;
-                this.part.OnEditorDestroy += OnEditorDestroy;
-                OnEditorAttach();
-            }
-
         }
 
         void registerEffects()
@@ -355,7 +345,10 @@ namespace SmokeScreen
         public override void OnUpdate()
         {
             if (HighLogic.LoadedSceneIsEditor)
+            {
+                updateEditor();
                 return;
+            }
 
             // we launched
             if (lastSituation == Vessel.Situations.PRELAUNCH && vessel.situation != Vessel.Situations.PRELAUNCH)
@@ -377,26 +370,7 @@ namespace SmokeScreen
             if (performanceLimiter++ % performaceThreshold == 0)
                 setEffect(editorPlacementOptionsActive);
         }
-
-        private void OnEditorAttach()
-        {
-            RenderingManager.AddToPostDrawQueue(99, updateEditor);
-        }
-
-        private void OnEditorDetach()
-        {
-
-            RenderingManager.RemoveFromPostDrawQueue(99, updateEditor);
-            //print("OnEditorDetach");
-        }
-
-        private void OnEditorDestroy()
-        {
-            RenderingManager.RemoveFromPostDrawQueue(99, updateEditor);
-            //print("OnEditorDestroy");
-
-        }
-
+        
         public void setEffect(bool state)
         {
             foreach (KeyValuePair<int, KSPParticleEmitter> pair in effectsList)

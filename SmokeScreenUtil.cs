@@ -91,7 +91,7 @@ namespace SmokeScreen
 
             GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cube.name = LaunchPadColliderName;
-            cube.renderer.material.color = Color.green;
+            cube.GetComponent<Renderer>().material.color = Color.green;
             cube.transform.parent = parentTransform;
             cube.transform.localPosition = new Vector3(8.5f, 0, 2.3f);
             cube.transform.localRotation = parentTransform.localRotation;
@@ -99,7 +99,7 @@ namespace SmokeScreen
 
             cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cube.name = LaunchPadColliderName;
-            cube.renderer.material.color = Color.green;
+            cube.GetComponent<Renderer>().material.color = Color.green;
             cube.transform.parent = parentTransform;
             cube.transform.localPosition = new Vector3(7, 10.5f, 2.3f);
             cube.transform.localRotation = parentTransform.localRotation * Quaternion.Euler(0, 60, 0);
@@ -107,7 +107,7 @@ namespace SmokeScreen
 
             cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cube.name = LaunchPadColliderName;
-            cube.renderer.material.color = Color.green;
+            cube.GetComponent<Renderer>().material.color = Color.green;
             cube.transform.parent = parentTransform;
             cube.transform.localPosition = new Vector3(7, -10.5f, 2.3f);
             cube.transform.localRotation = parentTransform.localRotation * Quaternion.Euler(0, -60, 0);
@@ -115,7 +115,7 @@ namespace SmokeScreen
 
             cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cube.name = LaunchPadColliderName;
-            cube.renderer.material.color = Color.green;
+            cube.GetComponent<Renderer>().material.color = Color.green;
             cube.transform.parent = parentTransform;
             cube.transform.localPosition = new Vector3(-8.5f, 0, 2.3f);
             cube.transform.localRotation = parentTransform.localRotation;
@@ -123,7 +123,7 @@ namespace SmokeScreen
 
             cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cube.name = LaunchPadColliderName;
-            cube.renderer.material.color = Color.green;
+            cube.GetComponent<Renderer>().material.color = Color.green;
             cube.transform.parent = parentTransform;
             cube.transform.localPosition = new Vector3(-7, 10.5f, 2.3f);
             cube.transform.localRotation = parentTransform.localRotation * Quaternion.Euler(0, -60, 0);
@@ -131,7 +131,7 @@ namespace SmokeScreen
 
             cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cube.name = LaunchPadColliderName;
-            cube.renderer.material.color = Color.green;
+            cube.GetComponent<Renderer>().material.color = Color.green;
             cube.transform.parent = parentTransform;
             cube.transform.localPosition = new Vector3(-7, -10.5f, 2.3f);
             cube.transform.localRotation = parentTransform.localRotation * Quaternion.Euler(0, 60, 0);

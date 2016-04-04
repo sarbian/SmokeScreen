@@ -420,8 +420,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
                 {
                     float a =
                         Mathf.Clamp01(alpha.Value(inputs) *
-                                      (1 - linAlphaDecay.Value(inputs) * (t / 4) -
-                                       Mathf.Log(logAlphaDecay.Value(inputs) * (t / 4) + 1)));
+                                      (1 - linAlphaDecay.Value(inputs) * (t / 4f) -
+                                       Mathf.Log(logAlphaDecay.Value(inputs) * (t / 4f) + 1)));
                     cols[t] = new Color(a, a, a, a);
                 }
 
@@ -593,10 +593,11 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     private static void DisableCollider(GameObject go)
     {
-        if (go.collider != null)
+        var collider = go.GetComponent<Collider>();
+        if (collider != null)
         {
             //Print("Found one collider and disabled it");
-            go.collider.enabled = false;
+            collider.enabled = false;
         }
 
         for (int i = 0; i < go.transform.childCount; i++)
