@@ -451,7 +451,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     public void Update()
     {
         //Print("Update");
-        if (persistentEmitters == null)
+        if (persistentEmitters == null || Camera.main == null)
         {
             return;
         }
