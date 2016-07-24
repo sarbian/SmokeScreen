@@ -76,7 +76,7 @@ internal class PersistentEmitterManager : MonoBehaviour
             }
 
             // If the gameObject is null clean up the emitter
-            if (persistentEmittersCopy[i].go == null)
+            if (persistentEmittersCopy[i].go == null || persistentEmittersCopy[i].pe == null || persistentEmittersCopy[i].pe.pe == null)
             {
                 //Print("FixedUpdate cleaning null go");
                 Remove(persistentEmittersCopy[i]);

@@ -174,6 +174,10 @@ public class PersistentKSPParticleEmitter
     // Update the particles of the Emitter : Emit, resize, collision and physic
     public void EmitterOnUpdate(Vector3 emitterWorldVelocity)
     {
+        if (pe == null || pe.pe == null)
+            return;
+
+
         // "Default", "TransparentFX", "Local Scenery", "Ignore Raycast"
         int mask = (1 << LayerMask.NameToLayer("Default")) | (1 << LayerMask.NameToLayer("Local Scenery"));
 
