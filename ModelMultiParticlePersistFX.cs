@@ -263,7 +263,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
     public void FixedUpdate()
     {
         //Print("FixedUpdate");
-        if (persistentEmitters == null || hostPart == null || hostPart.rb == null)
+        if (persistentEmitters == null || hostPart == null || hostPart.Rigidbody == null)
         {
             return;
         }
@@ -296,7 +296,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         {
             PersistentKSPParticleEmitter persistentKspParticleEmitter = persistentKspParticleEmitters[i];
 
-            persistentKspParticleEmitter.EmitterOnUpdate(hostPart.rb.velocity + Krakensbane.GetFrameVelocity());
+            persistentKspParticleEmitter.EmitterOnUpdate(hostPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity());
         }
     }
 

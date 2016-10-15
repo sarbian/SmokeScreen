@@ -62,7 +62,7 @@ internal class PersistentEmitterManager : MonoBehaviour
                 Destroy(persistentEmitters[i].go);
             }
         }
-        persistentEmitters = new List<PersistentKSPParticleEmitter>();
+        persistentEmitters.Clear();
     }
 
     public void FixedUpdate()
