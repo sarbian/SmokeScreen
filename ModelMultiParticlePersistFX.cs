@@ -44,6 +44,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
     [Persistent] public string renderMode = "Billboard";
 
+    [Persistent] public string layer = "TransparentFX";
+    private int layerId = 1;
+
     [Persistent] public bool collide = false;
 
     [Persistent] public float collideRatio = 0.0f;
@@ -579,6 +582,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
                 emitterGameObject.transform.localPosition = localPosition;
                 emitterGameObject.transform.localRotation = Quaternion.Euler(localRotation);
+                emitterGameObject.SetLayerRecursive(layerId);
             }
         }
 
@@ -675,6 +679,8 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
 
         angle.Load("angle", node);
         distance.Load("distance", node);
+        layerId = LayerMask.NameToLayer(layer);
+
         loaded = true;
     }
 
