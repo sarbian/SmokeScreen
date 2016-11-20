@@ -586,7 +586,7 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
             }
         }
 
-        Destroy(templateKspParticleEmitter);
+        Destroy(model);
 
         list.Add(this);
 
