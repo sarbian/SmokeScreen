@@ -35,12 +35,14 @@ internal class PersistentEmitterManager : MonoBehaviour
     //public static PersistentEmitterManager Instance { get; private set; }
 
     public static List<PersistentKSPParticleEmitter> persistentEmitters;
+    public static List<PersistentKSPShurikenEmitter> persistentEmittersShuriken;
 
     private void Awake()
     {
         //PersistentEmitterManager.Instance = this;
 
         persistentEmitters = new List<PersistentKSPParticleEmitter>();
+        persistentEmittersShuriken = new List<PersistentKSPShurikenEmitter>();
 
         GameEvents.onGameSceneLoadRequested.Add(OnSceneChange);
     }
@@ -59,10 +61,24 @@ internal class PersistentEmitterManager : MonoBehaviour
         //print("[SmokeScreen PersistentEmitterManager]: Added 1 PersistentKSPParticleEmitter. Count = " + persistentEmitters.Count);
     }
 
+    public static void Add(PersistentKSPShurikenEmitter pkpe)
+    {
+        persistentEmittersShuriken.Add(pkpe);
+        FloatingOrigin.RegisterParticleSystem(pkpe.pe);
+    }
+
     public static void Remove(PersistentKSPParticleEmitter pkpe)
     {
         EffectBehaviour.RemoveParticleEmitter(pkpe.pe);
         persistentEmitters.Remove(pkpe);
+
+        //print("[SmokeScreen PersistentEmitterManager]: Removed 1 PersistentKSPParticleEmitter. Count = " + persistentEmitters.Count);
+    }
+
+    public static void Remove(PersistentKSPShurikenEmitter pkpe)
+    {
+        FloatingOrigin.UnregisterParticleSystem(pkpe.pe);
+        persistentEmittersShuriken.Remove(pkpe);
 
         //print("[SmokeScreen PersistentEmitterManager]: Removed 1 PersistentKSPParticleEmitter. Count = " + persistentEmitters.Count);
     }
@@ -82,39 +98,93 @@ internal class PersistentEmitterManager : MonoBehaviour
             }
         }
         persistentEmitters.Clear();
+
+        for (int i = 0; i < persistentEmittersShuriken.Count; i++)
+        {
+            FloatingOrigin.UnregisterParticleSystem(persistentEmittersShuriken[i].pe);
+
+            if (persistentEmittersShuriken[i].go != null && persistentEmittersShuriken[i].go.transform.parent != null)
+            {
+                Destroy(persistentEmittersShuriken[i].go);
+            }
+        }
+        persistentEmittersShuriken.Clear();
+
     }
 
     public void FixedUpdate()
     {
-        var persistentEmittersCopy = persistentEmitters.ToArray();
-        for (int i = 0; i < persistentEmittersCopy.Length; i++)
+        //var persistentEmittersCopy = persistentEmitters.ToArray();
+        for (int i = 0; i < persistentEmitters.Count; i++)
         {
-            if (persistentEmittersCopy[i].endTime > 0 && persistentEmittersCopy[i].endTime < Time.fixedTime)
+            PersistentKSPParticleEmitter em = persistentEmitters[i];
+            if (em.endTime > 0 && em.endTime < Time.fixedTime)
             {
-                persistentEmittersCopy[i].EmissionStop();
+                em.EmissionStop();
             }
 
+#warning Clearly something is not OK because detached emmiter can generate errors like :
+            //          NullReferenceException
+            //at(wrapper managed - to - native) UnityEngine.ParticleEmitter:get_particles()
+            //at PersistentKSPParticleEmitter.EmitterOnUpdate(Vector3 emitterWorldVelocity)[0x00000] in < filename unknown >:0
+            //at ModelMultiParticlePersistFX.FixedUpdate()[0x00000] in < filename unknown >:0
+
+
+            // A more robust logic need to be put in place for when the PersistentKSPParticleEmitter is detached but the KSPParticleEmitter is destroyed.
+            
+
             // If the gameObject is null clean up the emitter
-            if (persistentEmittersCopy[i].go == null || persistentEmittersCopy[i].pe == null || persistentEmittersCopy[i].pe.pe == null)
+            if (em.go == null || em.pe == null || em.pe.pe == null)
             {
                 //Print("FixedUpdate cleaning null go");
-                Remove(persistentEmittersCopy[i]);
-
+                Remove(em);
                 // Make sure
-                Destroy(persistentEmittersCopy[i].go);
+                Destroy(em.go);
+                i--;
             }
 
                 // if not and the transform parent is null ( Emitter detached from part so the particle are not removed instantly )
                 // then the emitter won't be updated by the effect FixedUpdate Call. So update it here
-            else if (persistentEmittersCopy[i].go.transform.parent == null)
+            else if (em.go.transform.parent == null)
             {
-                persistentEmittersCopy[i].EmitterOnUpdate(Vector3.zero);
+                em.EmitterOnUpdate(Vector3.zero);
 
-                if (persistentEmittersCopy[i].pe.pe.particles.Count() == 0)
+                if (em.pe.pe.particleCount == 0)
                 {
                     //Print("FixedUpdate cleaning parent go");
-                    Remove(persistentEmittersCopy[i]);
-                    Destroy(persistentEmittersCopy[i].go);
+                    Remove(em);
+                    Destroy(em.go);
+                    i--;
+                }
+            }
+        }
+
+        for (int i = 0; i < persistentEmittersShuriken.Count; i++)
+        {
+            PersistentKSPShurikenEmitter em = persistentEmittersShuriken[i];
+            if (em.endTime > 0 && em.endTime < Time.fixedTime)
+            {
+                em.EmissionStop();
+            }
+            
+            // If the gameObject is null clean up the emitter
+            if (em.go == null || em.pe == null)
+            {
+                Remove(em);
+                Destroy(em.go);
+                i--;
+            }
+            // if not and the transform parent is null ( Emitter detached from part so the particle are not removed instantly )
+            // then the emitter won't be updated by the effect FixedUpdate Call. So update it here
+            else if (em.go.transform.parent == null)
+            {
+                em.EmitterOnUpdate(Vector3.zero);
+
+                if (em.pe.particleCount == 0)
+                {
+                    Remove(em);
+                    Destroy(em.go);
+                    i--;
                 }
             }
         }

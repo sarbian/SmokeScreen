@@ -114,6 +114,18 @@ namespace SmokeScreen
                 }
             }
 
+            GUILayout.Label("Open ModelMultiShurikenPersistFX UI :");
+
+            foreach (var mmFX in ModelMultiShurikenPersistFX.List)
+            {
+                if (mmFX.hostPart != null)
+                {
+                    mmFX.showUI = GUILayout.Toggle(
+                        mmFX.showUI,
+                        mmFX.hostPart.name + " " + mmFX.effectName + " " + mmFX.instanceName + "(" + mmFX.MaxActiveParticles + ")");
+                }
+            }
+
             GUILayout.EndVertical();
 
             GUI.DragWindow();
