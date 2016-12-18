@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (c) 2014, Sébastien GAGGINI AKA Sarbian, France
+ * Copyright (c) 2017, Sébastien GAGGINI AKA Sarbian, France
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -198,7 +198,7 @@ public class PersistentKSPParticleEmitter
                 pe.EmitParticle();
             }
         }
-
+        
         // This line (and the one that does the oposite at the end) is actally the slowest part of the whole function
         Particle[] particles = pe.pe.particles;
 
