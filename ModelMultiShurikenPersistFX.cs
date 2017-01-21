@@ -289,11 +289,11 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         {
             if (Time.fixedTime <= singleTimerEnd)
             {
-                OnEvent(1);
+                OnEvent(1f);
             }
             else
             {
-                OnEvent(0);
+                OnEvent(0f);
                 singleTimerEnd = 0;
             }
         }
@@ -671,7 +671,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         list.Add(this);
 
         // 1.0 don't seems to properly do this for engines.
-        OnEvent(0);
+        OnEvent(0f);
     }
 
     private static void DisableCollider(GameObject go)
