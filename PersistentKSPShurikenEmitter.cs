@@ -74,6 +74,7 @@ public class PersistentKSPShurikenEmitter
     public Vector3 force;
     public Vector3 rndForce;
     public Color color;
+    public bool doesAnimateColor;
 
     //private float emitterVelocityScale;
     private Vector3 rndVelocity;
@@ -542,6 +543,12 @@ public class PersistentKSPShurikenEmitter
                     particle.position = pe.simulationSpace == ParticleSystemSimulationSpace.World
                         ? (Vector3)pPos
                         : peTransform.InverseTransformPoint(pPos);
+                }
+
+                if (doesAnimateColor)
+                {
+                    float lifePercentage = (particle.lifetime / particle.startLifetime);
+                    particle.startColor = pe.colorOverLifetime.color.Evaluate(lifePercentage);
                 }
             }
             particles[j] = particle;

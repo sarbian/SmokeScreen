@@ -620,10 +620,16 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
                 
                 //particleSystemRenderer.alignment = ParticleSystemRenderSpace.View;
 
+                pkpe.doesAnimateColor = childKSPParticleEmitter.doesAnimateColor;
+
                 if (childKSPParticleEmitter.doesAnimateColor)
                 {
                     ParticleSystem.ColorOverLifetimeModule col = particleSystem.colorOverLifetime;
-                    col.enabled = true;
+
+                    // This one is annoying. The old particle system animate the color over the whole % life of the particle (0 - 1)
+                    // The new one animate it over time. So converted system may not reac the full value
+                    // The animation is set up here but disabled and the color is manually set in the update of PersistentKSPShurikenEmitter with this gradient
+                    col.enabled = false;
 
                     GradientColorKey[] colorKeys = new GradientColorKey[5];
                     GradientAlphaKey[] alphaKeys = new GradientAlphaKey[5];
@@ -634,8 +640,8 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
 
                     for (int t = 0; t < colors.Length; t++)
                     {
-                        colorKeys[t] = new GradientColorKey(colors[t], t * step);
-                        alphaKeys[t] = new GradientAlphaKey(colors[t].a, t * step);
+                        colorKeys[t] = new GradientColorKey(colors[t], 1 - t * step);
+                        alphaKeys[t] = new GradientAlphaKey(colors[t].a, 1 - t * step);
                     }
 
                     Gradient gradient = new Gradient();
@@ -971,7 +977,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
 
     private static void Print(String s)
     {
-        print("[SmokeScreen ModelMultiParticlePersistFX] " + s);
+        print("[SmokeScreen ModelMultiShurikenPersistFX] " + s);
     }
 
     // TODO : move the whole UI stuff to a dedicated class - this is getting way too big
