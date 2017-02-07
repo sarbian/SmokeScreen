@@ -75,6 +75,7 @@ public class PersistentKSPShurikenEmitter
     public Vector3 rndForce;
     public Color color;
     public bool doesAnimateColor;
+    public Color[] colors;
 
     //private float emitterVelocityScale;
     private Vector3 rndVelocity;
@@ -547,8 +548,38 @@ public class PersistentKSPShurikenEmitter
 
                 if (doesAnimateColor)
                 {
-                    float lifePercentage = (particle.lifetime / particle.startLifetime);
-                    particle.startColor = pe.colorOverLifetime.color.Evaluate(lifePercentage);
+                    float lifePercentage = 1 - (particle.lifetime / particle.startLifetime);
+                    
+                    float lerp;
+                    Color a;
+                    Color b;
+                    if (lifePercentage < 0.25f)
+                    {
+                        a = colors[0];
+                        b = colors[1];
+                        lerp = lifePercentage * 4f;
+                    }
+                    else if (lifePercentage < 0.50f)
+                    {
+                        a = colors[1];
+                        b = colors[2];
+                        lerp = (lifePercentage - 0.25f) * 4f;
+                    }
+                    else if (lifePercentage < 0.75f)
+                    {
+                        a = colors[2];
+                        b = colors[3];
+                        lerp = (lifePercentage - 0.50f) * 4f;
+                    }
+                    else 
+                    {
+                        a = colors[3];
+                        b = colors[4];
+                        lerp = (lifePercentage - 0.75f) * 4f;
+                    }
+                    
+                    Color c = Color.Lerp(a, b, lerp);
+                    particle.startColor = c;
                 }
             }
             particles[j] = particle;

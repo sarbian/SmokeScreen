@@ -627,27 +627,14 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
                     ParticleSystem.ColorOverLifetimeModule col = particleSystem.colorOverLifetime;
 
                     // This one is annoying. The old particle system animate the color over the whole % life of the particle (0 - 1)
-                    // The new one animate it over time. So converted system may not reac the full value
-                    // The animation is set up here but disabled and the color is manually set in the update of PersistentKSPShurikenEmitter with this gradient
+                    // The new one animate it over time. So converted system may not reach the full value
+                    // The color is manually set in the update of PersistentKSPShurikenEmitter
                     col.enabled = false;
 
-                    GradientColorKey[] colorKeys = new GradientColorKey[5];
-                    GradientAlphaKey[] alphaKeys = new GradientAlphaKey[5];
-
                     Color[] colors = childKSPParticleEmitter.colorAnimation;
-
-                    float step = 1f / (colors.Length - 1);
-
-                    for (int t = 0; t < colors.Length; t++)
-                    {
-                        colorKeys[t] = new GradientColorKey(colors[t], 1 - t * step);
-                        alphaKeys[t] = new GradientAlphaKey(colors[t].a, 1 - t * step);
-                    }
-
-                    Gradient gradient = new Gradient();
-                    gradient.SetKeys(colorKeys, alphaKeys);
-
-                    col.color = new ParticleSystem.MinMaxGradient(gradient);
+                    
+                    pkpe.colors = new Color[colors.Length];
+                    Array.Copy(colors, pkpe.colors, colors.Length);
                 }
 
                 //try
