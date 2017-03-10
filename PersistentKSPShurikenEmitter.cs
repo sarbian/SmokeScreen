@@ -337,12 +337,10 @@ public class PersistentKSPShurikenEmitter
             }
         }
         Profiler.EndSample();
-        
+
         if (particles == null || pe.maxParticles > particles.Length)
             particles = new ParticleSystem.Particle[pe.maxParticles];
-
-        int maxParticles = pe.maxParticles;
-
+        
         // This line (and the one that does the oposite at the end) is actally the slowest part of the whole function
         Profiler.BeginSample("GetParticles");
         int numParticlesAlive = pe.GetParticles(particles);
@@ -369,13 +367,13 @@ public class PersistentKSPShurikenEmitter
         Profiler.BeginSample("Loop");
 
         //Step through all the particles:
-        for (int j = 0; j < maxParticles; j++)
+        for (int j = 0; j < numParticlesAlive; j++)
         {
             ParticleSystem.Particle particle = particles[j];
 
             //Profiler.BeginSample("Cull");
             // Check if we need to cull the number of particles
-            if (SmokeScreenConfig.particleDecimate != 0 && maxParticles > SmokeScreenConfig.decimateFloor)
+            if (SmokeScreenConfig.particleDecimate != 0 && numParticlesAlive > SmokeScreenConfig.decimateFloor)
             {
                 SmokeScreenConfig.particleCounter++;
                 if ((SmokeScreenConfig.particleDecimate > 0
