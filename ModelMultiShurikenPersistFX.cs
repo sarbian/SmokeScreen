@@ -546,6 +546,14 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
             Print("Found ProceduralSRB. Rescaling by " + specialScale.ToString("F3") + " final scale " + (fixedScale * specialScale).ToString("F3"));
         }
         
+        if (hostPart.Modules.Contains("TweakScale"))
+        {
+            PartModule pm = hostPart.Modules["TweakScale"];
+
+            specialScale = pm.Fields.GetValue<float>("currentScale");
+            Print("Found TweakScale. Rescaling by " + specialScale.ToString("F3") + " final scale " + (fixedScale * specialScale).ToString("F3"));
+        }
+
         for (int i = 0; i < transforms.Count; i++)
         {
             GameObject emitterGameObject = Instantiate(model) as GameObject;
