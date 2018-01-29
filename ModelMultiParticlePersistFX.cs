@@ -549,8 +549,9 @@ public class ModelMultiParticlePersistFX : EffectBehaviour
         if (hostPart.Modules.Contains("TweakScale"))
         {
             PartModule pm = hostPart.Modules["TweakScale"];
-
-            specialScale = pm.Fields.GetValue<float>("currentScale");
+            float tweakScale = pm.Fields.GetValue<float>("currentScale");
+            float defaultScale = pm.Fields.GetValue<float>("defaultScale");
+            specialScale = tweakScale / (defaultScale <= 0 ? 1 : defaultScale );
             Print("Found TweakScale. Rescaling by " + specialScale.ToString("F3") + " final scale " + (fixedScale * specialScale).ToString("F3"));
         }
 
