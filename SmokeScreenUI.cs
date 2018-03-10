@@ -102,18 +102,6 @@ namespace SmokeScreen
 
             GUILayout.Space(10);
 
-            GUILayout.Label("Open ModelMultiParticlePersistFX UI :");
-
-            foreach (var mmFX in ModelMultiParticlePersistFX.List)
-            {
-                if (mmFX.hostPart != null)
-                {
-                    mmFX.showUI = GUILayout.Toggle(
-                        mmFX.showUI,
-                        mmFX.hostPart.name + " " + mmFX.effectName + " " + mmFX.instanceName);
-                }
-            }
-
             GUILayout.Label("Open ModelMultiShurikenPersistFX UI :");
 
             foreach (var mmFX in ModelMultiShurikenPersistFX.List)
