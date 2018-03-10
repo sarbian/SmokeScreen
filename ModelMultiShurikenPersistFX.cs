@@ -255,10 +255,11 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
             UpdateEmitters(power);
             for (int i = 0; i < persistentEmitters.Count; i++)
             {
-                persistentEmitters[i].fixedEmit = true;
-                if (persistentEmitters[i].pe != null)
+                PersistentKSPShurikenEmitter pkse = persistentEmitters[i];
+                pkse.fixedEmit = true;
+                if (pkse.pe != null)
                 {
-                    ParticleSystem.EmissionModule em = persistentEmitters[i].pe.emission;
+                    ParticleSystem.EmissionModule em = pkse.pe.emission;
                     em.enabled = false;
                 }
             }
@@ -267,16 +268,18 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         {
             for (int j = 0; j < persistentEmitters.Count; j++)
             {
-                persistentEmitters[j].fixedEmit = false;
-                if (persistentEmitters[j].pe != null)
+                PersistentKSPShurikenEmitter pkse = persistentEmitters[j];
+                pkse.fixedEmit = false;
+                if (pkse.pe != null)
                 {
-                    ParticleSystem.EmissionModule em = persistentEmitters[j].pe.emission;
+                    ParticleSystem.EmissionModule em = pkse.pe.emission;
                     em.enabled = false;
                 }
             }
         }
     }
 
+    
     public void FixedUpdate()
     {
         //Print("FixedUpdate");
@@ -557,75 +560,28 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
 
         for (int i = 0; i < transforms.Count; i++)
         {
-            GameObject emitterGameObject = Instantiate(model) as GameObject;
+            GameObject emitterGameObject = i==0 ? model : Instantiate(model);
             KSPParticleEmitter childKSPParticleEmitter = emitterGameObject.GetComponentInChildren<KSPParticleEmitter>();
-
-            //if (shader != null)
-            //{
-            //    childKSPParticleEmitter.material.shader = shader;
-            //    childKSPParticleEmitter.pr.material.shader = shader;
-            //}
-            
 
             if (childKSPParticleEmitter != null)
             {
-                // Destroy them ?
-                childKSPParticleEmitter.pr.enabled = false;
-                childKSPParticleEmitter.pe.enabled = false;
-                childKSPParticleEmitter.enabled = false;
-
-                ParticleSystem particleSystem = childKSPParticleEmitter.gameObject.AddComponent<ParticleSystem>();
+                ParticleSystem particleSystem = childKSPParticleEmitter.gameObject.GetComponent<ParticleSystem>();
                 ParticleSystemRenderer particleSystemRenderer = childKSPParticleEmitter.gameObject.GetComponent<ParticleSystemRenderer>();
 
                 PersistentKSPShurikenEmitter pkpe = new PersistentKSPShurikenEmitter(
                     emitterGameObject,
                     particleSystem,
                     particleSystemRenderer,
-                    templateKspParticleEmitter);
+                    childKSPParticleEmitter);
 
-                particleSystem.simulationSpace = childKSPParticleEmitter.pe.useWorldSpace
-                    ? ParticleSystemSimulationSpace.World
-                    : ParticleSystemSimulationSpace.Local;
 
-                particleSystem.maxParticles = particleCountLimit;
+                // We do the emission and animation ourselves so we disable the KSP code
+                childKSPParticleEmitter.emit = false;
+                childKSPParticleEmitter.SetupProperties();
+                childKSPParticleEmitter.enabled = false;
 
-                particleSystemRenderer.material = childKSPParticleEmitter.pr.material;
-                
-                // TODO Actually copy the mode from childKSPParticleEmitter.particleRenderMode?
-                particleSystemRenderer.renderMode = ParticleSystemRenderMode.Billboard;
-
-                try
-                {
-                    childKSPParticleEmitter.particleRenderMode =
-                        (ParticleRenderMode)Enum.Parse(typeof(ParticleRenderMode), renderMode);
-                }
-                catch (ArgumentException)
-                {
-                    Print("ModelMultiParticleFXExt: " + renderMode + " is not a valid ParticleRenderMode");
-                }
-
-                switch (childKSPParticleEmitter.particleRenderMode)
-                {
-                    case ParticleRenderMode.Billboard:
-                        particleSystemRenderer.renderMode = ParticleSystemRenderMode.Billboard;
-                        break;
-                    case ParticleRenderMode.Stretch:
-                        particleSystemRenderer.renderMode = ParticleSystemRenderMode.Stretch;
-                        break;
-                    case ParticleRenderMode.SortedBillboard:
-                        particleSystemRenderer.renderMode = ParticleSystemRenderMode.Billboard;
-                        particleSystemRenderer.sortMode = ParticleSystemSortMode.Distance;
-                        break;
-                    case ParticleRenderMode.HorizontalBillboard:
-                        particleSystemRenderer.renderMode = ParticleSystemRenderMode.HorizontalBillboard;
-                        break;
-                    case ParticleRenderMode.VerticalBillboard:
-                        particleSystemRenderer.renderMode = ParticleSystemRenderMode.VerticalBillboard;
-                        break;
-                    default:
-                        particleSystemRenderer.renderMode = ParticleSystemRenderMode.Billboard;
-                        break;
-                }
+                ParticleSystem.MainModule main = particleSystem.main;
+                main.maxParticles = particleCountLimit;
                 
                 //particleSystemRenderer.alignment = ParticleSystemRenderSpace.View;
 
@@ -668,12 +624,10 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
             }
         }
 
-        Destroy(model);
-
         list.Add(this);
 
         // 1.0 don't seems to properly do this for engines.
-        OnEvent(0f);
+        //OnEvent(0f);
     }
 
     private static void DisableCollider(GameObject go)

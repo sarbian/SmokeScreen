@@ -28,6 +28,7 @@
 using System;
 using SmokeScreen;
 using UnityEngine;
+using UnityEngine.Profiling;
 using Random = UnityEngine.Random;
 
 // TODO : handle the relation with PersistentEmitterManager inside the class
@@ -272,7 +273,7 @@ public class PersistentKSPShurikenEmitter
         }
 
         Vector3 vel;
-        if (pe.simulationSpace == ParticleSystemSimulationSpace.Local)
+        if (pe.main.simulationSpace == ParticleSystemSimulationSpace.Local)
         {
             vel = localVelocity + new Vector3(
                       Random.Range(-rndVelocity.x, rndVelocity.x),
@@ -338,10 +339,9 @@ public class PersistentKSPShurikenEmitter
         }
         Profiler.EndSample();
 
-        if (particles == null || pe.maxParticles > particles.Length)
-            particles = new ParticleSystem.Particle[pe.maxParticles];
+        if (particles == null || pe.main.maxParticles > particles.Length)
+            particles = new ParticleSystem.Particle[pe.main.maxParticles];
         
-        // This line (and the one that does the oposite at the end) is actally the slowest part of the whole function
         Profiler.BeginSample("GetParticles");
         int numParticlesAlive = pe.GetParticles(particles);
         Profiler.EndSample();
@@ -362,7 +362,7 @@ public class PersistentKSPShurikenEmitter
 
         Vector3d frameVel = Krakensbane.GetFrameVelocity();
 
-        bool useWorldSpace = pe.simulationSpace == ParticleSystemSimulationSpace.World;
+        bool useWorldSpace = pe.main.simulationSpace == ParticleSystemSimulationSpace.World;
 
         Profiler.BeginSample("Loop");
 
@@ -371,7 +371,7 @@ public class PersistentKSPShurikenEmitter
         {
             ParticleSystem.Particle particle = particles[j];
 
-            //Profiler.BeginSample("Cull");
+            Profiler.BeginSample("Cull");
             // Check if we need to cull the number of particles
             if (SmokeScreenConfig.particleDecimate != 0 && numParticlesAlive > SmokeScreenConfig.decimateFloor)
             {
@@ -381,22 +381,23 @@ public class PersistentKSPShurikenEmitter
                     || (SmokeScreenConfig.particleDecimate < 0
                         && (SmokeScreenConfig.particleCounter % SmokeScreenConfig.particleDecimate) != 0))
                 {
-                    particle.lifetime = 0; // energy set to 0 remove the particle, as per Unity doc
+                    particle.remainingLifetime = 0; // energy set to 0 remove the particle, as per Unity doc
                 }
             }
-            //Profiler.EndSample();
+            Profiler.EndSample();
 
-            if (particle.lifetime > 0)
+            if (particle.remainingLifetime > 0)
             {
                 //Slight methodology change to avoid duplicating if statements:
                 Vector3d pVel;
                 Vector3d pPos;
+                Profiler.BeginSample("lifetime");
                 if (useWorldSpace)
                 {
                     pVel = particle.velocity + frameVel;
                     pPos = particle.position;
                 }
-                else if (!useWorldSpace && particle.lifetime == particle.startLifetime)
+                else if (!useWorldSpace && particle.remainingLifetime == particle.startLifetime)
                 {
                     Vector3 lVel = new Vector3(0, 0, 1);
                     Vector3 lPos = particle.position;
@@ -432,7 +433,7 @@ public class PersistentKSPShurikenEmitter
                     pVel = peTransform.TransformDirection(lVel)
                                 + frameVel;
                 }
-                else if (!useWorldSpace && particle.lifetime != particle.startLifetime)
+                else if (!useWorldSpace && particle.remainingLifetime != particle.startLifetime)
                 {
                     pPos = peTransform.TransformPoint(particle.position);
                     pVel = peTransform.TransformDirection(particle.velocity.x * xyForce,
@@ -445,14 +446,15 @@ public class PersistentKSPShurikenEmitter
                     pPos = peTransform.TransformPoint(particle.position);
                     pVel = peTransform.TransformDirection(particle.velocity) + frameVel;
                 }
-                
+                Profiler.EndSample();
                 // try-finally block to ensure we set the particle velocities correctly in the end.
                 try
                 {
                     // Fixed update is not the best place to update the size but the particles array copy is
                     // slow so doing each frame would be worse
 
-
+                    Profiler.BeginSample("Grow");
+                    
                     if (sizeGrow != 0.0)
                     {
                         particle.startSize = particle.startSize * growConst;
@@ -463,7 +465,7 @@ public class PersistentKSPShurikenEmitter
                         // Euler integration of the derivative of Log(logarithmicGrowth * t + 1) + 1.
                         // This might look weird.
                         
-                        particle.startSize += (float) ((logGrowConst / (1 + (particle.startLifetime - particle.lifetime) * logarithmicGrow)) * averageSize);
+                        particle.startSize += (float) ((logGrowConst / (1 + (particle.startLifetime - particle.remainingLifetime) * logarithmicGrow)) * averageSize);
                     }
                     if (linearGrow != 0.0)
                     {
@@ -471,8 +473,9 @@ public class PersistentKSPShurikenEmitter
                     }
                     
                     particle.startSize = Mathf.Min(particle.startSize, sizeClamp);
-
-                    if (particle.lifetime == particle.startLifetime)
+                    Profiler.EndSample();
+                    Profiler.BeginSample("Velocity");
+                    if (particle.remainingLifetime == particle.startLifetime)
                     {
                         
                         if (useWorldSpace)
@@ -519,36 +522,44 @@ public class PersistentKSPShurikenEmitter
 
                         }
                     }
-
+                    Profiler.EndSample();
+                    Profiler.BeginSample("ParticlePhysics");
                     if (physical && (j % physicsPass == activePhysicsPass))
                     {
                         // There must be a way to keep the actual initial volume,
                         // but I'm lazy.
-                        pVel = ParticlePhysics(particle.size, averageSize, pPos, pVel);
+                        pVel = ParticlePhysics(particle.startSize, averageSize, pPos, pVel);
+                        
                     }
-
-                    if (collide && particle.lifetime != particle.startLifetime
+                    Profiler.EndSample();
+                    Profiler.BeginSample("ParticleCollision");
+                    if (collide && particle.remainingLifetime != particle.startLifetime
 
                         // Do not collide newly created particles (they collide with the emitter and things look bad).
                         && (j % physicsPass == activePhysicsPass))
                     {
                         pVel = ParticleCollision(pPos, pVel, mask);
+                        
                     }
-
+                    Profiler.EndSample();
                 }
                 finally
                 {
-                    particle.velocity = pe.simulationSpace == ParticleSystemSimulationSpace.World
+                    Profiler.BeginSample("SetVelPos");
+                    particle.velocity = pe.main.simulationSpace == ParticleSystemSimulationSpace.World
                         ? (Vector3)(pVel - frameVel)
                         : peTransform.InverseTransformDirection(pVel - frameVel);
-                    particle.position = pe.simulationSpace == ParticleSystemSimulationSpace.World
+                    particle.position = pe.main.simulationSpace == ParticleSystemSimulationSpace.World
                         ? (Vector3)pPos
                         : peTransform.InverseTransformPoint(pPos);
+                    Profiler.EndSample();
                 }
 
+                
                 if (doesAnimateColor)
                 {
-                    float lifePercentage = 1 - (particle.lifetime / particle.startLifetime);
+                    Profiler.BeginSample("AnimateColor");
+                    float lifePercentage = 1 - (particle.remainingLifetime / particle.startLifetime);
                     
                     float lerp;
                     Color a;
@@ -580,9 +591,12 @@ public class PersistentKSPShurikenEmitter
                     
                     Color c = Color.Lerp(a, b, lerp);
                     particle.startColor = c;
+                    Profiler.EndSample();
                 }
             }
+            Profiler.BeginSample("SetParticle");
             particles[j] = particle;
+            Profiler.EndSample();
         }
         Profiler.EndSample();
         activePhysicsPass = ++activePhysicsPass % physicsPass;
@@ -593,6 +607,7 @@ public class PersistentKSPShurikenEmitter
         SmokeScreenConfig.activeParticles += pe.particleCount;
     }
 
+    //[MethodImpl(MethodImplOptions.AggressiveInlining)]
     private Vector3 ParticlePhysics(double radius, double initialRadius, Vector3d pPos, Vector3d pVel)
     {
         // N.B.: multiplications rather than Pow, Pow is slow,
@@ -618,6 +633,7 @@ public class PersistentKSPShurikenEmitter
         return pVel + acceleration * TimeWarp.fixedDeltaTime * physicsPass;
     }
 
+    //[MethodImpl(MethodImplOptions.AggressiveInlining)]
     private Vector3 ParticleCollision(Vector3d pPos, Vector3d pVel, int mask)
     {
         RaycastHit hit;
