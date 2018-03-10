@@ -279,7 +279,42 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         }
     }
 
-    
+    public override void OnEvent(float power, int transformIdx)
+    {
+        if (persistentEmitters == null || transformIdx >= persistentEmitters.Count)
+        {
+            return;
+        }
+
+        if (transformIdx == -1)
+        {
+            OnEvent(power);
+            return;
+        }
+        
+        PersistentKSPShurikenEmitter pkse = persistentEmitters[transformIdx];
+        if ((overRideInputs || power > 0) && activated)
+        {
+            UpdateEmitters(power);
+
+            pkse.fixedEmit = true;
+            if (pkse.pe != null)
+            {
+                ParticleSystem.EmissionModule em = pkse.pe.emission;
+                em.enabled = false;
+            }
+        }
+        else
+        {
+            pkse.fixedEmit = false;
+            if (pkse.pe != null)
+            {
+                ParticleSystem.EmissionModule em = pkse.pe.emission;
+                em.enabled = false;
+            }
+        }
+    }
+
     public void FixedUpdate()
     {
         //Print("FixedUpdate");
