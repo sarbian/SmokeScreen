@@ -651,7 +651,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
 
                 DisableCollider(pkpe.go);
 
-                emitterGameObject.transform.SetParent(transforms[i]);
+                emitterGameObject.transform.SetParent(transforms[i], false);
 
                 emitterGameObject.transform.localPosition = localPosition;
                 emitterGameObject.transform.localRotation = Quaternion.Euler(localRotation);
