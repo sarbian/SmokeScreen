@@ -90,7 +90,16 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
     // than from a cube. Units (SI): m/s.
     // TODO Sarbian : have the init auto fill this one
     [Persistent] public float randomInitalVelocityOffsetMaxRadius = 0.0f;
-    
+
+	// Enables particle decluttering
+	// This adds a vector to particle's position based on velocity, deltaTime, and which particle of the frame is it.
+	// ⁙    ⁙    ⁙    ⁙    ⁙    ⁙    ⁙
+	// ^      false
+	// SPAWNED IN ONE FRAME
+	// vvvvv  true
+	// ···································
+	[Persistent] public bool declutter = false;
+
     [Persistent]
     public int particleCountLimit = 1000;
 
@@ -467,6 +476,8 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
 
             pkpe.logarithmicGrow = logGrow.Value(inputs);
             pkpe.logarithmicGrowScale = logGrowScale.Value(inputs);
+
+			pkpe.declutter = declutter;
 
             pkpe.linearGrow = linGrow.Value(inputs);
 
