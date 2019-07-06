@@ -136,16 +136,16 @@ public class PersistentKSPShurikenEmitter
 
     public float collideRatio = 0.0f;
 
-	// Enables particle decluttering
-	// This adds a vector to particle's position based on velocity, deltaTime, and which particle of the frame is it.
-	// ⁙    ⁙    ⁙    ⁙    ⁙    ⁙    ⁙
-	// ^      false
-	// SPAWNED IN ONE FRAME
-	// vvvvv  true
-	// ···································
-	public bool declutter = false;
+    // Enables particle declustering
+    // This adds a vector to particle's position based on velocity, deltaTime, and which particle of the frame is it.
+    // ⁙    ⁙    ⁙    ⁙    ⁙    ⁙    ⁙
+    // ^      false
+    // SPAWNED IN ONE FRAME
+    // vvvvv  true
+    // ···································
+    public bool decluster = false;
 
-	private bool addedLaunchPadCollider;
+    private bool addedLaunchPadCollider;
 
     private static uint physicsPass = 4;
 
@@ -231,48 +231,48 @@ public class PersistentKSPShurikenEmitter
             em.enabled = false;
         }
     }
-	/// <summary>
-	/// Spawns a single particle
-	/// </summary>
-	/// <param name="ThisInUpdate">Which particle is it in this emitter in this frame</param>
-	/// <param name="TotalInUpdate">How many particles will you spawn</param>
+    /// <summary>
+    /// Spawns a single particle
+    /// </summary>
+    /// <param name="ThisInUpdate">Which particle is it in this emitter in this frame</param>
+    /// <param name="TotalInUpdate">How many particles will you spawn</param>
     private void Emit (int ThisInUpdate, int TotalInUpdate)
     {
         ParticleSystem.EmitParams emitParams = new ParticleSystem.EmitParams();
         
         Vector3 pos = Vector3.zero;
-		Vector3 FinalLocalVelocity = localVelocity + new Vector3 (
-			Random.Range (-rndVelocity.x, rndVelocity.x),
-			Random.Range (-rndVelocity.y, rndVelocity.y), // There's something weird going on with rotations. This Y isn't up-down, while Unity's is
-			Random.Range (-rndVelocity.z, rndVelocity.z)
-		);
+        Vector3 FinalLocalVelocity = localVelocity + new Vector3 (
+            Random.Range (-rndVelocity.x, rndVelocity.x),
+            Random.Range (-rndVelocity.y, rndVelocity.y), // There's something weird going on with rotations. This Y isn't up-down, while Unity's is
+            Random.Range (-rndVelocity.z, rndVelocity.z)
+        );
 
-		switch (shape)
+        switch (shape)
         {
             case KSPParticleEmitter.EmissionShape.Point:
-				pos = Vector3.zero;
-				break;
+                pos = Vector3.zero;
+                break;
 
             case KSPParticleEmitter.EmissionShape.Line:
-			pos = new Vector3 (Random.Range (-shape1D, shape1D) * 0.5f, 0f, 0f);
+            pos = new Vector3 (Random.Range (-shape1D, shape1D) * 0.5f, 0f, 0f);
                 break;
 
             case KSPParticleEmitter.EmissionShape.Ellipsoid:
                 pos = Random.insideUnitSphere;
                 pos.Scale(shape3D);
 
-				break;
+                break;
 
             case KSPParticleEmitter.EmissionShape.Ellipse:
                 pos = Random.insideUnitCircle;
                 pos.x = pos.x * shape2D.x;
                 pos.z = pos.y * shape2D.y;
                 pos.y = 0f;
-			break;
+            break;
 
             case KSPParticleEmitter.EmissionShape.Sphere:
                 pos = Random.insideUnitSphere * shape1D;
-			break;
+            break;
 
             case KSPParticleEmitter.EmissionShape.Cuboid:
                 pos = new Vector3(
@@ -291,7 +291,7 @@ public class PersistentKSPShurikenEmitter
                 break;
         }
 
-		Vector3 vel;
+        Vector3 vel;
         if (pe.main.simulationSpace == ParticleSystemSimulationSpace.Local)
         {
             vel = FinalLocalVelocity + go.transform.InverseTransformDirection(worldVelocity);
@@ -302,17 +302,17 @@ public class PersistentKSPShurikenEmitter
             vel = worldVelocity + go.transform.TransformDirection(FinalLocalVelocity);
         }
 
-		if (declutter) {
-			// Apply some local velocity to prevent multiple particles spawned in one frame from clumping together
-			// Simulates as if some particles already were emitted between frames, and travelled some distance
-			pos += (
-				vel * // Initial velocity
-				(Time.fixedDeltaTime) * // How much time has passed. At this point this value should be the total distance to the last particle emmited in the last update
-				((float) (ThisInUpdate) / (float) (TotalInUpdate)) // Spread them out evenly, from 0 to last particle
-			);
-		}
+        if (decluster) {
+            // Apply some local velocity to prevent multiple particles spawned in one frame from clumping together
+            // Simulates as if some particles already were emitted between frames, and travelled some distance
+            pos += (
+                vel * // Initial velocity
+                (Time.deltaTime) * TimeWarp.CurrentRate * // How much time has passed. At this point this value should be the total distance to the last particle emmited in the last update
+                ((float) (ThisInUpdate) / (float) (TotalInUpdate)) // Spread them out evenly, from 0 to last particle
+            );
+        }
 
-		float rotation = rndRotation ? Random.value * 360f : 0f;
+        float rotation = rndRotation ? Random.value * 360f : 0f;
         float angularV = angularVelocity + Random.value * rndAngularVelocity;
 
         emitParams.position = pos;
@@ -332,32 +332,31 @@ public class PersistentKSPShurikenEmitter
         if (pe == null)
             return;
 
-
         // "Default", "TransparentFX", "Local Scenery", "Ignore Raycast"
         int mask = (1 << LayerMask.NameToLayer("Default")) | (1 << LayerMask.NameToLayer("Local Scenery"));
 
-        Profiler.BeginSample("fixedEmit");
+        Profiler.BeginSample ("fixedEmit");
         // Emit particles on fixedUpdate rather than Update so that we know which particles
         // were just created and should be nudged, should not be collided, etc.
-        if (fixedEmit)
-        {
-			// double averageEmittedParticles = Random.Range (minEmission, maxEmission) * TimeWarp.fixedDeltaTime;
-			// double compensatedEmittedParticles = averageEmittedParticles + particleFraction;
-			// double emittedParticles = Math.Truncate (compensatedEmittedParticles);
-			// particleFraction = compensatedEmittedParticles - emittedParticles;
+        if (fixedEmit) {
+            // Changed every frame time measure to Time.deltaTime, because, as stated here: https://docs.unity3d.com/ScriptReference/Time-fixedDeltaTime.html
+            // Time.deltaTime is equal to fixed time, or frame time, depending on context
+            // If called from FixedUpdate, it will be equal to 0.02
+            // If called from LateUpdate, it will be equal to frame time
+            pendingParticles += Random.Range (minEmission, maxEmission) * Time.deltaTime; // * TimeWarp.CurrentRate
+            // Don't increase particle count on timewarp. KSP already has enough stuff to process
 
-			pendingParticles += Random.Range (minEmission, maxEmission) * TimeWarp.fixedDeltaTime;
+            // How many particles should be spawned this frame
+            int ParticlesThisFrame = Mathf.FloorToInt (pendingParticles);
 
-			// How many particles should be spawned this frame
-			int ParticlesThisFrame = Mathf.FloorToInt (pendingParticles);
+            // Keeps track of remaining fractions of a particle
+            pendingParticles -= ParticlesThisFrame;
 
-			pendingParticles -= ParticlesThisFrame;
-
-			for (int i = 0; i < ParticlesThisFrame; ++i) {
+            for (int i = 0; i < ParticlesThisFrame; ++i) {
                 Emit (i, ParticlesThisFrame);
             }
         }
-        Profiler.EndSample();
+        Profiler.EndSample ();
 
         if (particles == null || pe.main.maxParticles > particles.Length)
             particles = new ParticleSystem.Particle[pe.main.maxParticles];
@@ -374,9 +373,10 @@ public class PersistentKSPShurikenEmitter
         Vector2 disk = new Vector2 (0,0);
         //For startSpread
 
-        double logGrowConst = TimeWarp.fixedDeltaTime * logarithmicGrow * logarithmicGrowScale;
-        float linGrowConst = (float)(TimeWarp.fixedDeltaTime * linearGrow * averageSize);
-        float growConst = Mathf.Pow( 1 + sizeGrow, TimeWarp.fixedDeltaTime);
+        // Use Time.deltaTime, so that the time will be correct in both FixedUpdate, and LateUpdate contexts
+        double logGrowConst = Time.deltaTime * logarithmicGrow * logarithmicGrowScale;
+        float linGrowConst = (float)(Time.deltaTime * linearGrow * averageSize);
+        float growConst = Mathf.Pow( 1 + sizeGrow, Time.deltaTime);
 
         Transform peTransform = pe.transform;
 
@@ -385,6 +385,17 @@ public class PersistentKSPShurikenEmitter
         bool useWorldSpace = pe.main.simulationSpace == ParticleSystemSimulationSpace.World;
 
         Profiler.BeginSample("Loop");
+
+        // This one is multiplicative, and relied on it being run 50 times per second.
+        // Now that this may be called any number of times per second,
+        // The force multiplier needs to be raised to the power of passed time.
+        // More time per frame -> apply more of the multiplier
+        // 
+        // 'Time.deltaTime * 50' preserves original behavior.
+        // Moved out of the loop, because it doesn't change particle-to-particle.
+        // Doesn't need to be calculated multiple times
+        float xyForceMultiplier = Mathf.Pow (xyForce, Time.deltaTime * 50);
+        float zForceMultiplier = Mathf.Pow (zForce, Time.deltaTime * 50);
 
         //Step through all the particles:
         for (int j = 0; j < numParticlesAlive; j++)
@@ -456,10 +467,12 @@ public class PersistentKSPShurikenEmitter
                 else if (!useWorldSpace && particle.remainingLifetime != particle.startLifetime)
                 {
                     pPos = peTransform.TransformPoint(particle.position);
-                    pVel = peTransform.TransformDirection(particle.velocity.x * xyForce,
-                                                           particle.velocity.y * xyForce,
-                                                           particle.velocity.z * zForce)
-                                + frameVel;
+
+                    pVel = peTransform.TransformDirection (
+                        particle.velocity.x * xyForceMultiplier,
+                        particle.velocity.y * xyForceMultiplier,
+                        particle.velocity.z * zForceMultiplier
+                    ) + frameVel;
                 }
                 else
                 {
@@ -650,7 +663,7 @@ public class PersistentKSPShurikenEmitter
         acceleration += -0.5 * atmosphericDensity * pVel * pVel.magnitude * dragCoefficient * Math.PI * radius * radius / mass;
 
         // Euler is good enough for graphics.
-        return pVel + acceleration * TimeWarp.fixedDeltaTime * physicsPass;
+        return pVel + acceleration * Time.deltaTime * physicsPass * TimeWarp.CurrentRate;
     }
 
     //[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -661,7 +674,7 @@ public class PersistentKSPShurikenEmitter
             pPos,
             pVel,
             out hit,
-            (float)pVel.magnitude * TimeWarp.fixedDeltaTime * physicsPass,
+            (float)pVel.magnitude * Time.deltaTime * physicsPass * TimeWarp.CurrentRate,
             mask))
         {
             //// collidersName[hit.collider.name] = true;

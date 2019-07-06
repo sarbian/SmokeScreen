@@ -91,14 +91,26 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
     // TODO Sarbian : have the init auto fill this one
     [Persistent] public float randomInitalVelocityOffsetMaxRadius = 0.0f;
 
-	// Enables particle decluttering
+	// Enables particle declustering
 	// This adds a vector to particle's position based on velocity, deltaTime, and which particle of the frame is it.
 	// ⁙    ⁙    ⁙    ⁙    ⁙    ⁙    ⁙
 	// ^      false
 	// SPAWNED IN ONE FRAME
 	// vvvvv  true
 	// ···································
-	[Persistent] public bool declutter = false;
+	[Persistent] public bool decluster = false;
+
+    // Emits particles on LateUpdate, rather than FixedUpdate, if enabled
+    //
+    // Synchronizes particle emission with frame draws. That fixes the 'sliding away from origin' on lower FPS
+    // (I think new particles effectively skip first physics pass before drawing)
+    // Check here (Rightmost one is enabled): https://i.imgur.com/fTU2F7r.gif
+    // 
+    // Also, makes decluster more consistent. Frame draws are not synchronized with FixedUpdate.
+    // Decluster relies on Time.deltaTime to calculate distance to last emmited particle.
+    // On FixedUpdate, the Time.deltaTime is always 0.02, regardless of how much time actually passed from last frame draw.
+    // On LateUpdate,  the Time.deltaTime is the actual time from last draw, so decluster can predict last particle's position a lot better
+    [Persistent] public bool emitOnUpdate = false;
 
     [Persistent]
     public int particleCountLimit = 1000;
@@ -168,6 +180,11 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
             return lastMaxActiveParticles;
         }
     }
+
+    // Previous way of counting particle count relied on the particled being emitted/updated synchronously with each other.
+    // With 'emitOnUpdate' changes, particles can be updated either in FixedUpdate, or LateUpdate.
+    // Used to count all currently active particles, and to display current particle count of this effect in SmokeScreen UI.
+    public int CurrentlyActiveParticles => persistentEmitters.Sum (x => x.pe.particleCount);
 
     public string node_backup = string.Empty;
 
@@ -355,11 +372,13 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         //        Debug.Log(vHit2.collider.name);
         //}
 
-        for (int i = 0; i < persistentEmitters.Count; i++)
-        {
-            PersistentKSPShurikenEmitter persistentKspShurikenEmitter = persistentEmitters[i];
-            persistentKspShurikenEmitter.EmitterOnUpdate(hostPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity());
-        }
+        foreach (PersistentKSPShurikenEmitter emitter in persistentEmitters) {
+			// This is FixedUpdate, so don't emit here if particles should emit in LateUpdate
+			if (!emitOnUpdate) {
+				emitter.EmitterOnUpdate (hostPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity ());
+			}
+		}
+
     }
 
     private void UpdateInputs(float power)
@@ -477,7 +496,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
             pkpe.logarithmicGrow = logGrow.Value(inputs);
             pkpe.logarithmicGrowScale = logGrowScale.Value(inputs);
 
-			pkpe.declutter = declutter;
+			pkpe.decluster = decluster;
 
             pkpe.linearGrow = linGrow.Value(inputs);
 
@@ -547,6 +566,27 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
 
             persistentEmitters[i].pr.maxParticleSize = persistentEmitters[i].maxSizeBase * angle.Value(currentAngle) * distance.Value(currentDist);
         }
+    }
+
+    // First, I tried to emit particles on regular Update, but stuff was weird, and the plume still appeared out of sync with frame draws
+    // According to https://docs.unity3d.com/Manual/ExecutionOrder.html
+    // LateUpdate is the last thing that happens before frame draw. That makes it as synced to frame draws, as possible
+    // LateUpdate is called after physics calculations too, so the newly emitted plume particles are right where they should be.
+    public void LateUpdate () {
+		foreach (PersistentKSPShurikenEmitter emitter in persistentEmitters) {
+			if (emitter.go is null) {
+				continue;
+			}
+
+			if (emitOnUpdate) {
+				emitter.EmitterOnUpdate (hostPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity ());
+			}
+		}
+
+        // I think it's important to call this even though it doesn't count active particles
+        // because it calculates how many particles should be removed on next emit pass.
+        SmokeScreenConfig.UpdateParticlesCount ();
+
     }
 
     public override void OnInitialize()

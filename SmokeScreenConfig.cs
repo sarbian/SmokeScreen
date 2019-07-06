@@ -67,18 +67,22 @@ namespace SmokeScreen
 
         public static void UpdateParticlesCount()
         {
+            // Like stated before, because emission passes can be out of sync now, activeParticles is not a reliable
+            // way to measure how many particles are out there.
+            int currentlyActiveParticles = 0;
+            ModelMultiShurikenPersistFX.List.ForEach (x => currentlyActiveParticles += x.CurrentlyActiveParticles);
             if (lastTime < Time.fixedTime)
             {
-                if (activeParticles > Instance.maximumActiveParticles)
+                if (currentlyActiveParticles > Instance.maximumActiveParticles)
                 {
-                    int toRemove = activeParticles - Instance.maximumActiveParticles;
+                    int toRemove = currentlyActiveParticles - Instance.maximumActiveParticles;
                     if (toRemove < Instance.maximumActiveParticles)
                     {
-                        particleDecimate = activeParticles / (toRemove + 1); // positive we remove each n
+                        particleDecimate = currentlyActiveParticles / (toRemove + 1); // positive we remove each n
                     }
                     else
                     {
-                        particleDecimate = -activeParticles / Instance.maximumActiveParticles;
+                        particleDecimate = -currentlyActiveParticles / Instance.maximumActiveParticles;
 
                         // negative we keep each n
                     }

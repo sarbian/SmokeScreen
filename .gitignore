@@ -30,6 +30,7 @@
 *.sdf
 *.opensdf
 *.unsuccessfulbuild
+.vs/
 ipch/
 [Oo]bj/
 [Bb]in
