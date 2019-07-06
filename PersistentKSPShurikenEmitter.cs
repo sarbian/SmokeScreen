@@ -43,7 +43,7 @@ public class PersistentKSPShurikenEmitter
 
     public float endTime;
 
-    public double particleFraction;
+    public float pendingParticles;
 
     public readonly float minEmissionBase;
     public readonly float maxEmissionBase;
@@ -136,7 +136,16 @@ public class PersistentKSPShurikenEmitter
 
     public float collideRatio = 0.0f;
 
-    private bool addedLaunchPadCollider;
+	// Enables particle decluttering
+	// This adds a vector to particle's position based on velocity, deltaTime, and which particle of the frame is it.
+	// ⁙    ⁙    ⁙    ⁙    ⁙    ⁙    ⁙
+	// ^      false
+	// SPAWNED IN ONE FRAME
+	// vvvvv  true
+	// ···································
+	public bool declutter = false;
+
+	private bool addedLaunchPadCollider;
 
     private static uint physicsPass = 4;
 
@@ -222,38 +231,48 @@ public class PersistentKSPShurikenEmitter
             em.enabled = false;
         }
     }
-
-    private void Emit()
+	/// <summary>
+	/// Spawns a single particle
+	/// </summary>
+	/// <param name="ThisInUpdate">Which particle is it in this emitter in this frame</param>
+	/// <param name="TotalInUpdate">How many particles will you spawn</param>
+    private void Emit (int ThisInUpdate, int TotalInUpdate)
     {
         ParticleSystem.EmitParams emitParams = new ParticleSystem.EmitParams();
         
         Vector3 pos = Vector3.zero;
+		Vector3 FinalLocalVelocity = localVelocity + new Vector3 (
+			Random.Range (-rndVelocity.x, rndVelocity.x),
+			Random.Range (-rndVelocity.y, rndVelocity.y), // There's something weird going on with rotations. This Y isn't up-down, while Unity's is
+			Random.Range (-rndVelocity.z, rndVelocity.z)
+		);
 
-        switch (shape)
+		switch (shape)
         {
             case KSPParticleEmitter.EmissionShape.Point:
-                pos = Vector3.zero;
-                break;
+				pos = Vector3.zero;
+				break;
 
             case KSPParticleEmitter.EmissionShape.Line:
-                pos = new Vector3(Random.Range(-shape1D, shape1D) * 0.5f, 0f, 0f);
+			pos = new Vector3 (Random.Range (-shape1D, shape1D) * 0.5f, 0f, 0f);
                 break;
 
             case KSPParticleEmitter.EmissionShape.Ellipsoid:
                 pos = Random.insideUnitSphere;
                 pos.Scale(shape3D);
-                break;
+
+				break;
 
             case KSPParticleEmitter.EmissionShape.Ellipse:
                 pos = Random.insideUnitCircle;
                 pos.x = pos.x * shape2D.x;
                 pos.z = pos.y * shape2D.y;
                 pos.y = 0f;
-                break;
+			break;
 
             case KSPParticleEmitter.EmissionShape.Sphere:
                 pos = Random.insideUnitSphere * shape1D;
-                break;
+			break;
 
             case KSPParticleEmitter.EmissionShape.Cuboid:
                 pos = new Vector3(
@@ -272,30 +291,28 @@ public class PersistentKSPShurikenEmitter
                 break;
         }
 
-        Vector3 vel;
+		Vector3 vel;
         if (pe.main.simulationSpace == ParticleSystemSimulationSpace.Local)
         {
-            vel = localVelocity + new Vector3(
-                      Random.Range(-rndVelocity.x, rndVelocity.x),
-                      Random.Range(-rndVelocity.y, rndVelocity.y),
-                      Random.Range(-rndVelocity.z, rndVelocity.z)) +
-                  go.transform.InverseTransformDirection(worldVelocity);
+            vel = FinalLocalVelocity + go.transform.InverseTransformDirection(worldVelocity);
         }
         else
         {
             pos = go.transform.TransformPoint(pos);
-            vel = worldVelocity 
-                + go.transform.TransformDirection(
-                    localVelocity 
-                    + new Vector3(
-                        Random.Range(-rndVelocity.x, rndVelocity.x),
-                        Random.Range(-rndVelocity.y, rndVelocity.y),
-                        Random.Range(-rndVelocity.z, rndVelocity.z)
-                        )
-                    );
+            vel = worldVelocity + go.transform.TransformDirection(FinalLocalVelocity);
         }
 
-        float rotation = rndRotation ? Random.value * 360f : 0f;
+		if (declutter) {
+			// Apply some local velocity to prevent multiple particles spawned in one frame from clumping together
+			// Simulates as if some particles already were emitted between frames, and travelled some distance
+			pos += (
+				vel * // Initial velocity
+				(Time.fixedDeltaTime) * // How much time has passed. At this point this value should be the total distance to the last particle emmited in the last update
+				((float) (ThisInUpdate) / (float) (TotalInUpdate)) // Spread them out evenly, from 0 to last particle
+			);
+		}
+
+		float rotation = rndRotation ? Random.value * 360f : 0f;
         float angularV = angularVelocity + Random.value * rndAngularVelocity;
 
         emitParams.position = pos;
@@ -324,17 +341,20 @@ public class PersistentKSPShurikenEmitter
         // were just created and should be nudged, should not be collided, etc.
         if (fixedEmit)
         {
-            // Number of particles to emit:
-            double averageEmittedParticles = Random.Range(minEmission, maxEmission)
-                                             * TimeWarp.fixedDeltaTime;
-            double compensatedEmittedParticles = averageEmittedParticles + particleFraction;
-            double emittedParticles = Math.Truncate(compensatedEmittedParticles);
-            particleFraction = compensatedEmittedParticles - emittedParticles;
+			// double averageEmittedParticles = Random.Range (minEmission, maxEmission) * TimeWarp.fixedDeltaTime;
+			// double compensatedEmittedParticles = averageEmittedParticles + particleFraction;
+			// double emittedParticles = Math.Truncate (compensatedEmittedParticles);
+			// particleFraction = compensatedEmittedParticles - emittedParticles;
 
-            int emissionCount = (int)emittedParticles;
-            for (int k = 0; k < emissionCount; ++k)
-            {
-                Emit();
+			pendingParticles += Random.Range (minEmission, maxEmission) * TimeWarp.fixedDeltaTime;
+
+			// How many particles should be spawned this frame
+			int ParticlesThisFrame = Mathf.FloorToInt (pendingParticles);
+
+			pendingParticles -= ParticlesThisFrame;
+
+			for (int i = 0; i < ParticlesThisFrame; ++i) {
+                Emit (i, ParticlesThisFrame);
             }
         }
         Profiler.EndSample();
