@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2017, Sébastien GAGGINI AKA Sarbian, France
  * All rights reserved.
  *

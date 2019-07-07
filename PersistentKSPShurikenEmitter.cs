@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2017, Sébastien GAGGINI AKA Sarbian, France
  * All rights reserved.
  *
@@ -254,13 +254,12 @@ public class PersistentKSPShurikenEmitter
                 break;
 
             case KSPParticleEmitter.EmissionShape.Line:
-            pos = new Vector3 (Random.Range (-shape1D, shape1D) * 0.5f, 0f, 0f);
+                pos = new Vector3 (Random.Range (-shape1D, shape1D) * 0.5f, 0f, 0f);
                 break;
 
             case KSPParticleEmitter.EmissionShape.Ellipsoid:
                 pos = Random.insideUnitSphere;
                 pos.Scale(shape3D);
-
                 break;
 
             case KSPParticleEmitter.EmissionShape.Ellipse:
@@ -268,11 +267,11 @@ public class PersistentKSPShurikenEmitter
                 pos.x = pos.x * shape2D.x;
                 pos.z = pos.y * shape2D.y;
                 pos.y = 0f;
-            break;
+                break;
 
             case KSPParticleEmitter.EmissionShape.Sphere:
                 pos = Random.insideUnitSphere * shape1D;
-            break;
+                break;
 
             case KSPParticleEmitter.EmissionShape.Cuboid:
                 pos = new Vector3(
