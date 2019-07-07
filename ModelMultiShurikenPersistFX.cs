@@ -529,7 +529,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
             }
 
             pkpe.go.transform.localPosition = localPosition
-                                              + offsetDirection.normalized * offset.Value(inputs) * finalScale;
+                                              + offset.Value(inputs) * finalScale * offsetDirection.normalized;
 
             pkpe.go.transform.localRotation = Quaternion.Euler(localRotation);
 

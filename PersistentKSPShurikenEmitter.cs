@@ -515,7 +515,7 @@ public class PersistentKSPShurikenEmitter
                             // Uniformly scatter newly emitted particles along the emitter's trajectory in order to
                             // remove the dotted smoke effect.
                             // use variableDeltaTime since the particle are emited on Update anyway.
-                            pPos -= emitterWorldVelocity * Random.value * Time.deltaTime;
+                            pPos -= Random.value * Time.deltaTime * emitterWorldVelocity;
                         }
 
                         if (randomInitalVelocityOffsetMaxRadius != 0.0)
