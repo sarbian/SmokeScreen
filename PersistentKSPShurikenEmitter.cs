@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2017, Sébastien GAGGINI AKA Sarbian, France
  * All rights reserved.
  *
@@ -210,14 +210,14 @@ public class PersistentKSPShurikenEmitter
         PersistentEmitterManager.Add(this);
     }
 
-    // Detach the emitter from its parent gameobject and stop its emmission in timer seconds
+    // Detach the emitter from its parent gameObject and stop its emission in timer seconds
     public void Detach(float timer)
     {
         //Print("Detach");
         endTime = Time.fixedTime + timer;
         if (go != null && go.transform.parent != null)
         {
-            // detach from the parent so the emmitter(and its particle) don't get removed instantly
+            // detach from the parent so the emitter(and its particle) don't get removed instantly
             go.transform.parent = null;
         }
     }
@@ -304,7 +304,7 @@ public class PersistentKSPShurikenEmitter
 
         if (decluster) {
             // Apply some local velocity to prevent multiple particles spawned in one frame from clumping together
-            // Simulates as if some particles already were emitted between frames, and travelled some distance
+            // Simulates as if some particles already were emitted between frames, and traveled some distance
             pos += (
                 vel * // Initial velocity
                 (Time.deltaTime) * TimeWarp.CurrentRate * // How much time has passed. At this point this value should be the total distance to the last particle emmited in the last update
@@ -684,7 +684,7 @@ public class PersistentKSPShurikenEmitter
                 Vector3 unitTangent = (hit.normal.x == 0 && hit.normal.y == 0)
                     ? new Vector3(1, 0, 0)
                     : Vector3.ProjectOnPlane(new Vector3(0, 0, 1), hit.normal).normalized;
-                 Vector3 hVel = Vector3.ProjectOnPlane(pVel, hit.normal);
+                Vector3 hVel = Vector3.ProjectOnPlane(pVel, hit.normal);
                 Vector3 reflectedNormalVelocity = hVel - pVel;
                 float residualFlow = reflectedNormalVelocity.magnitude * (1 - collideRatio);
 
