@@ -98,19 +98,24 @@ namespace SmokeScreen
                 out SmokeScreenConfig.Instance.maximumActiveParticles);
             GUILayout.EndHorizontal();
 
-            GUILayout.Label("activeParticles : " + SmokeScreenConfig.activeParticles);
+            // 'SmokeScreenConfig.activeParticles' isn't accurate anymore
+            int activeParticles = 0;
+            ModelMultiShurikenPersistFX.List.ForEach (x => activeParticles += x.CurrentlyActiveParticles);
+            GUILayout.Label ($"Active particles: {activeParticles}");
 
             GUILayout.Space(10);
 
             GUILayout.Label("Open ModelMultiShurikenPersistFX UI :");
-
+            
             foreach (var mmFX in ModelMultiShurikenPersistFX.List)
             {
                 if (mmFX.hostPart != null)
                 {
+                    // Changed to string interpolation, and added current particle count alongside max particle count per plume
                     mmFX.showUI = GUILayout.Toggle(
                         mmFX.showUI,
-                        mmFX.hostPart.name + " " + mmFX.effectName + " " + mmFX.instanceName + "(" + mmFX.MaxActiveParticles + ")");
+                        $"{mmFX.hostPart.name}: {mmFX.effectName}, {mmFX.instanceName}: {mmFX.CurrentlyActiveParticles} ({mmFX.MaxActiveParticles} max)"
+                    );
                 }
             }
 
