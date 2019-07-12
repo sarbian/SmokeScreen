@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2017, Sébastien GAGGINI AKA Sarbian, France
  * All rights reserved.
  *
@@ -97,7 +97,40 @@ internal class PersistentEmitterManager : MonoBehaviour
             }
             // if not and the transform parent is null ( Emitter detached from part so the particle are not removed instantly )
             // then the emitter won't be updated by the effect FixedUpdate Call. So update it here
-            else if (em.go.transform.parent == null)
+            else if (!em.emitOnUpdate && em.go.transform.parent == null)
+            {
+                em.EmitterOnUpdate(Vector3.zero);
+
+                if (em.pe.particleCount == 0)
+                {
+                    Remove(em);
+                    Destroy(em.go);
+                    i--;
+                }
+            }
+        }
+    }
+
+    private void LateUpdate()
+    {
+        for (int i = 0; i < persistentEmittersShuriken.Count; i++)
+        {
+            PersistentKSPShurikenEmitter em = persistentEmittersShuriken[i];
+            if (em.endTime > 0 && em.endTime < Time.fixedTime)
+            {
+                em.EmissionStop();
+            }
+
+            // If the gameObject is null clean up the emitter
+            if (em.go == null || em.pe == null)
+            {
+                Remove(em);
+                Destroy(em.go);
+                i--;
+            }
+            // if not and the transform parent is null ( Emitter detached from part so the particle are not removed instantly )
+            // then the emitter won't be updated by the effect FixedUpdate Call. So update it here
+            else if (em.emitOnUpdate && em.go.transform.parent == null)
             {
                 em.EmitterOnUpdate(Vector3.zero);
 
