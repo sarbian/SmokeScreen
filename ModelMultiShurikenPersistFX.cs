@@ -111,6 +111,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
     // On FixedUpdate, the Time.deltaTime is always 0.02, regardless of how much time actually passed from last frame draw.
     // On LateUpdate,  the Time.deltaTime is the actual time from last draw, so decluster can predict last particle's position a lot better
     [Persistent] public bool emitOnUpdate = false;
+    private bool EmitOnUpdate => emitOnUpdate || SmokeScreenConfig.Instance.forceEmitOnUpdate;
 
     [Persistent]
     public int particleCountLimit = 1000;
@@ -282,7 +283,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
             for (int i = 0; i < persistentEmitters.Count; i++)
             {
                 PersistentKSPShurikenEmitter pkse = persistentEmitters[i];
-                pkse.fixedEmit = true;
+                pkse.emitting = true;
                 if (pkse.pe != null)
                 {
                     ParticleSystem.EmissionModule em = pkse.pe.emission;
@@ -295,7 +296,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
             for (int j = 0; j < persistentEmitters.Count; j++)
             {
                 PersistentKSPShurikenEmitter pkse = persistentEmitters[j];
-                pkse.fixedEmit = false;
+                pkse.emitting = false;
                 if (pkse.pe != null)
                 {
                     ParticleSystem.EmissionModule em = pkse.pe.emission;
@@ -323,7 +324,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         {
             UpdateEmitters(power);
 
-            pkse.fixedEmit = true;
+            pkse.emitting = true;
             if (pkse.pe != null)
             {
                 ParticleSystem.EmissionModule em = pkse.pe.emission;
@@ -332,7 +333,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         }
         else
         {
-            pkse.fixedEmit = false;
+            pkse.emitting = false;
             if (pkse.pe != null)
             {
                 ParticleSystem.EmissionModule em = pkse.pe.emission;
@@ -376,7 +377,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         {
             PersistentKSPShurikenEmitter emitter = persistentEmitters[i];
             // This is FixedUpdate, so don't emit here if particles should emit in LateUpdate
-            if (!emitOnUpdate)
+            if (!EmitOnUpdate)
             {
                 emitter.EmitterOnUpdate(hostPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity());
             }
@@ -500,6 +501,8 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
 
             pkpe.decluster = decluster;
 
+            pkpe.emitOnUpdate = EmitOnUpdate;
+
             pkpe.linearGrow = linGrow.Value(inputs);
 
             if (alpha.Value(inputs) != 1 || linAlphaDecay.Value(inputs) != 0 || logAlphaDecay.Value(inputs) != 0)
@@ -584,12 +587,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         for (int i = 0; i < persistentEmitters.Count; i++)
         {
             PersistentKSPShurikenEmitter emitter = persistentEmitters[i];
-            if (emitter.go is null)
-            {
-                continue;
-            }
-
-            if (emitOnUpdate)
+            if (EmitOnUpdate)
             {
                 emitter.EmitterOnUpdate(hostPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity());
             }

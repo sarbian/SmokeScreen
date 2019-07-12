@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2017, Sébastien GAGGINI AKA Sarbian, France
  * All rights reserved.
  *
@@ -26,7 +26,6 @@
  */
 
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 [KSPAddon(KSPAddon.Startup.EveryScene, false)]

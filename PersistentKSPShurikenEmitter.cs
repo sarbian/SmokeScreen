@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2017, Sébastien GAGGINI AKA Sarbian, France
  * All rights reserved.
  *
@@ -39,7 +39,9 @@ public class PersistentKSPShurikenEmitter
     public ParticleSystem pe;
     public ParticleSystemRenderer pr;
 
-    public bool fixedEmit;
+    public bool emitting;
+    
+    public bool emitOnUpdate;
 
     public float endTime;
 
@@ -144,6 +146,7 @@ public class PersistentKSPShurikenEmitter
     // vvvvv  true
     // ···································
     public bool decluster = false;
+    private bool Decluster => decluster || SmokeScreenConfig.Instance.forceDecluster;
 
     private bool addedLaunchPadCollider;
 
@@ -224,7 +227,7 @@ public class PersistentKSPShurikenEmitter
 
     public void EmissionStop()
     {
-        fixedEmit = false;
+        emitting = false;
         if (pe != null)
         {
             ParticleSystem.EmissionModule em = pe.emission;
@@ -301,7 +304,7 @@ public class PersistentKSPShurikenEmitter
             vel = worldVelocity + go.transform.TransformDirection(FinalLocalVelocity);
         }
 
-        if (decluster) {
+        if (Decluster) {
             // Apply some local velocity to prevent multiple particles spawned in one frame from clumping together
             // Simulates as if some particles already were emitted between frames, and traveled some distance
             pos += (
@@ -335,9 +338,7 @@ public class PersistentKSPShurikenEmitter
         int mask = (1 << LayerMask.NameToLayer("Default")) | (1 << LayerMask.NameToLayer("Local Scenery"));
 
         Profiler.BeginSample ("fixedEmit");
-        // Emit particles on fixedUpdate rather than Update so that we know which particles
-        // were just created and should be nudged, should not be collided, etc.
-        if (fixedEmit) {
+        if (emitting) {
             // Changed every frame time measure to Time.deltaTime, because, as stated here: https://docs.unity3d.com/ScriptReference/Time-fixedDeltaTime.html
             // Time.deltaTime is equal to fixed time, or frame time, depending on context
             // If called from FixedUpdate, it will be equal to 0.02

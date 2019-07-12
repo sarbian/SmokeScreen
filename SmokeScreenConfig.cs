@@ -41,6 +41,10 @@ namespace SmokeScreen
         [Persistent] public bool globalCollideDisable = false;
 
         [Persistent] public bool globalPhysicalDisable = false;
+        
+        [Persistent] public bool forceEmitOnUpdate = false;
+
+        [Persistent] public bool forceDecluster = false;
 
         public static int activeParticles = 0;
 
@@ -106,6 +110,7 @@ namespace SmokeScreen
                 print("SmokeScreenConfig loading config");
                 ConfigNode node = config[0].config;
                 ConfigNode.LoadObjectFromConfig(this, node);
+                maximumActiveParticles = Mathf.Max(1, maximumActiveParticles);
             }
             else
             {

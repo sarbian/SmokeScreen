@@ -86,6 +86,12 @@ namespace SmokeScreen
             SmokeScreenConfig.Instance.globalPhysicalDisable =
                 GUILayout.Toggle(SmokeScreenConfig.Instance.globalPhysicalDisable, "Globally disable Physical");
 
+            SmokeScreenConfig.Instance.forceEmitOnUpdate =
+                GUILayout.Toggle(SmokeScreenConfig.Instance.forceEmitOnUpdate, "Globally force emitOnUpdate");
+
+            SmokeScreenConfig.Instance.forceDecluster =
+                GUILayout.Toggle(SmokeScreenConfig.Instance.forceDecluster, "Globally force decluster");
+
             GUILayout.Space(10);
 
             GUILayout.BeginHorizontal();
