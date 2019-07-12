@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2017, Sébastien GAGGINI AKA Sarbian, France
  * All rights reserved.
  *
@@ -576,6 +576,11 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
     // LateUpdate is called after physics calculations too, so the newly emitted plume particles are right where they should be.
     public void LateUpdate ()
     {
+        if (persistentEmitters == null || hostPart == null || hostPart.Rigidbody == null)
+        {
+            return;
+        }
+
         for (int i = 0; i < persistentEmitters.Count; i++)
         {
             PersistentKSPShurikenEmitter emitter = persistentEmitters[i];
