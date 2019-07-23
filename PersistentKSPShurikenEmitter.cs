@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2017, Sébastien GAGGINI AKA Sarbian, France
  * All rights reserved.
  *
@@ -329,7 +329,7 @@ public class PersistentKSPShurikenEmitter
     }
     
     // Update the particles of the Emitter : Emit, resize, collision and physic
-    public void EmitterOnUpdate(Vector3 emitterWorldVelocity)
+    public void EmitterOnUpdate(Vector3d emitterWorldVelocity)
     {
         if (pe == null)
             return;

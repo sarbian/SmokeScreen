@@ -129,7 +129,7 @@ internal class PersistentEmitterManager : MonoBehaviour
                 i--;
             }
             // if not and the transform parent is null ( Emitter detached from part so the particle are not removed instantly )
-            // then the emitter won't be updated by the effect FixedUpdate Call. So update it here
+            // then the emitter won't be updated by the effect Update Call. So update it here
             else if (em.emitOnUpdate && em.go.transform.parent == null)
             {
                 em.EmitterOnUpdate(Vector3.zero);
