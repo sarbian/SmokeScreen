@@ -185,7 +185,20 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
     // Previous way of counting particle count relied on the particles being emitted/updated synchronously with each other.
     // With 'emitOnUpdate' changes, particles can be updated either in FixedUpdate, or LateUpdate.
     // Used to count all currently active particles, and to display current particle count of this effect in SmokeScreen UI.
-    public int CurrentlyActiveParticles => persistentEmitters.Sum (x => x.pe.particleCount);
+    public int CurrentlyActiveParticles
+    {
+        get
+        {
+            int count = 0;
+            for (int i = 0; i < persistentEmitters.Count; i++)
+            {
+                var emitter = persistentEmitters[i];
+                if (emitter != null && emitter.pe != null)
+                    count += emitter.pe.particleCount;
+            }
+            return count;
+        }
+    }
 
     public string node_backup = string.Empty;
 
