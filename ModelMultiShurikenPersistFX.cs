@@ -148,6 +148,12 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
     public MultiInputCurve logAlphaDecay;
 
     public MultiInputCurve linAlphaDecay;
+    
+    public MultiInputCurve saturationMult;
+
+    public MultiInputCurve brightnessMult;
+
+    public MultiInputCurve alphaMult;
 
     public MultiInputCurve initalVelocityOffsetMaxRadius;
 
@@ -541,6 +547,10 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
                 col.color = new ParticleSystem.MinMaxGradient(gradient);
             }
 
+            pkpe.saturationMult = saturationMult.Value(inputs);
+            pkpe.brightnessMult = brightnessMult.Value(inputs);
+            pkpe.alphaMult = alphaMult.Value(inputs);
+
             pkpe.go.transform.localPosition = localPosition
                                               + offset.Value(inputs) * finalScale * offsetDirection.normalized;
 
@@ -786,6 +796,9 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         alpha = new MultiInputCurve("alpha");
         linAlphaDecay = new MultiInputCurve("linAlphaDecay", true);
         logAlphaDecay = new MultiInputCurve("logAlphaDecay", true);
+        saturationMult = new MultiInputCurve("saturationMult");
+        brightnessMult = new MultiInputCurve("brightnessMult");
+        alphaMult = new MultiInputCurve("alphaMult");
         initalVelocityOffsetMaxRadius = new MultiInputCurve("initalVelocityOffsetMaxRadius", true);
         sizeClampCurve = new MultiInputCurve("sizeClamp", true);
         randConeEmit = new MultiInputCurve("randConeEmit", true);
@@ -810,6 +823,9 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         linAlphaDecay.Load(node);
         logAlphaDecay.Load(node);
         initalVelocityOffsetMaxRadius.Load(node);
+        saturationMult.Load(node);
+        brightnessMult.Load(node);
+        alphaMult.Load(node);
         sizeClampCurve.Load(node);
         randConeEmit.Load(node);
         vRandPosOffset.Load(node);
@@ -957,6 +973,33 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         {
             Print("OnSave initalVelocityOffsetMaxRadius is null");
         }
+
+        if (saturationMult != null)
+        {
+            saturationMult.Save(node);
+        }
+        else
+        {
+            Print("OnSave saturationMult is null");
+        }
+        if (brightnessMult != null)
+        {
+            brightnessMult.Save(node);
+        }
+        else
+        {
+            Print("OnSave brightnessMult is null");
+        }
+
+        if (alphaMult != null)
+        {
+            alphaMult.Save(node);
+        }
+        else
+        {
+            Print("OnSave alphaMult is null");
+        }
+
 
         if (sizeClampCurve != null)
         {
@@ -1200,6 +1243,9 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         min = Mathf.Min(min, linAlphaDecay.minInput[id]);
         min = Mathf.Min(min, logAlphaDecay.minInput[id]);
         min = Mathf.Min(min, initalVelocityOffsetMaxRadius.minInput[id]);
+        min = Mathf.Min(min, saturationMult.minInput[id]);
+        min = Mathf.Min(min, brightnessMult.minInput[id]);
+        min = Mathf.Min(min, alphaMult.minInput[id]);
         min = Mathf.Min(min, sizeClampCurve.minInput[id]);
         min = Mathf.Min(min, randConeEmit.minInput[id]);
         min = Mathf.Min(min, vRandPosOffset.minInput[id]);
@@ -1228,6 +1274,9 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         max = Mathf.Max(max, linAlphaDecay.maxInput[id]);
         max = Mathf.Max(max, logAlphaDecay.maxInput[id]);
         max = Mathf.Max(max, initalVelocityOffsetMaxRadius.maxInput[id]);
+        max = Mathf.Max(max, saturationMult.maxInput[id]);
+        max = Mathf.Max(max, brightnessMult.maxInput[id]);
+        max = Mathf.Max(max, alphaMult.maxInput[id]);
         max = Mathf.Max(max, sizeClampCurve.maxInput[id]);
         max = Mathf.Max(max, randConeEmit.minInput[id]);
         max = Mathf.Max(max, vRandPosOffset.minInput[id]);

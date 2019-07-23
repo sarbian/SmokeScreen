@@ -77,6 +77,10 @@ public class PersistentKSPShurikenEmitter
     public Vector3 force;
     public Vector3 rndForce;
     public Color color;
+    public float saturationMult;
+    public float brightnessMult;
+    public float alphaMult;
+
     public bool doesAnimateColor;
     public Color[] colors;
 
@@ -209,6 +213,9 @@ public class PersistentKSPShurikenEmitter
         fol.z = new ParticleSystem.MinMaxCurve(forceBase.z, forceBase.z + rndForce.z);
 
         color = templateKspParticleEmitter.color;
+        saturationMult = 1;
+        brightnessMult = 1;
+        alphaMult = 1;
         
         PersistentEmitterManager.Add(this);
     }
@@ -323,6 +330,12 @@ public class PersistentKSPShurikenEmitter
         emitParams.angularVelocity = angularV;
         emitParams.startLifetime = Random.Range(minEnergy, maxEnergy);
         emitParams.startColor = color;
+
+        Color.RGBToHSV(color, out float h, out float s, out float v);
+        Color finalColor = Color.HSVToRGB(h, s * saturationMult, v * brightnessMult);
+        finalColor.a = color.a * alphaMult;
+
+        emitParams.startColor = finalColor;
         emitParams.startSize = Random.Range(minSize, maxSize);
         
         pe.Emit(emitParams, 1);
