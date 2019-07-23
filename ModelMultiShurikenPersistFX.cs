@@ -218,10 +218,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
 
     private string lastRenderMode = "";
 
-    public static List<ModelMultiShurikenPersistFX> List
-    {
-        get { return list; }
-    }
+    public static List<ModelMultiShurikenPersistFX> List => list;
 
     public bool overRideInputs = false;
 
@@ -597,6 +594,10 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
             return;
         }
 
+        // I think it's important to call this even though it doesn't count active particles
+        // because it calculates how many particles should be removed on next emit pass.
+        SmokeScreenConfig.UpdateParticlesCount ();
+
         for (int i = 0; i < persistentEmitters.Count; i++)
         {
             PersistentKSPShurikenEmitter emitter = persistentEmitters[i];
@@ -605,10 +606,6 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
                 emitter.EmitterOnUpdate(hostPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity());
             }
         }
-
-        // I think it's important to call this even though it doesn't count active particles
-        // because it calculates how many particles should be removed on next emit pass.
-        SmokeScreenConfig.UpdateParticlesCount ();
     }
 
     public override void OnInitialize()
