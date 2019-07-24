@@ -329,7 +329,6 @@ public class PersistentKSPShurikenEmitter
         emitParams.rotation = rotation;
         emitParams.angularVelocity = angularV;
         emitParams.startLifetime = Random.Range(minEnergy, maxEnergy);
-        emitParams.startColor = color;
 
         Color.RGBToHSV(color, out float h, out float s, out float v);
         Color finalColor = Color.HSVToRGB(h, s * saturationMult, v * brightnessMult);
@@ -636,7 +635,11 @@ public class PersistentKSPShurikenEmitter
                     }
                     
                     Color c = Color.Lerp(a, b, lerp);
-                    particle.startColor = c;
+                    Color.RGBToHSV(c, out float h, out float s, out float v);
+                    Color finalColor = Color.HSVToRGB(h, s * saturationMult, v * brightnessMult);
+                    finalColor.a = c.a * alphaMult;
+
+                    particle.startColor = finalColor;
                     Profiler.EndSample();
                 }
             }
