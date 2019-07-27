@@ -337,6 +337,33 @@ public class PersistentKSPShurikenEmitter
         emitParams.startColor = finalColor;
         emitParams.startSize = Random.Range(minSize, maxSize);
         
+        // Preapply some size, if particles were spread out by decluster
+        // Don't apply this to the first particle in frame, because it's already correct
+        if (Decluster && ThisInUpdate != 0) {
+            // (Theoretically)
+            // How long was this particle alive, before it got spawned
+            float simulatedLifetime = Time.deltaTime * ThisInUpdate / TotalInUpdate;
+
+            double averageSize = 0.5 * (minSize + maxSize);
+            double logGrowConst = simulatedLifetime * logarithmicGrow * logarithmicGrowScale;
+            float linGrowConst = (float) (simulatedLifetime * linearGrow * averageSize);
+            float growConst = Mathf.Pow (1 + sizeGrow, simulatedLifetime);
+
+            if (sizeGrow != 0.0) {
+                emitParams.startSize = emitParams.startSize * growConst;
+            }
+
+            if (logarithmicGrow != 0.0) {
+                emitParams.startSize += (float) ((logGrowConst / (1 + simulatedLifetime * logarithmicGrow)) * averageSize);
+            }
+
+            if (linearGrow != 0.0) {
+                emitParams.startSize += linGrowConst;
+            }
+
+            emitParams.startSize = Mathf.Min (emitParams.startSize, sizeClamp);
+        }
+
         pe.Emit(emitParams, 1);
     }
     
@@ -350,6 +377,8 @@ public class PersistentKSPShurikenEmitter
         int mask = (1 << LayerMask.NameToLayer("Default")) | (1 << LayerMask.NameToLayer("Local Scenery"));
 
         Profiler.BeginSample ("fixedEmit");
+        // Moved to outer scope to use later. Will stay 0 if it's not emitting.
+        int ParticlesThisFrame = 0;
         if (emitting) {
             // Changed every frame time measure to Time.deltaTime, because, as stated here: https://docs.unity3d.com/ScriptReference/Time-fixedDeltaTime.html
             // Time.deltaTime is equal to fixed time, or frame time, depending on context
@@ -359,7 +388,7 @@ public class PersistentKSPShurikenEmitter
             // Don't increase particle count on timewarp. KSP already has enough stuff to process
 
             // How many particles should be spawned this frame
-            int ParticlesThisFrame = Mathf.FloorToInt (pendingParticles);
+            ParticlesThisFrame = Mathf.FloorToInt (pendingParticles);
 
             // Keeps track of remaining fractions of a particle
             pendingParticles -= ParticlesThisFrame;
@@ -376,6 +405,16 @@ public class PersistentKSPShurikenEmitter
         Profiler.BeginSample("GetParticles");
         int numParticlesAlive = pe.GetParticles(particles);
         Profiler.EndSample();
+
+        if (Decluster) {
+            // Preremove remaining lifetime from new particles, if this plume uses Decluster
+            // OLD: https://pastebin.com/K2UiTt09
+            // NEW: https://pastebin.com/KJgkjifs
+            // Skip the first particle, it would subtract 0 anyway.
+            for (int i = 1; i < ParticlesThisFrame; ++i) {
+                particles[numParticlesAlive - i - 1].remainingLifetime -= (Time.deltaTime * i / ParticlesThisFrame);
+            }
+        }
 
         double averageSize = 0.5 * (minSize + maxSize);
         
@@ -412,6 +451,7 @@ public class PersistentKSPShurikenEmitter
         //Step through all the particles:
         for (int j = 0; j < numParticlesAlive; j++)
         {
+            bool spawnedThisFrame = j >= numParticlesAlive - ParticlesThisFrame;
             ParticleSystem.Particle particle = particles[j];
 
             Profiler.BeginSample("Cull");
@@ -440,7 +480,7 @@ public class PersistentKSPShurikenEmitter
                     pVel = particle.velocity + frameVel;
                     pPos = particle.position;
                 }
-                else if (!useWorldSpace && particle.remainingLifetime == particle.startLifetime)
+                else if (!useWorldSpace && spawnedThisFrame)
                 {
                     Vector3 lVel = new Vector3(0, 0, 1);
                     Vector3 lPos = particle.position;
@@ -476,7 +516,7 @@ public class PersistentKSPShurikenEmitter
                     pVel = peTransform.TransformDirection(lVel)
                                 + frameVel;
                 }
-                else if (!useWorldSpace && particle.remainingLifetime != particle.startLifetime)
+                else if (!useWorldSpace && !spawnedThisFrame)
                 {
                     pPos = peTransform.TransformPoint(particle.position);
 
@@ -520,7 +560,7 @@ public class PersistentKSPShurikenEmitter
                     particle.startSize = Mathf.Min(particle.startSize, sizeClamp);
                     Profiler.EndSample();
                     Profiler.BeginSample("Velocity");
-                    if (particle.remainingLifetime == particle.startLifetime)
+                    if (spawnedThisFrame)
                     {
                         
                         if (useWorldSpace)
@@ -578,7 +618,7 @@ public class PersistentKSPShurikenEmitter
                     }
                     Profiler.EndSample();
                     Profiler.BeginSample("ParticleCollision");
-                    if (collide && particle.remainingLifetime != particle.startLifetime
+                    if (collide && !spawnedThisFrame
 
                         // Do not collide newly created particles (they collide with the emitter and things look bad).
                         && (j % physicsPass == activePhysicsPass))
