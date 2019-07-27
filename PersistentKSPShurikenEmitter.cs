@@ -39,7 +39,9 @@ public class PersistentKSPShurikenEmitter
     public ParticleSystem pe;
     public ParticleSystemRenderer pr;
 
-    public bool fixedEmit;
+    public bool emitting;
+    
+    public bool emitOnUpdate;
 
     public float endTime;
 
@@ -75,6 +77,10 @@ public class PersistentKSPShurikenEmitter
     public Vector3 force;
     public Vector3 rndForce;
     public Color color;
+    public float saturationMult;
+    public float brightnessMult;
+    public float alphaMult;
+
     public bool doesAnimateColor;
     public Color[] colors;
 
@@ -144,6 +150,7 @@ public class PersistentKSPShurikenEmitter
     // vvvvv  true
     // ···································
     public bool decluster = false;
+    private bool Decluster => decluster || SmokeScreenConfig.Instance.forceDecluster;
 
     private bool addedLaunchPadCollider;
 
@@ -206,25 +213,28 @@ public class PersistentKSPShurikenEmitter
         fol.z = new ParticleSystem.MinMaxCurve(forceBase.z, forceBase.z + rndForce.z);
 
         color = templateKspParticleEmitter.color;
+        saturationMult = 1;
+        brightnessMult = 1;
+        alphaMult = 1;
         
         PersistentEmitterManager.Add(this);
     }
 
-    // Detach the emitter from its parent gameobject and stop its emmission in timer seconds
+    // Detach the emitter from its parent gameObject and stop its emission in timer seconds
     public void Detach(float timer)
     {
         //Print("Detach");
         endTime = Time.fixedTime + timer;
         if (go != null && go.transform.parent != null)
         {
-            // detach from the parent so the emmitter(and its particle) don't get removed instantly
+            // detach from the parent so the emitter(and its particle) don't get removed instantly
             go.transform.parent = null;
         }
     }
 
     public void EmissionStop()
     {
-        fixedEmit = false;
+        emitting = false;
         if (pe != null)
         {
             ParticleSystem.EmissionModule em = pe.emission;
@@ -254,13 +264,12 @@ public class PersistentKSPShurikenEmitter
                 break;
 
             case KSPParticleEmitter.EmissionShape.Line:
-            pos = new Vector3 (Random.Range (-shape1D, shape1D) * 0.5f, 0f, 0f);
+                pos = new Vector3 (Random.Range (-shape1D, shape1D) * 0.5f, 0f, 0f);
                 break;
 
             case KSPParticleEmitter.EmissionShape.Ellipsoid:
                 pos = Random.insideUnitSphere;
                 pos.Scale(shape3D);
-
                 break;
 
             case KSPParticleEmitter.EmissionShape.Ellipse:
@@ -268,11 +277,11 @@ public class PersistentKSPShurikenEmitter
                 pos.x = pos.x * shape2D.x;
                 pos.z = pos.y * shape2D.y;
                 pos.y = 0f;
-            break;
+                break;
 
             case KSPParticleEmitter.EmissionShape.Sphere:
                 pos = Random.insideUnitSphere * shape1D;
-            break;
+                break;
 
             case KSPParticleEmitter.EmissionShape.Cuboid:
                 pos = new Vector3(
@@ -302,13 +311,13 @@ public class PersistentKSPShurikenEmitter
             vel = worldVelocity + go.transform.TransformDirection(FinalLocalVelocity);
         }
 
-        if (decluster) {
+        if (Decluster) {
             // Apply some local velocity to prevent multiple particles spawned in one frame from clumping together
-            // Simulates as if some particles already were emitted between frames, and travelled some distance
+            // Simulates as if some particles already were emitted between frames, and traveled some distance
             pos += (
-                vel * // Initial velocity
-                (Time.deltaTime) * TimeWarp.CurrentRate * // How much time has passed. At this point this value should be the total distance to the last particle emmited in the last update
-                ((float) (ThisInUpdate) / (float) (TotalInUpdate)) // Spread them out evenly, from 0 to last particle
+                (Time.deltaTime) * TimeWarp.CurrentRate * // How much time has passed. At this point this value should be the total distance to the last particle emitted in the last update
+                ((float) (ThisInUpdate) / (float) (TotalInUpdate)) * // Spread them out evenly, from 0 to last particle
+                vel // Initial velocity
             );
         }
 
@@ -320,14 +329,19 @@ public class PersistentKSPShurikenEmitter
         emitParams.rotation = rotation;
         emitParams.angularVelocity = angularV;
         emitParams.startLifetime = Random.Range(minEnergy, maxEnergy);
-        emitParams.startColor = color;
+
+        Color.RGBToHSV(color, out float h, out float s, out float v);
+        Color finalColor = Color.HSVToRGB(h, s * saturationMult, v * brightnessMult);
+        finalColor.a = color.a * alphaMult;
+
+        emitParams.startColor = finalColor;
         emitParams.startSize = Random.Range(minSize, maxSize);
         
         pe.Emit(emitParams, 1);
     }
     
     // Update the particles of the Emitter : Emit, resize, collision and physic
-    public void EmitterOnUpdate(Vector3 emitterWorldVelocity)
+    public void EmitterOnUpdate(Vector3d emitterWorldVelocity)
     {
         if (pe == null)
             return;
@@ -336,9 +350,7 @@ public class PersistentKSPShurikenEmitter
         int mask = (1 << LayerMask.NameToLayer("Default")) | (1 << LayerMask.NameToLayer("Local Scenery"));
 
         Profiler.BeginSample ("fixedEmit");
-        // Emit particles on fixedUpdate rather than Update so that we know which particles
-        // were just created and should be nudged, should not be collided, etc.
-        if (fixedEmit) {
+        if (emitting) {
             // Changed every frame time measure to Time.deltaTime, because, as stated here: https://docs.unity3d.com/ScriptReference/Time-fixedDeltaTime.html
             // Time.deltaTime is equal to fixed time, or frame time, depending on context
             // If called from FixedUpdate, it will be equal to 0.02
@@ -516,7 +528,7 @@ public class PersistentKSPShurikenEmitter
                             // Uniformly scatter newly emitted particles along the emitter's trajectory in order to
                             // remove the dotted smoke effect.
                             // use variableDeltaTime since the particle are emited on Update anyway.
-                            pPos -= emitterWorldVelocity * Random.value * Time.deltaTime;
+                            pPos -= Random.value * Time.deltaTime * emitterWorldVelocity;
                         }
 
                         if (randomInitalVelocityOffsetMaxRadius != 0.0)
@@ -623,7 +635,11 @@ public class PersistentKSPShurikenEmitter
                     }
                     
                     Color c = Color.Lerp(a, b, lerp);
-                    particle.startColor = c;
+                    Color.RGBToHSV(c, out float h, out float s, out float v);
+                    Color finalColor = Color.HSVToRGB(h, s * saturationMult, v * brightnessMult);
+                    finalColor.a = c.a * alphaMult;
+
+                    particle.startColor = finalColor;
                     Profiler.EndSample();
                 }
             }
@@ -660,10 +676,10 @@ public class PersistentKSPShurikenEmitter
         Vector3d acceleration = (1 - (atmosphericDensity / density)) * geeForce;
 
         // Drag. TODO(robin): simplify.
-        acceleration += -0.5 * atmosphericDensity * pVel * pVel.magnitude * dragCoefficient * Math.PI * radius * radius / mass;
+        acceleration += -0.5 * atmosphericDensity * pVel.magnitude * dragCoefficient * Math.PI * radius * radius / mass * pVel;
 
         // Euler is good enough for graphics.
-        return pVel + acceleration * Time.deltaTime * physicsPass * TimeWarp.CurrentRate;
+        return pVel + Time.deltaTime * physicsPass * TimeWarp.CurrentRate * acceleration;
     }
 
     //[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -684,7 +700,7 @@ public class PersistentKSPShurikenEmitter
                 Vector3 unitTangent = (hit.normal.x == 0 && hit.normal.y == 0)
                     ? new Vector3(1, 0, 0)
                     : Vector3.ProjectOnPlane(new Vector3(0, 0, 1), hit.normal).normalized;
-                 Vector3 hVel = Vector3.ProjectOnPlane(pVel, hit.normal);
+                Vector3 hVel = Vector3.ProjectOnPlane(pVel, hit.normal);
                 Vector3 reflectedNormalVelocity = hVel - pVel;
                 float residualFlow = reflectedNormalVelocity.magnitude * (1 - collideRatio);
 

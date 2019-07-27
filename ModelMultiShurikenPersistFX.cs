@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2017, Sébastien GAGGINI AKA Sarbian, France
  * All rights reserved.
  *
@@ -91,14 +91,14 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
     // TODO Sarbian : have the init auto fill this one
     [Persistent] public float randomInitalVelocityOffsetMaxRadius = 0.0f;
 
-	// Enables particle declustering
-	// This adds a vector to particle's position based on velocity, deltaTime, and which particle of the frame is it.
-	// ⁙    ⁙    ⁙    ⁙    ⁙    ⁙    ⁙
-	// ^      false
-	// SPAWNED IN ONE FRAME
-	// vvvvv  true
-	// ···································
-	[Persistent] public bool decluster = false;
+    // Enables particle declustering
+    // This adds a vector to particle's position based on velocity, deltaTime, and which particle of the frame is it.
+    // ⁙    ⁙    ⁙    ⁙    ⁙    ⁙    ⁙
+    // ^      false
+    // SPAWNED IN ONE FRAME
+    // vvvvv  true
+    // ···································
+    [Persistent] public bool decluster = false;
 
     // Emits particles on LateUpdate, rather than FixedUpdate, if enabled
     //
@@ -111,6 +111,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
     // On FixedUpdate, the Time.deltaTime is always 0.02, regardless of how much time actually passed from last frame draw.
     // On LateUpdate,  the Time.deltaTime is the actual time from last draw, so decluster can predict last particle's position a lot better
     [Persistent] public bool emitOnUpdate = false;
+    private bool EmitOnUpdate => emitOnUpdate || SmokeScreenConfig.Instance.forceEmitOnUpdate;
 
     [Persistent]
     public int particleCountLimit = 1000;
@@ -147,6 +148,12 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
     public MultiInputCurve logAlphaDecay;
 
     public MultiInputCurve linAlphaDecay;
+    
+    public MultiInputCurve saturationMult;
+
+    public MultiInputCurve brightnessMult;
+
+    public MultiInputCurve alphaMult;
 
     public MultiInputCurve initalVelocityOffsetMaxRadius;
 
@@ -181,10 +188,23 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         }
     }
 
-    // Previous way of counting particle count relied on the particled being emitted/updated synchronously with each other.
+    // Previous way of counting particle count relied on the particles being emitted/updated synchronously with each other.
     // With 'emitOnUpdate' changes, particles can be updated either in FixedUpdate, or LateUpdate.
     // Used to count all currently active particles, and to display current particle count of this effect in SmokeScreen UI.
-    public int CurrentlyActiveParticles => persistentEmitters.Sum (x => x.pe.particleCount);
+    public int CurrentlyActiveParticles
+    {
+        get
+        {
+            int count = 0;
+            for (int i = 0; i < persistentEmitters.Count; i++)
+            {
+                var emitter = persistentEmitters[i];
+                if (emitter != null && emitter.pe != null)
+                    count += emitter.pe.particleCount;
+            }
+            return count;
+        }
+    }
 
     public string node_backup = string.Empty;
 
@@ -204,10 +224,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
 
     private string lastRenderMode = "";
 
-    public static List<ModelMultiShurikenPersistFX> List
-    {
-        get { return list; }
-    }
+    public static List<ModelMultiShurikenPersistFX> List => list;
 
     public bool overRideInputs = false;
 
@@ -282,7 +299,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
             for (int i = 0; i < persistentEmitters.Count; i++)
             {
                 PersistentKSPShurikenEmitter pkse = persistentEmitters[i];
-                pkse.fixedEmit = true;
+                pkse.emitting = true;
                 if (pkse.pe != null)
                 {
                     ParticleSystem.EmissionModule em = pkse.pe.emission;
@@ -295,7 +312,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
             for (int j = 0; j < persistentEmitters.Count; j++)
             {
                 PersistentKSPShurikenEmitter pkse = persistentEmitters[j];
-                pkse.fixedEmit = false;
+                pkse.emitting = false;
                 if (pkse.pe != null)
                 {
                     ParticleSystem.EmissionModule em = pkse.pe.emission;
@@ -323,7 +340,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         {
             UpdateEmitters(power);
 
-            pkse.fixedEmit = true;
+            pkse.emitting = true;
             if (pkse.pe != null)
             {
                 ParticleSystem.EmissionModule em = pkse.pe.emission;
@@ -332,7 +349,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         }
         else
         {
-            pkse.fixedEmit = false;
+            pkse.emitting = false;
             if (pkse.pe != null)
             {
                 ParticleSystem.EmissionModule em = pkse.pe.emission;
@@ -372,13 +389,15 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         //        Debug.Log(vHit2.collider.name);
         //}
 
-        foreach (PersistentKSPShurikenEmitter emitter in persistentEmitters) {
-			// This is FixedUpdate, so don't emit here if particles should emit in LateUpdate
-			if (!emitOnUpdate) {
-				emitter.EmitterOnUpdate (hostPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity ());
-			}
-		}
-
+        for (int i = 0; i < persistentEmitters.Count; i++)
+        {
+            PersistentKSPShurikenEmitter emitter = persistentEmitters[i];
+            // This is FixedUpdate, so don't emit here if particles should emit in LateUpdate
+            if (!EmitOnUpdate)
+            {
+                emitter.EmitterOnUpdate(hostPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity());
+            }
+        }
     }
 
     private void UpdateInputs(float power)
@@ -496,7 +515,9 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
             pkpe.logarithmicGrow = logGrow.Value(inputs);
             pkpe.logarithmicGrowScale = logGrowScale.Value(inputs);
 
-			pkpe.decluster = decluster;
+            pkpe.decluster = decluster;
+
+            pkpe.emitOnUpdate = EmitOnUpdate;
 
             pkpe.linearGrow = linGrow.Value(inputs);
 
@@ -526,8 +547,12 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
                 col.color = new ParticleSystem.MinMaxGradient(gradient);
             }
 
+            pkpe.saturationMult = saturationMult.Value(inputs);
+            pkpe.brightnessMult = brightnessMult.Value(inputs);
+            pkpe.alphaMult = alphaMult.Value(inputs);
+
             pkpe.go.transform.localPosition = localPosition
-                                              + offsetDirection.normalized * offset.Value(inputs) * finalScale;
+                                              + offset.Value(inputs) * finalScale * offsetDirection.normalized;
 
             pkpe.go.transform.localRotation = Quaternion.Euler(localRotation);
 
@@ -572,21 +597,25 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
     // According to https://docs.unity3d.com/Manual/ExecutionOrder.html
     // LateUpdate is the last thing that happens before frame draw. That makes it as synced to frame draws, as possible
     // LateUpdate is called after physics calculations too, so the newly emitted plume particles are right where they should be.
-    public void LateUpdate () {
-		foreach (PersistentKSPShurikenEmitter emitter in persistentEmitters) {
-			if (emitter.go is null) {
-				continue;
-			}
-
-			if (emitOnUpdate) {
-				emitter.EmitterOnUpdate (hostPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity ());
-			}
-		}
+    public void LateUpdate ()
+    {
+        if (persistentEmitters == null || hostPart == null || hostPart.Rigidbody == null)
+        {
+            return;
+        }
 
         // I think it's important to call this even though it doesn't count active particles
         // because it calculates how many particles should be removed on next emit pass.
         SmokeScreenConfig.UpdateParticlesCount ();
 
+        for (int i = 0; i < persistentEmitters.Count; i++)
+        {
+            PersistentKSPShurikenEmitter emitter = persistentEmitters[i];
+            if (EmitOnUpdate)
+            {
+                emitter.EmitterOnUpdate(hostPart.Rigidbody.velocity + Krakensbane.GetFrameVelocity());
+            }
+        }
     }
 
     public override void OnInitialize()
@@ -767,6 +796,9 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         alpha = new MultiInputCurve("alpha");
         linAlphaDecay = new MultiInputCurve("linAlphaDecay", true);
         logAlphaDecay = new MultiInputCurve("logAlphaDecay", true);
+        saturationMult = new MultiInputCurve("saturationMult");
+        brightnessMult = new MultiInputCurve("brightnessMult");
+        alphaMult = new MultiInputCurve("alphaMult");
         initalVelocityOffsetMaxRadius = new MultiInputCurve("initalVelocityOffsetMaxRadius", true);
         sizeClampCurve = new MultiInputCurve("sizeClamp", true);
         randConeEmit = new MultiInputCurve("randConeEmit", true);
@@ -791,6 +823,9 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         linAlphaDecay.Load(node);
         logAlphaDecay.Load(node);
         initalVelocityOffsetMaxRadius.Load(node);
+        saturationMult.Load(node);
+        brightnessMult.Load(node);
+        alphaMult.Load(node);
         sizeClampCurve.Load(node);
         randConeEmit.Load(node);
         vRandPosOffset.Load(node);
@@ -938,6 +973,33 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         {
             Print("OnSave initalVelocityOffsetMaxRadius is null");
         }
+
+        if (saturationMult != null)
+        {
+            saturationMult.Save(node);
+        }
+        else
+        {
+            Print("OnSave saturationMult is null");
+        }
+        if (brightnessMult != null)
+        {
+            brightnessMult.Save(node);
+        }
+        else
+        {
+            Print("OnSave brightnessMult is null");
+        }
+
+        if (alphaMult != null)
+        {
+            alphaMult.Save(node);
+        }
+        else
+        {
+            Print("OnSave alphaMult is null");
+        }
+
 
         if (sizeClampCurve != null)
         {
@@ -1181,6 +1243,9 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         min = Mathf.Min(min, linAlphaDecay.minInput[id]);
         min = Mathf.Min(min, logAlphaDecay.minInput[id]);
         min = Mathf.Min(min, initalVelocityOffsetMaxRadius.minInput[id]);
+        min = Mathf.Min(min, saturationMult.minInput[id]);
+        min = Mathf.Min(min, brightnessMult.minInput[id]);
+        min = Mathf.Min(min, alphaMult.minInput[id]);
         min = Mathf.Min(min, sizeClampCurve.minInput[id]);
         min = Mathf.Min(min, randConeEmit.minInput[id]);
         min = Mathf.Min(min, vRandPosOffset.minInput[id]);
@@ -1209,6 +1274,9 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         max = Mathf.Max(max, linAlphaDecay.maxInput[id]);
         max = Mathf.Max(max, logAlphaDecay.maxInput[id]);
         max = Mathf.Max(max, initalVelocityOffsetMaxRadius.maxInput[id]);
+        max = Mathf.Max(max, saturationMult.maxInput[id]);
+        max = Mathf.Max(max, brightnessMult.maxInput[id]);
+        max = Mathf.Max(max, alphaMult.maxInput[id]);
         max = Mathf.Max(max, sizeClampCurve.maxInput[id]);
         max = Mathf.Max(max, randConeEmit.minInput[id]);
         max = Mathf.Max(max, vRandPosOffset.minInput[id]);
