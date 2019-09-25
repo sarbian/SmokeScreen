@@ -111,7 +111,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
     // On FixedUpdate, the Time.deltaTime is always 0.02, regardless of how much time actually passed from last frame draw.
     // On LateUpdate,  the Time.deltaTime is the actual time from last draw, so decluster can predict last particle's position a lot better
     [Persistent] public bool emitOnUpdate = false;
-    private bool EmitOnUpdate => emitOnUpdate || SmokeScreenConfig.Instance.forceEmitOnUpdate;
+    private bool EmitOnUpdate => emitOnUpdate || SmokeScreenConfig.Instance.forceEmitOnUpdate || TimeWarp.WarpMode == TimeWarp.Modes.HIGH;
 
     [Persistent]
     public int particleCountLimit = 1000;
