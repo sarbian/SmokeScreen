@@ -84,7 +84,7 @@ namespace SmokeScreen
             ////print("AddLaunchPadColliders parent col name = " + hit.collider.gameObject.transform.parent.gameObject.name);
 
             // Are the collider already here ?
-            if (parentTransform.FindChild(LaunchPadColliderName))
+            if (parentTransform.FindDeepChild(LaunchPadColliderName))
             {
                 return true;
             }

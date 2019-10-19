@@ -222,8 +222,6 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
 
     private float timeModuloDelta = 0;
 
-    private string lastRenderMode = "";
-
     public static List<ModelMultiShurikenPersistFX> List => list;
 
     public bool overRideInputs = false;
@@ -244,7 +242,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
     //}
 
     // if Die() is called for a debris of vessel then all the
-    // vessel gameobject are removed without an OnDestroy call
+    // vessel gameObject are removed without an OnDestroy call
     // But an OnVesselDie message is send before, so we can
     // Catch in time
     public void OnVesselDie()
@@ -555,18 +553,6 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
                                               + offset.Value(inputs) * finalScale * offsetDirection.normalized;
 
             pkpe.go.transform.localRotation = Quaternion.Euler(localRotation);
-
-
-            //if (renderMode != lastRenderMode)
-            //{
-            //    // Bad code is bad
-            //    try
-            //    {
-            //        pkpe.pe.particleRenderMode = (ParticleRenderMode)Enum.Parse(typeof (ParticleRenderMode), renderMode);
-            //    }
-            //    catch (ArgumentException) { }
-            //    lastRenderMode = renderMode;
-            //}
         }
     }
 
