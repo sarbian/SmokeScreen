@@ -1,6 +1,6 @@
 ﻿
 /*
- * Copyright (c) 2017, Sébastien GAGGINI AKA Sarbian, France
+ * Copyright (c) 2019, Sébastien GAGGINI AKA Sarbian, France
  * All rights reserved.
  *
  * Original work by dtobi, used with his permission

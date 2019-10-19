@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Sébastien GAGGINI AKA Sarbian, France
+ * Copyright (c) 2019, Sébastien GAGGINI AKA Sarbian, France
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
