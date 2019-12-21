@@ -604,7 +604,13 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
 
     public override void OnInitialize()
     {
-        //Print("Init");
+        //Print("OnInitialize");
+
+        // Ship spawned somehow don't call OnLoad...
+        if (transformName != string.Empty)
+        {
+            OnLoad(null);
+        }
         
         List<Transform> transforms = new List<Transform>(hostPart.FindModelTransforms(transformName));
         if (transforms.Count == 0)
@@ -750,7 +756,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
 
     public override void OnLoad(ConfigNode node)
     {
-        //print("OnLoad :\n" + node);
+        //print("OnLoad");
 
         // Use the actual part cfg instead of what KSP provides us for 2 reasons:
         // - this effect config goes beyond the 7 deep serialization restriction and we get a node without the InputCurves
@@ -768,6 +774,8 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
                 return;
             }
         }
+
+        //print("OnLoad :\n" + node);
 
         emission = new MultiInputCurve("emission");
         energy = new MultiInputCurve("energy");
