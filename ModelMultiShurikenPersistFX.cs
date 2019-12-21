@@ -206,8 +206,6 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         }
     }
 
-    public string node_backup = string.Empty;
-
     private bool activated = true;
 
     private bool loaded = false;
@@ -607,14 +605,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
     public override void OnInitialize()
     {
         //Print("Init");
-
-        // Restore the Curve config from the node content backup
-        // Done because I could not get the serialization of MultiInputCurve to work
-        if (node_backup != string.Empty)
-        {
-            Restore();
-        }
-
+        
         List<Transform> transforms = new List<Transform>(hostPart.FindModelTransforms(transformName));
         if (transforms.Count == 0)
         {
@@ -748,25 +739,35 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
             }
         }
     }
-
-    // TODO : I learned to do proper serialization since then. I might want to do it instead of that mess
-    public void Backup(ConfigNode node)
+    
+    private ConfigNode GetEffectConfig()
     {
-        node_backup = SmokeScreenUtil.WriteRootNode(node);
-        //print("Backup node_backup is\n " + node_backup.Replace(Environment.NewLine, Environment.NewLine + "ModelMultiParticlePersistFX "));
-    }
-
-    public void Restore()
-    {
-        //print("Restore node_backup is\n " + node_backup.Replace(Environment.NewLine, Environment.NewLine + "ModelMultiParticlePersistFX "));
-        ConfigNode node = ConfigNode.Parse(node_backup);
-        OnLoad(node);
+        ConfigNode partConfig = PartLoader.getPartInfoByName(hostPart.protoPartSnapshot.partName).partConfig;
+        ConfigNode effectsNode = partConfig?.GetNode("EFFECTS");
+        ConfigNode eNode = effectsNode?.GetNode(effectName);
+        return eNode?.nodes.GetNode("MODEL_MULTI_SHURIKEN_PERSIST", "name", instanceName);
     }
 
     public override void OnLoad(ConfigNode node)
     {
-        //Print("OnLoad");
-        Backup(node);
+        //print("OnLoad :\n" + node);
+
+        // Use the actual part cfg instead of what KSP provides us for 2 reasons:
+        // - this effect config goes beyond the 7 deep serialization restriction and we get a node without the InputCurves
+        // - the node provided for the root part after a load/scene change is empty
+        if (HighLogic.LoadedScene != GameScenes.LOADING)
+        {
+            node = GetEffectConfig();
+
+            if (node == null)
+            {
+                print("Unable to find the effect config for" +
+                      " part " + hostPart.protoPartSnapshot.partName +
+                      " effectName " + effectName +
+                      " instanceName " + instanceName);
+                return;
+            }
+        }
 
         emission = new MultiInputCurve("emission");
         energy = new MultiInputCurve("energy");
@@ -1144,8 +1145,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
             // Set the node with what was in the .cfg
             if (GUILayout.Button("Import"))
             {
-                nodeText = string.Copy(node_backup);
-
+                nodeText = SmokeScreenUtil.WriteRootNode(GetEffectConfig());
                 //print("Displaying node \n " + nodeText.Replace("\n", "\n" + "ModelMultiParticlePersistFX "));
             }
 
