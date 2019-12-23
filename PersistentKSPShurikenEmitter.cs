@@ -397,7 +397,7 @@ public class PersistentKSPShurikenEmitter
                 Emit (i, ParticlesThisFrame);
             }
         }
-        Profiler.EndSample ();
+        Profiler.EndSample();
 
         if (particles == null || pe.main.maxParticles > particles.Length)
             particles = new ParticleSystem.Particle[pe.main.maxParticles];

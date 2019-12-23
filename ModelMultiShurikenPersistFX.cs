@@ -773,8 +773,8 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
     {
         //print("OnLoad");
 
-        // Use the actual part cfg instead of what KSP provides u
-        // - the node provided for the root part after a load/scene change is empty
+        // Use the actual part cfg instead of what KSP provides because
+        // the node provided for the root part after a load/scene change is empty
         if (HighLogic.LoadedScene != GameScenes.LOADING && !node.HasNode())
         {
             node = GetEffectConfig();
