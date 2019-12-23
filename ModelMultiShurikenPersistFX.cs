@@ -609,7 +609,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         //Print("OnInitialize");
 
         // Ship spawned somehow don't call OnLoad...
-        if (transformName != string.Empty)
+        if (node_backup != string.Empty)
         {
             Restore();
         }
