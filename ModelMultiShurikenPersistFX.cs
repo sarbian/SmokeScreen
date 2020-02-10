@@ -765,8 +765,15 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
     {
         ConfigNode partConfig = PartLoader.getPartInfoByName(hostPart.protoPartSnapshot.partName).partConfig;
         ConfigNode effectsNode = partConfig?.GetNode("EFFECTS");
-        ConfigNode eNode = effectsNode?.GetNode(effectName);
-        return eNode?.nodes.GetNode("MODEL_MULTI_SHURIKEN_PERSIST", "name", instanceName);
+        if (effectsNode == null) return null;
+        ConfigNode[] eNodes = effectsNode.GetNodes(effectName);
+        foreach (ConfigNode node in eNodes)
+        {
+            ConfigNode mmspNode = null; // Why does TryGetNode uses ref instead of out ????
+            if (node.TryGetNode("MODEL_MULTI_SHURIKEN_PERSIST", ref mmspNode) && mmspNode.GetValue("name") == instanceName)
+                return mmspNode;
+        }
+        return null;
     }
 
     public override void OnLoad(ConfigNode node)
@@ -781,7 +788,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
 
             if (node == null)
             {
-                print("Unable to find the effect config for" +
+                Print("Unable to find the effect config for" +
                       " part " + hostPart.protoPartSnapshot.partName +
                       " effectName " + effectName +
                       " instanceName " + instanceName);
