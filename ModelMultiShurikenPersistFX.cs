@@ -767,11 +767,12 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         ConfigNode effectsNode = partConfig?.GetNode("EFFECTS");
         if (effectsNode == null) return null;
         ConfigNode[] eNodes = effectsNode.GetNodes(effectName);
-        foreach (ConfigNode node in eNodes)
+        foreach (ConfigNode eNode in eNodes)
         {
-            ConfigNode mmspNode = null; // Why does TryGetNode uses ref instead of out ????
-            if (node.TryGetNode("MODEL_MULTI_SHURIKEN_PERSIST", ref mmspNode) && mmspNode.GetValue("name") == instanceName)
-                return mmspNode;
+            ConfigNode[] mmspNodes = eNode.GetNodes("MODEL_MULTI_SHURIKEN_PERSIST");
+            foreach (ConfigNode mmspNode in mmspNodes)
+                if (mmspNode.GetValue("name") == instanceName)
+                    return mmspNode;
         }
         return null;
     }
