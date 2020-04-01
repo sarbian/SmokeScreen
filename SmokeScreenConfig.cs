@@ -46,6 +46,10 @@ namespace SmokeScreen
 
         [Persistent] public bool forceDecluster = false;
 
+        [Persistent] public bool shareManualInput = false;
+
+        public readonly float[] sharedInputs = new float[MultiInputCurve.inputsCount];
+
         public static int activeParticles = 0;
 
         public static int particleDecimate = 0;

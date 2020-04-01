@@ -402,6 +402,13 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
     {
         if (overRideInputs)
         {
+            if (SmokeScreenConfig.Instance.shareManualInput)
+            {
+                for (int i = 0; i < MultiInputCurve.inputsCount; i++)
+                {
+                    inputs[i] = SmokeScreenConfig.Instance.sharedInputs[i];
+                }
+            }
             return;
         }
 
@@ -617,8 +624,15 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         List<Transform> transforms = new List<Transform>(hostPart.FindModelTransforms(transformName));
         if (transforms.Count == 0)
         {
-            Print("Cannot find transform " + transformName);
-            return;
+            if (transformName == "partTransform")
+            {
+                transforms.Add(hostPart.partTransform);
+            }
+            else
+            {
+                Print("Cannot find transform " + transformName);
+                return;
+            }
         }
         GameObject model = GameDatabase.Instance.GetModel(modelName);
         if (model == null)
@@ -1242,6 +1256,8 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
                     maxInput(id),
                     GUILayout.ExpandWidth(true));
             }
+
+            SmokeScreenConfig.Instance.sharedInputs[id] = inputs[id];
 
             GUILayout.EndHorizontal();
         }
