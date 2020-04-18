@@ -92,6 +92,9 @@ namespace SmokeScreen
             SmokeScreenConfig.Instance.forceDecluster =
                 GUILayout.Toggle(SmokeScreenConfig.Instance.forceDecluster, "Globally force decluster");
 
+            SmokeScreenConfig.Instance.shareManualInput =
+                GUILayout.Toggle(SmokeScreenConfig.Instance.shareManualInput, "Share manual input values across effects");
+
             GUILayout.Space(10);
 
             GUILayout.BeginHorizontal();
