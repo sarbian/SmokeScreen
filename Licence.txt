@@ -1,5 +1,4 @@
-Copyright (c) 2014, Sébastien GAGGINI AKA Sarbian, France
-All rights reserved.
+Copyright (c) 2014, SÃ©bastien GAGGINI AKA Sarbian, France
 
 Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
