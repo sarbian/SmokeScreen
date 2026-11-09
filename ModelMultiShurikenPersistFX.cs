@@ -502,9 +502,10 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
 
             ParticleSystem.ForceOverLifetimeModule fol = pkpe.pe.forceOverLifetime;
             fol.enabled = pkpe.force.sqrMagnitude > 0 || pkpe.rndForce.sqrMagnitude > 0;
-            fol.x = new ParticleSystem.MinMaxCurve(pkpe.forceBase.x, pkpe.force.x + pkpe.rndForce.x);
-            fol.y = new ParticleSystem.MinMaxCurve(pkpe.forceBase.y, pkpe.force.y + pkpe.rndForce.y);
-            fol.z = new ParticleSystem.MinMaxCurve(pkpe.forceBase.z, pkpe.force.z + pkpe.rndForce.z);
+            // force ± rndForce / 2, as KSPParticleEmitter.SetupProperties does
+            fol.x = new ParticleSystem.MinMaxCurve(pkpe.force.x - 0.5f * pkpe.rndForce.x, pkpe.force.x + 0.5f * pkpe.rndForce.x);
+            fol.y = new ParticleSystem.MinMaxCurve(pkpe.force.y - 0.5f * pkpe.rndForce.y, pkpe.force.y + 0.5f * pkpe.rndForce.y);
+            fol.z = new ParticleSystem.MinMaxCurve(pkpe.force.z - 0.5f * pkpe.rndForce.z, pkpe.force.z + 0.5f * pkpe.rndForce.z);
 
             pkpe.sizeGrow = grow.Value(inputs);
             
