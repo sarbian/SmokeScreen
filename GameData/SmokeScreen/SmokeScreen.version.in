@@ -1,0 +1,26 @@
+{
+    "NAME": "SmokeScreen",
+    "URL": "https://github.com/sarbian/SmokeScreen/releases/latest/download/SmokeScreen.version",
+    "DOWNLOAD": "https://github.com/sarbian/SmokeScreen/releases/latest",
+    "VERSION":{
+        "MAJOR": @VERSION_MAJOR@,
+        "MINOR": @VERSION_MINOR@,
+        "PATCH": @VERSION_PATCH@,
+        "BUILD": @VERSION_BUILD@
+    },
+    "KSP_VERSION": {
+        "MAJOR": @KSP_MAJOR@,
+        "MINOR": @KSP_MINOR@,
+        "PATCH": @KSP_PATCH@
+    },
+    "KSP_VERSION_MIN": {
+        "MAJOR": @KSP_MAJOR_MIN@,
+        "MINOR": @KSP_MINOR_MIN@,
+        "PATCH": @KSP_PATCH_MIN@
+    },
+    "KSP_VERSION_MAX": {
+        "MAJOR": @KSP_MAJOR_MAX@,
+        "MINOR": @KSP_MINOR_MAX@,
+        "PATCH": @KSP_PATCH_MAX@
+    }
+}
