@@ -153,7 +153,7 @@ Global settings
 
 | Key | Default | Meaning |
 |---|---|---|
-| `maximumActiveParticles` | 8000 | above this many particles in the scene, the emitters with more than 30 particles drop some |
+| `maximumActiveParticles` | 1000 | above this many particles in the scene, the emitters with more than 30 particles drop some (8000 when the file doesn't set it) |
 | `atmDensityExp` | 1 | the exponent applied to the density input |
 | `globalCollideDisable` | False | turn `collide` off on every effect |
 | `globalPhysicalDisable` | False | turn `physical` off on every effect |
