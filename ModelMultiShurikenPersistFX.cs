@@ -40,6 +40,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
 
     [Persistent] public string transformName = string.Empty;
     
+    // Read and saved, but not applied: the particles keep the model's render mode
     [Persistent] public string renderMode = "Billboard";
 
     [Persistent] public string layer = "TransparentFX";
@@ -900,6 +901,11 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         angle.Load("angle", node);
         distance.Load("distance", node);
         layerId = LayerMask.NameToLayer(layer);
+        if (layerId < 0)
+        {
+            Print("Unknown layer \"" + layer + "\" for " + effectName + " " + instanceName + ", using TransparentFX");
+            layerId = LayerMask.NameToLayer("TransparentFX");
+        }
 
         loaded = true;
     }
