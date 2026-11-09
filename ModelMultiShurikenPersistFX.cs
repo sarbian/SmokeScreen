@@ -669,7 +669,8 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
     {
         //Print("OnInitialize");
 
-        // Ship spawned somehow don't call OnLoad...
+        // Parts instantiated from the prefab get no OnLoad call, and Unity does not copy the curves:
+        // rebuild them from the config text OnLoad kept
         if (node_backup != string.Empty)
         {
             Restore();
@@ -943,229 +944,33 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
             return;
         }
 
-        // All those ugly null check are most likely superfluous after the loaded check
-        // but I'll keep it until I m sure don't get NRE new report
-
-        //Print("OnSave");
         ConfigNode.CreateConfigFromObject(this, node);
-        if (emission != null)
-        {
-            emission.Save(node);
-        }
-        else
-        {
-            Print("OnSave emission is null");
-        }
-        if (energy != null)
-        {
-            energy.Save(node);
-        }
-        else
-        {
-            Print("OnSave energy is null");
-        }
-        if (speed != null)
-        {
-            speed.Save(node);
-        }
-        else
-        {
-            Print("OnSave speed is null");
-        }
-        if (grow != null)
-        {
-            grow.Save(node);
-        }
-        else
-        {
-            Print("OnSave grow is null");
-        }
-        if (scale != null)
-        {
-            scale.Save(node);
-        }
-        else
-        {
-            Print("OnSave scale is null");
-        }
-        if (size != null)
-        {
-            size.Save(node);
-        }
-        else
-        {
-            Print("OnSave size is null");
-        }
-        if (offset != null)
-        {
-            offset.Save(node);
-        }
-        else
-        {
-            Print("OnSave offset is null");
-        }
-        if (force != null)
-        {
-            force.Save(node);
-        }
-        else
-        {
-            Print("OnSave force is null");
-        }
-        if (logGrow != null)
-        {
-            logGrow.Save(node);
-        }
-        else
-        {
-            Print("OnSave logGrow is null");
-        }
-        if (linGrow != null)
-        {
-            linGrow.Save(node);
-        }
-        else
-        {
-            Print("OnSave linGrow is null");
-        }
-        if (logGrowScale != null)
-        {
-            logGrowScale.Save(node);
-        }
-        else
-        {
-            Print("OnSave logGrowScale is null");
-        }
-        if (alpha != null)
-        {
-            alpha.Save(node);
-        }
-        else
-        {
-            Print("OnSave alpha is null");
-        }
-        if (linAlphaDecay != null)
-        {
-            linAlphaDecay.Save(node);
-        }
-        else
-        {
-            Print("OnSave linAlphaDecay is null");
-        }
-        if (logAlphaDecay != null)
-        {
-            logAlphaDecay.Save(node);
-        }
-        else
-        {
-            Print("OnSave logAlphaDecay is null");
-        }
-        if (initalVelocityOffsetMaxRadius != null)
-        {
-            initalVelocityOffsetMaxRadius.Save(node);
-        }
-        else
-        {
-            Print("OnSave initalVelocityOffsetMaxRadius is null");
-        }
-
-        if (saturationMult != null)
-        {
-            saturationMult.Save(node);
-        }
-        else
-        {
-            Print("OnSave saturationMult is null");
-        }
-        if (brightnessMult != null)
-        {
-            brightnessMult.Save(node);
-        }
-        else
-        {
-            Print("OnSave brightnessMult is null");
-        }
-
-        if (alphaMult != null)
-        {
-            alphaMult.Save(node);
-        }
-        else
-        {
-            Print("OnSave alphaMult is null");
-        }
-
-
-        if (sizeClampCurve != null)
-        {
-            sizeClampCurve.Save(node);
-        }
-        else
-        {
-            Print("OnSave sizeClampCurve is null");
-        }
-
-        if (randConeEmit != null)
-        {
-            randConeEmit.Save(node);
-        }
-        else
-        {
-            Print("OnSave randConeEmit is null");
-        }
-
-        if (vRandPosOffset != null)
-        {
-            vRandPosOffset.Save(node);
-        }
-        else
-        {
-            Print("OnSave vRandPosOffset is null");
-        }
-
-        if (vPosOffset != null)
-        {
-            vPosOffset.Save(node);
-        }
-        else
-        {
-            Print("OnSave vPosOffset is null");
-        }
-
-        if (xyForce != null)
-        {
-            xyForce.Save(node);
-        }
-        else
-        {
-            Print("OnSave xyForce is null");
-        }
-
-        if (zForce != null)
-        {
-            zForce.Save(node);
-        }
-        else
-        {
-            Print("OnSave zForce is null");
-        }
-
-        if (angle != null)
-        {
-            angle.Save(node);
-        }
-        else
-        {
-            Print("OnSave angle is null");
-        }
-        if (distance != null)
-        {
-            distance.Save(node);
-        }
-        else
-        {
-            Print("OnSave distance is null");
-        }
+        emission.Save(node);
+        energy.Save(node);
+        speed.Save(node);
+        grow.Save(node);
+        scale.Save(node);
+        size.Save(node);
+        offset.Save(node);
+        force.Save(node);
+        logGrow.Save(node);
+        linGrow.Save(node);
+        logGrowScale.Save(node);
+        alpha.Save(node);
+        linAlphaDecay.Save(node);
+        logAlphaDecay.Save(node);
+        initalVelocityOffsetMaxRadius.Save(node);
+        saturationMult.Save(node);
+        brightnessMult.Save(node);
+        alphaMult.Save(node);
+        sizeClampCurve.Save(node);
+        randConeEmit.Save(node);
+        vRandPosOffset.Save(node);
+        vPosOffset.Save(node);
+        xyForce.Save(node);
+        zForce.Save(node);
+        angle.Save(node);
+        distance.Save(node);
     }
 
     private static void Print(String s)
