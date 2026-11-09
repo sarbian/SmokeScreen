@@ -315,7 +315,7 @@ public class PersistentKSPShurikenEmitter
             // Apply some local velocity to prevent multiple particles spawned in one frame from clumping together
             // Simulates as if some particles already were emitted between frames, and traveled some distance
             pos += (
-                (Time.deltaTime) * TimeWarp.CurrentRate * // How much time has passed. At this point this value should be the total distance to the last particle emitted in the last update
+                (Time.deltaTime) * // How much time has passed, physics warp included. At this point this value should be the total distance to the last particle emitted in the last update
                 ((float) (ThisInUpdate) / (float) (TotalInUpdate)) * // Spread them out evenly, from 0 to last particle
                 vel // Initial velocity
             );
@@ -719,7 +719,8 @@ public class PersistentKSPShurikenEmitter
         acceleration += -0.5 * atmosphericDensity * pVel.magnitude * dragCoefficient * Math.PI * radius * radius / mass * pVel;
 
         // Euler is good enough for graphics.
-        return pVel + Time.deltaTime * physicsPass * TimeWarp.CurrentRate * acceleration;
+        // Time.deltaTime already includes the physics warp rate
+        return pVel + Time.deltaTime * physicsPass * acceleration;
     }
 
     //[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -730,7 +731,7 @@ public class PersistentKSPShurikenEmitter
             pPos,
             pVel,
             out hit,
-            (float)pVel.magnitude * Time.deltaTime * physicsPass * TimeWarp.CurrentRate,
+            (float)pVel.magnitude * Time.deltaTime * physicsPass,
             mask))
         {
             //// collidersName[hit.collider.name] = true;
