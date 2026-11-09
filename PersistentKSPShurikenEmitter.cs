@@ -98,8 +98,10 @@ public class PersistentKSPShurikenEmitter
 
     // The size over lifetime curve SetupProperties gives the particle system from the model's sizeGrow.
     // The rendered size is startSize times this curve, so the clamp on startSize divides by it.
-    private AnimationCurve sizeCurve;
-    private float sizeCurveMultiplier = 1;
+    // The size-over-lifetime curve times its multiplier, sampled once: AnimationCurve.Evaluate is an engine call,
+    // and the clamp needs the curve twice per particle per update
+    private const int SizeCurveSamples = 256;
+    private float[] sizeCurveTable;
     private bool sizeCurveRead;
 
     // The last frame's Time.deltaTime, set by ModelMultiShurikenPersistFX.Update. Unity ages the particles once per frame,
@@ -393,8 +395,9 @@ public class PersistentKSPShurikenEmitter
         ParticleSystem.MinMaxCurve size = sol.size;
         if (size.mode == ParticleSystemCurveMode.Curve && size.curve != null)
         {
-            sizeCurve = size.curve;
-            sizeCurveMultiplier = size.curveMultiplier;
+            sizeCurveTable = new float[SizeCurveSamples + 1];
+            for (int i = 0; i <= SizeCurveSamples; i++)
+                sizeCurveTable[i] = size.curve.Evaluate(i / (float)SizeCurveSamples) * size.curveMultiplier;
         }
     }
 
@@ -402,15 +405,24 @@ public class PersistentKSPShurikenEmitter
     // clamp, `step` later: a fast-growing particle would otherwise pass the clamp between two clamps
     private float SizeClampAt(float lifeFraction, float step)
     {
-        if (sizeCurve == null)
+        if (sizeCurveTable == null)
             return sizeClamp;
         if (!(lifeFraction >= 0))
             lifeFraction = 0;
         if (!(step >= 0))
             step = 0;
-        float curve = Mathf.Max(sizeCurve.Evaluate(Mathf.Min(lifeFraction, 1)), sizeCurve.Evaluate(Mathf.Min(lifeFraction + step, 1)));
-        curve *= sizeCurveMultiplier;
+        float curve = Mathf.Max(SizeCurveAt(lifeFraction), SizeCurveAt(lifeFraction + step));
         return curve > 0.001f ? sizeClamp / curve : sizeClamp;
+    }
+
+    // The sampled curve at this fraction of the particle's life, interpolated between samples
+    private float SizeCurveAt(float lifeFraction)
+    {
+        float x = Mathf.Min(lifeFraction, 1f) * SizeCurveSamples;
+        int i = (int)x;
+        if (i >= SizeCurveSamples)
+            return sizeCurveTable[SizeCurveSamples];
+        return sizeCurveTable[i] + (sizeCurveTable[i + 1] - sizeCurveTable[i]) * (x - i);
     }
 
     // Update the particles of the Emitter : Emit, resize, collision and physic
