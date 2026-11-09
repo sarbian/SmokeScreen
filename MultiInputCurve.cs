@@ -94,17 +94,6 @@ public class MultiInputCurve
         }
     }
 
-    public void Test()
-    {
-        //if (!isLoaded) Restore();
-        if (curves != null && curves[0] != null)
-        {
-            print("Test curve[0] is " + curves[0].valueName);
-        }
-
-        //print("Test for " + name + " backup_node is null = " + (backup_node == null).ToString());
-    }
-
     public void Load(ConfigNode node)
     {
         Reset();
