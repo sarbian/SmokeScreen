@@ -62,7 +62,7 @@ namespace SmokeScreen
             }
             for (int j = 0; j < node.nodes.Count; j++)
             {
-                WriteNodeString(node, ref builder, str);
+                WriteNodeString(node.nodes[j], ref builder, str);
             }
             builder.AppendLine(string.Concat(indent, "}"));
         }
