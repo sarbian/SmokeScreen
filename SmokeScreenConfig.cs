@@ -62,7 +62,27 @@ namespace SmokeScreen
 
         private static float lastTime = 0;
 
-        private int lastHash = 0;
+        // The settings as last saved (or loaded), compared field by field every frame without allocating
+        private struct Settings : System.IEquatable<Settings>
+        {
+            public int maximumActiveParticles;
+            public float atmDensityExp;
+            public bool globalCollideDisable, globalPhysicalDisable, forceEmitOnUpdate, forceDecluster, shareManualInput;
+
+            public bool Equals(Settings o) =>
+                maximumActiveParticles == o.maximumActiveParticles && atmDensityExp == o.atmDensityExp &&
+                globalCollideDisable == o.globalCollideDisable && globalPhysicalDisable == o.globalPhysicalDisable &&
+                forceEmitOnUpdate == o.forceEmitOnUpdate && forceDecluster == o.forceDecluster && shareManualInput == o.shareManualInput;
+        }
+
+        private Settings Current => new Settings
+        {
+            maximumActiveParticles = maximumActiveParticles, atmDensityExp = atmDensityExp,
+            globalCollideDisable = globalCollideDisable, globalPhysicalDisable = globalPhysicalDisable,
+            forceEmitOnUpdate = forceEmitOnUpdate, forceDecluster = forceDecluster, shareManualInput = shareManualInput
+        };
+
+        private Settings saved;
 
         private float lastSave = 0;
 
@@ -144,23 +164,17 @@ namespace SmokeScreen
             {
                 print("SmokeScreenConfig could not load config");
             }
-            lastHash = Hash();
+            saved = Current;
         }
 
         private void Update()
         {
-            if (lastHash != Hash() && lastSave + 10f < Time.time)
+            if (!Current.Equals(saved) && lastSave + 10f < Time.time)
             {
-                lastHash = Hash();
+                saved = Current;
                 lastSave = Time.time;
                 Save();
             }
-        }
-
-        private int Hash()
-        {
-            return string.Concat(maximumActiveParticles, atmDensityExp, globalCollideDisable, globalPhysicalDisable,
-                forceEmitOnUpdate, forceDecluster, shareManualInput).GetHashCode();
         }
 
         // In PluginData, which the game database doesn't load, so the shipped SmokeScreen.cfg stays as installed
