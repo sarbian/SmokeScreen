@@ -228,6 +228,11 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
 
     public readonly float[] inputs = new float[MultiInputCurve.inputsCount];
 
+    // Reused by the alpha curves for every emitter at every update
+    private readonly GradientColorKey[] alphaColorKeys = new GradientColorKey[5];
+    private readonly GradientAlphaKey[] alphaAlphaKeys = new GradientAlphaKey[5];
+    private Gradient alphaGradient;
+
     public ModelMultiShurikenPersistFX()
     {
         winID = baseWinID++;
@@ -526,30 +531,31 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
 
             pkpe.linearGrow = linGrow.Value(inputs);
 
-            if (alpha.Value(inputs) != 1 || linAlphaDecay.Value(inputs) != 0 || logAlphaDecay.Value(inputs) != 0)
+            float alphaValue = alpha.Value(inputs);
+            float linAlphaDecayValue = linAlphaDecay.Value(inputs);
+            float logAlphaDecayValue = logAlphaDecay.Value(inputs);
+            ParticleSystem.ColorOverLifetimeModule col = pkpe.pe.colorOverLifetime;
+            if (alphaValue != 1 || linAlphaDecayValue != 0 || logAlphaDecayValue != 0)
             {
-                //Color[] cols = new Color[5];
-                
-                GradientColorKey[] colorKeys = new GradientColorKey[5];
-                GradientAlphaKey[] alphaKeys = new GradientAlphaKey[5];
-                
+                if (alphaGradient == null)
+                    alphaGradient = new Gradient();
+
+                // The module multiplies the particle colour by the gradient: grey keys fade the colour with the alpha
                 for (int t = 0; t < 5; t++)
                 {
-                    float a =
-                        Mathf.Clamp01(alpha.Value(inputs) *
-                                      (1 - linAlphaDecay.Value(inputs) * (t / 4f) -
-                                       Mathf.Log(logAlphaDecay.Value(inputs) * (t / 4f) + 1)));
-                    colorKeys[t] = new GradientColorKey(Color.red, t * 0.25f);
-                    alphaKeys[t] = new GradientAlphaKey(a, t * 0.25f);
+                    float a = Mathf.Clamp01(alphaValue * (1 - linAlphaDecayValue * (t / 4f) - Mathf.Log(logAlphaDecayValue * (t / 4f) + 1)));
+                    alphaColorKeys[t] = new GradientColorKey(new Color(a, a, a), t * 0.25f);
+                    alphaAlphaKeys[t] = new GradientAlphaKey(a, t * 0.25f);
                 }
+                alphaGradient.SetKeys(alphaColorKeys, alphaAlphaKeys);
 
-                ParticleSystem.ColorOverLifetimeModule col = pkpe.pe.colorOverLifetime;
                 col.enabled = true;
-                
-                Gradient gradient = new Gradient();
-                gradient.SetKeys(colorKeys, alphaKeys);
-
-                col.color = new ParticleSystem.MinMaxGradient(gradient);
+                col.color = new ParticleSystem.MinMaxGradient(alphaGradient);
+            }
+            else if (col.enabled)
+            {
+                // Back to the defaults. Colour animation from the model is done in PersistentKSPShurikenEmitter, not by this module
+                col.enabled = false;
             }
 
             pkpe.saturationMult = saturationMult.Value(inputs);
