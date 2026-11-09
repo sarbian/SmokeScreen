@@ -1372,11 +1372,11 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         max = Mathf.Max(max, brightnessMult.maxInput[id]);
         max = Mathf.Max(max, alphaMult.maxInput[id]);
         max = Mathf.Max(max, sizeClampCurve.maxInput[id]);
-        max = Mathf.Max(max, randConeEmit.minInput[id]);
-        max = Mathf.Max(max, vRandPosOffset.minInput[id]);
-        max = Mathf.Max(max, vPosOffset.minInput[id]);
-        max = Mathf.Max(max, xyForce.minInput[id]);
-        max = Mathf.Max(max, zForce.minInput[id]);
+        max = Mathf.Max(max, randConeEmit.maxInput[id]);
+        max = Mathf.Max(max, vRandPosOffset.maxInput[id]);
+        max = Mathf.Max(max, vPosOffset.maxInput[id]);
+        max = Mathf.Max(max, xyForce.maxInput[id]);
+        max = Mathf.Max(max, zForce.maxInput[id]);
 
         return max;
     }
