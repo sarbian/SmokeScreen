@@ -582,6 +582,8 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
     public void Update()
     {
         //Print("Update");
+        PersistentKSPShurikenEmitter.frameDeltaTime = Time.deltaTime;
+
         if (persistentEmitters == null || Camera.main == null)
         {
             return;
