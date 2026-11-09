@@ -104,6 +104,10 @@ public class PersistentKSPShurikenEmitter
     private float sizeCurveMultiplier = 1;
     private bool sizeCurveRead;
 
+    // The last frame's Time.deltaTime, set by ModelMultiShurikenPersistFX.Update. Unity ages the particles once per frame,
+    // so from FixedUpdate the next clamp can be a whole frame away, not one fixed step
+    public static float frameDeltaTime;
+
     public bool clampXYstart = false;
 
     // The initial velocity of the particles will be offset by a random amount
@@ -367,7 +371,7 @@ public class PersistentKSPShurikenEmitter
                 emitParams.startSize += linGrowConst;
             }
 
-            emitParams.startSize = Mathf.Min (emitParams.startSize, SizeClampAt(simulatedLifetime / emitParams.startLifetime, Time.deltaTime / emitParams.startLifetime));
+            emitParams.startSize = Mathf.Min (emitParams.startSize, SizeClampAt(simulatedLifetime / emitParams.startLifetime, Mathf.Max(Time.deltaTime, frameDeltaTime) / emitParams.startLifetime));
         }
 
         pe.Emit(emitParams, 1);
@@ -388,7 +392,7 @@ public class PersistentKSPShurikenEmitter
     }
 
     // The largest startSize that renders at most sizeClamp from this fraction of the particle's life until the next
-    // update, `step` later: a fast-growing particle would otherwise pass the clamp between two updates
+    // clamp, `step` later: a fast-growing particle would otherwise pass the clamp between two clamps
     private float SizeClampAt(float lifeFraction, float step)
     {
         if (sizeCurve == null)
@@ -466,6 +470,7 @@ public class PersistentKSPShurikenEmitter
         double logGrowConst = Time.deltaTime * logarithmicGrow * logarithmicGrowScale;
         float linGrowConst = (float)(Time.deltaTime * linearGrow * averageSize);
         float growConst = Mathf.Pow( 1 + sizeGrow, Time.deltaTime);
+        float clampStep = Mathf.Max(Time.deltaTime, frameDeltaTime);
 
         Transform peTransform = pe.transform;
 
@@ -595,7 +600,7 @@ public class PersistentKSPShurikenEmitter
                         particle.startSize += linGrowConst;
                     }
                     
-                    particle.startSize = Mathf.Min(particle.startSize, SizeClampAt(1 - particle.remainingLifetime / particle.startLifetime, Time.deltaTime / particle.startLifetime));
+                    particle.startSize = Mathf.Min(particle.startSize, SizeClampAt(1 - particle.remainingLifetime / particle.startLifetime, clampStep / particle.startLifetime));
                     Profiler.EndSample();
                     Profiler.BeginSample("Velocity");
                     if (spawnedThisFrame)
