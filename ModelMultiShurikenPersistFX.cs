@@ -80,6 +80,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
     [Persistent] public float timeModulo = 10;
 
     // For how long the effect will be running after a single Emit()
+    // 0: a single Emit() emits one second of particles at once
     // time input is overridden to be the remaining time while it runs
     [Persistent] public float singleEmitTimer = 0;
 
@@ -277,6 +278,17 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         {
             return;
         }
+        if (singleEmitTimer <= 0)
+        {
+            // Without a timer, emit one second of particles at full power in one go
+            UpdateEmitters(1f);
+            for (int i = 0; i < persistentEmitters.Count; i++)
+            {
+                persistentEmitters[i].EmitBurst(1f);
+            }
+            return;
+        }
+
         singleTimerEnd = singleEmitTimer + Time.fixedTime;
         timeModuloDelta = singleTimerEnd % timeModulo;
 
