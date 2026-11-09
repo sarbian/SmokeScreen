@@ -87,8 +87,6 @@ public class PersistentKSPShurikenEmitter
     //private float emitterVelocityScale;
     private Vector3 rndVelocity;
     private bool rndRotation;
-    private float angularVelocity;
-    private float rndAngularVelocity;
 
     public float logarithmicGrow;
 
@@ -202,8 +200,6 @@ public class PersistentKSPShurikenEmitter
 
         rndVelocity = templateKspParticleEmitter.rndVelocity;
         rndRotation = templateKspParticleEmitter.rndRotation;
-        angularVelocity = templateKspParticleEmitter.angularVelocity;
-        rndAngularVelocity = templateKspParticleEmitter.rndAngularVelocity;
 
         // Unity sure love its strange way of using struct (this actually works because each properties of the struct does magic)
         ParticleSystem.ForceOverLifetimeModule fol = pe.forceOverLifetime;
@@ -321,13 +317,12 @@ public class PersistentKSPShurikenEmitter
             );
         }
 
+        // The spin comes from the rotationOverLifetime module that SetupProperties sets from the model
         float rotation = rndRotation ? Random.value * 360f : 0f;
-        float angularV = angularVelocity + Random.value * rndAngularVelocity;
 
         emitParams.position = pos;
         emitParams.velocity = vel;
         emitParams.rotation = rotation;
-        emitParams.angularVelocity = angularV;
         emitParams.startLifetime = Random.Range(minEnergy, maxEnergy);
 
         Color.RGBToHSV(color, out float h, out float s, out float v);
