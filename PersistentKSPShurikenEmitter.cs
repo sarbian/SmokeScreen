@@ -98,8 +98,6 @@ public class PersistentKSPShurikenEmitter
 
     public float sizeClamp = 50;
 
-    public bool clampXYstart = false;
-
     // The initial velocity of the particles will be offset by a random amount
     // lying in a disk perpendicular to the mean initial velocity whose radius
     // is randomOffsetMaxRadius. This is similar to Unity's 'Random Velocity'
@@ -761,17 +759,6 @@ public class PersistentKSPShurikenEmitter
             }
         }
         return pVel;
-    }
-    private Vector3 RandomConeVector(float angle)
-    {
-        //Performed in the transform's frame, default output should be 0,0,1
-        Vector3 unit = new Vector3(0,0,1);
-        //Produce a random vector within "angle" of the original vector.
-        Vector2 disk = Random.insideUnitCircle*angle;
-        unit.x = disk.x;
-        unit.y = disk.y;
-        unit = Vector3.Normalize(unit);
-        return unit;
     }
     private void Print(string s)
     {
