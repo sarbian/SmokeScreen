@@ -42,6 +42,8 @@ namespace SmokeScreen
 
         private const int winID = 512099;
 
+        private string maxParticlesText;
+
         private SmokeScreenUI()
         {
             if (!ToolbarManager.ToolbarAvailable)
@@ -99,12 +101,11 @@ namespace SmokeScreen
 
             GUILayout.BeginHorizontal();
             GUILayout.Label("maximumActiveParticles", GUILayout.ExpandWidth(true));
-            int.TryParse(
-                GUILayout.TextField(
-                    SmokeScreenConfig.Instance.maximumActiveParticles.ToString(),
-                    GUILayout.ExpandWidth(true),
-                    GUILayout.Width(100)),
-                out SmokeScreenConfig.Instance.maximumActiveParticles);
+            if (maxParticlesText == null)
+                maxParticlesText = SmokeScreenConfig.Instance.maximumActiveParticles.ToString();
+            maxParticlesText = GUILayout.TextField(maxParticlesText, GUILayout.ExpandWidth(true), GUILayout.Width(100));
+            if (int.TryParse(maxParticlesText, out int maxParticles) && maxParticles >= 1)
+                SmokeScreenConfig.Instance.maximumActiveParticles = maxParticles;
             GUILayout.EndHorizontal();
 
             // 'SmokeScreenConfig.activeParticles' isn't accurate anymore
