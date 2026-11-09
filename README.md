@@ -126,7 +126,7 @@ maximum particle size.
 | `offsetDirection` | 0, 0, 1 | the direction the `offset` curve moves the emitter |
 | `fixedScale` | 1 | scales size, speed, shape and offset. ProceduralSRB's bell scale and TweakScale's scale are applied on top |
 | `emissionMult` | 1 | multiplies the emission rate |
-| `sizeClamp` | 50 | the largest size in m a particle reaches by growing, including the model's own `sizeGrow` |
+| `sizeClamp` | 50 | the largest size in m a particle reaches by growing, including the model's own `sizeGrow`. A `sizeClamp = N` line is also read as the `power` key list of the `sizeClamp` curve (a single value is a constant), so it counts twice: the clamp is 2N. Configs written since 2015 rely on that |
 | `layer` | TransparentFX | the layer of the emitter's objects. An unknown name falls back to TransparentFX |
 | `renderMode` | Billboard | read and saved, but not applied: the particles keep the model's render mode |
 | `particleCountLimit` | 1000 | the most particles one emitter keeps |
