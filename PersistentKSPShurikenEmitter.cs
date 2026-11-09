@@ -245,6 +245,18 @@ public class PersistentKSPShurikenEmitter
             em.enabled = false;
         }
     }
+    // Emits the particles of `seconds` of emission at once
+    public void EmitBurst(float seconds)
+    {
+        if (pe == null || go == null)
+            return;
+        int count = Mathf.FloorToInt(Random.Range(minEmission, maxEmission) * seconds);
+        for (int i = 0; i < count; i++)
+        {
+            Emit(i, count);
+        }
+    }
+
     /// <summary>
     /// Spawns a single particle
     /// </summary>
