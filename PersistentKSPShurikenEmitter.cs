@@ -168,6 +168,8 @@ public class PersistentKSPShurikenEmitter
 
     private static ParticleSystem.Particle[] particles;
 
+    private static int collisionMask;
+
     public PersistentKSPShurikenEmitter(
         GameObject go,
         ParticleSystem pe,
@@ -411,7 +413,9 @@ public class PersistentKSPShurikenEmitter
             ReadSizeCurve();
 
         // "Default", "TransparentFX", "Local Scenery", "Ignore Raycast"
-        int mask = (1 << LayerMask.NameToLayer("Default")) | (1 << LayerMask.NameToLayer("Local Scenery"));
+        if (collisionMask == 0)
+            collisionMask = (1 << LayerMask.NameToLayer("Default")) | (1 << LayerMask.NameToLayer("Local Scenery"));
+        int mask = collisionMask;
 
         Profiler.BeginSample ("fixedEmit");
         // Moved to outer scope to use later. Will stay 0 if it's not emitting.
