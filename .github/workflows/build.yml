@@ -1,0 +1,163 @@
+name: build
+
+# pull_request:   build and comment the build zip on the PR
+# push (master):  build and publish the zip as a workflow artifact
+# workflow_call:  used by create-release.yml, which passes the version to release
+on:
+  push:
+    branches: [master]
+    paths-ignore:
+      - '**/*.md'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        required: false
+        default: ''
+        description: 'Version to build (major.minor.patch.build). Empty keeps the one from AssemblyInfo.cs.'
+      ref:
+        type: string
+        required: false
+        default: ''
+        description: 'Git ref to build. Empty checks out the ref that triggered this run.'
+
+concurrency:
+  # Only superseded PR builds get cancelled. Every push gets its own group so that each commit keeps its artifact.
+  group: build-${{ github.event_name == 'pull_request' && github.head_ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  DOTNET_NOLOGO: 1
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  # Written into SmokeScreen.version (KSP-AVC / CKAN): the KSP the build targets and the range it is known to work on
+  KSP_VERSION: '1.12.5'
+  KSP_VERSION_MIN: '1.12.0'
+  KSP_VERSION_MAX: '1.13.99'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write # comment the build on the PR
+    outputs:
+      label: ${{ steps.meta.outputs.label }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Check for UTF-8 BOMs
+        run: |
+          bom=$(git ls-files -z '*.cs' | xargs -0 perl -ne 'print "$ARGV\n" if $. == 1 && /^\xEF\xBB\xBF/; close ARGV if eof')
+          for f in $bom; do echo "::error file=$f::UTF-8 BOM (strip it: perl -pi -e 's/^\xEF\xBB\xBF// if \$. == 1' $f)"; done
+          test -z "$bom"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 8.x
+
+      # KSP_x64_Data/Managed, the layout the csproj reads through KSPDIR
+      - name: Download KSP Libs
+        run: |
+          curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 -o /tmp/ksp.zip https://github.com/KSPModdingLibs/KSPLibs/raw/main/KSP-1.12.5.zip
+          unzip -q /tmp/ksp.zip -d /tmp/ksp
+          test -f /tmp/ksp/KSP_x64_Data/Managed/Assembly-CSharp.dll
+
+      - name: Compute build metadata
+        id: meta
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [ -n "$VERSION" ]; then
+            label="$VERSION"
+          else
+            label="${GITHUB_SHA::7}"
+          fi
+          echo "label=$label" >> "$GITHUB_OUTPUT"
+
+      # AssemblyVersion and AssemblyFileVersion are kept equal in this project
+      - name: Stamp version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          file=Properties/AssemblyInfo.cs
+          if [ -n "$VERSION" ]; then
+            sed -i -E "/^\[assembly:/ s/(AssemblyVersion\(\")[^\"]*(\"\))/\1${VERSION}\2/" "$file"
+            sed -i -E "/^\[assembly:/ s/(AssemblyFileVersion\(\")[^\"]*(\"\))/\1${VERSION}\2/" "$file"
+            grep -qF "AssemblyVersion(\"$VERSION\")" "$file"
+            grep -qF "AssemblyFileVersion(\"$VERSION\")" "$file"
+          fi
+          grep -E 'Assembly(File)?Version' "$file"
+
+      - name: Build
+        run: dotnet build SmokeScreen.csproj -c Release -p:KSPDIR=/tmp/ksp
+
+      # GameData/SmokeScreen: the DLL, the global settings, the toolbar icon, the licence and the KSP-AVC version file
+      - name: Package
+        run: |
+          stage="$RUNNER_TEMP/package/SmokeScreen"
+          rm -rf "$RUNNER_TEMP/package"
+          mkdir -p "$stage"
+          cp bin/Release/SmokeScreen.dll GameData/SmokeScreen/SmokeScreen.cfg GameData/SmokeScreen/SmokeScreen.png Licence.txt "$stage/"
+
+          version=$(sed -n -E '/^\[assembly:/ s/.*AssemblyFileVersion\("([^"]*)"\).*/\1/p' Properties/AssemblyInfo.cs)
+          IFS=. read -r V1 V2 V3 V4 <<< "$version"
+          IFS=. read -r K1 K2 K3 <<< "$KSP_VERSION"
+          IFS=. read -r N1 N2 N3 <<< "$KSP_VERSION_MIN"
+          IFS=. read -r X1 X2 X3 <<< "$KSP_VERSION_MAX"
+          sed -e "s/@VERSION_MAJOR@/$V1/; s/@VERSION_MINOR@/$V2/; s/@VERSION_PATCH@/$V3/; s/@VERSION_BUILD@/$V4/" \
+              -e "s/@KSP_MAJOR_MIN@/$N1/; s/@KSP_MINOR_MIN@/$N2/; s/@KSP_PATCH_MIN@/$N3/" \
+              -e "s/@KSP_MAJOR_MAX@/$X1/; s/@KSP_MINOR_MAX@/$X2/; s/@KSP_PATCH_MAX@/$X3/" \
+              -e "s/@KSP_MAJOR@/$K1/; s/@KSP_MINOR@/$K2/; s/@KSP_PATCH@/$K3/" \
+              GameData/SmokeScreen/SmokeScreen.version.in > "$stage/SmokeScreen.version"
+          ! grep -q '@' "$stage/SmokeScreen.version"
+          jq . "$stage/SmokeScreen.version"
+
+          ls -l "$stage"
+
+      # GitHub downloads the artifact as SmokeScreen-<label>.zip, with the SmokeScreen folder at its root: unzip it in GameData
+      - name: Upload artifact
+        id: upload
+        uses: actions/upload-artifact@v7
+        with:
+          name: SmokeScreen-${{ steps.meta.outputs.label }}
+          path: ${{ runner.temp }}/package
+          if-no-files-found: error
+
+      # Forks only get a read-only token: they can still download the artifact from the run page
+      - name: Comment PR
+        if: ${{ !env.ACT && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+        uses: actions/github-script@v9
+        env:
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+          ZIP_NAME: SmokeScreen-${{ steps.meta.outputs.label }}.zip # the name GitHub gives the artifact download
+        with:
+          script: |
+            const marker = '<!-- smokescreen-build-artifact -->';
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const sha = context.payload.pull_request.head.sha.slice(0, 7);
+            const body = `${marker}\n## ✅ Build Artifact 🚀\n\n[${process.env.ZIP_NAME}](${process.env.ARTIFACT_URL}) (built from ${sha})`;
+
+            // Update the previous comment instead of adding a new one on every push
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const previous = comments.find(c => c.body && c.body.includes(marker));
+            if (previous) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: previous.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
