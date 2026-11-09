@@ -25,6 +25,7 @@
  *
  */
 
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace SmokeScreen
@@ -76,6 +77,12 @@ namespace SmokeScreen
             if (showUI)
             {
                 winPos = GUILayout.Window(winID, winPos, windowGUI, "SmokeScreen", GUILayout.MinWidth(300));
+            }
+
+            List<ModelMultiShurikenPersistFX> effects = ModelMultiShurikenPersistFX.List;
+            for (int i = 0; i < effects.Count; i++)
+            {
+                effects[i].DrawWindow();
             }
         }
 
