@@ -96,6 +96,16 @@ public class PersistentKSPShurikenEmitter
 
     public float sizeClamp = 50;
 
+    // The size over lifetime curve SetupProperties gives the particle system from the model's sizeGrow.
+    // The rendered size is startSize times this curve, so the clamp on startSize divides by it.
+    private AnimationCurve sizeCurve;
+    private float sizeCurveMultiplier = 1;
+    private bool sizeCurveRead;
+
+    // The last frame's Time.deltaTime, set by ModelMultiShurikenPersistFX.Update. Unity ages the particles once per frame,
+    // so from FixedUpdate the next clamp can be a whole frame away, not one fixed step
+    public static float frameDeltaTime;
+
     // The initial velocity of the particles will be offset by a random amount
     // lying in a disk perpendicular to the mean initial velocity whose radius
     // is randomOffsetMaxRadius. This is similar to Unity's 'Random Velocity'
@@ -368,17 +378,49 @@ public class PersistentKSPShurikenEmitter
                 emitParams.startSize += linGrowConst;
             }
 
-            emitParams.startSize = Mathf.Min (emitParams.startSize, sizeClamp);
+            emitParams.startSize = Mathf.Min (emitParams.startSize, SizeClampAt(simulatedLifetime / emitParams.startLifetime, Mathf.Max(Time.deltaTime, frameDeltaTime) / emitParams.startLifetime));
         }
 
         pe.Emit(emitParams, 1);
     }
     
+    private void ReadSizeCurve()
+    {
+        sizeCurveRead = true;
+        ParticleSystem.SizeOverLifetimeModule sol = pe.sizeOverLifetime;
+        if (!sol.enabled || sol.separateAxes)
+            return;
+        ParticleSystem.MinMaxCurve size = sol.size;
+        if (size.mode == ParticleSystemCurveMode.Curve && size.curve != null)
+        {
+            sizeCurve = size.curve;
+            sizeCurveMultiplier = size.curveMultiplier;
+        }
+    }
+
+    // The largest startSize that renders at most sizeClamp from this fraction of the particle's life until the next
+    // clamp, `step` later: a fast-growing particle would otherwise pass the clamp between two clamps
+    private float SizeClampAt(float lifeFraction, float step)
+    {
+        if (sizeCurve == null)
+            return sizeClamp;
+        if (!(lifeFraction >= 0))
+            lifeFraction = 0;
+        if (!(step >= 0))
+            step = 0;
+        float curve = Mathf.Max(sizeCurve.Evaluate(Mathf.Min(lifeFraction, 1)), sizeCurve.Evaluate(Mathf.Min(lifeFraction + step, 1)));
+        curve *= sizeCurveMultiplier;
+        return curve > 0.001f ? sizeClamp / curve : sizeClamp;
+    }
+
     // Update the particles of the Emitter : Emit, resize, collision and physic
     public void EmitterOnUpdate(Vector3d emitterWorldVelocity)
     {
         if (pe == null)
             return;
+
+        if (!sizeCurveRead)
+            ReadSizeCurve();
 
         // "Default", "TransparentFX", "Local Scenery", "Ignore Raycast"
         if (collisionMask == 0)
@@ -437,6 +479,7 @@ public class PersistentKSPShurikenEmitter
         double logGrowConst = Time.deltaTime * logarithmicGrow * logarithmicGrowScale;
         float linGrowConst = (float)(Time.deltaTime * linearGrow * averageSize);
         float growConst = Mathf.Pow( 1 + sizeGrow, Time.deltaTime);
+        float clampStep = Mathf.Max(Time.deltaTime, frameDeltaTime);
 
         Transform peTransform = pe.transform;
 
@@ -566,7 +609,7 @@ public class PersistentKSPShurikenEmitter
                         particle.startSize += linGrowConst;
                     }
                     
-                    particle.startSize = Mathf.Min(particle.startSize, sizeClamp);
+                    particle.startSize = Mathf.Min(particle.startSize, SizeClampAt(1 - particle.remainingLifetime / particle.startLifetime, clampStep / particle.startLifetime));
                     Profiler.EndSample();
                     Profiler.BeginSample("Velocity");
                     if (spawnedThisFrame)
