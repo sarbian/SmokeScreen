@@ -482,6 +482,12 @@ public class PersistentKSPShurikenEmitter
         float clampStep = Mathf.Max(Time.deltaTime, frameDeltaTime);
 
         Transform peTransform = pe.transform;
+        // The emitter's pose, read once per update instead of four transform calls per particle: TransformPoint is the
+        // local-to-world matrix, TransformDirection the rotation alone (no scale), and their inverses likewise
+        Matrix4x4 localToWorld = peTransform.localToWorldMatrix;
+        Matrix4x4 worldToLocal = peTransform.worldToLocalMatrix;
+        Quaternion rotation = peTransform.rotation;
+        Quaternion inverseRotation = Quaternion.Inverse(rotation);
 
         Vector3d frameVel = Krakensbane.GetFrameVelocity();
 
@@ -564,15 +570,14 @@ public class PersistentKSPShurikenEmitter
                     lPos += Vector3.Normalize(lVel) * (randoff + vPosOffset);
 
                     //Finalize position and velocity
-                    pPos = peTransform.TransformPoint(lPos);
-                    pVel = peTransform.TransformDirection(lVel)
-                                + frameVel;
+                    pPos = localToWorld.MultiplyPoint3x4(lPos);
+                    pVel = rotation * lVel + frameVel;
                 }
                 else if (!useWorldSpace && !spawnedThisFrame)
                 {
-                    pPos = peTransform.TransformPoint(particle.position);
+                    pPos = localToWorld.MultiplyPoint3x4(particle.position);
 
-                    pVel = peTransform.TransformDirection (
+                    pVel = rotation * new Vector3(
                         particle.velocity.x * xyForceMultiplier,
                         particle.velocity.y * xyForceMultiplier,
                         particle.velocity.z * zForceMultiplier
@@ -580,8 +585,8 @@ public class PersistentKSPShurikenEmitter
                 }
                 else
                 {
-                    pPos = peTransform.TransformPoint(particle.position);
-                    pVel = peTransform.TransformDirection(particle.velocity) + frameVel;
+                    pPos = localToWorld.MultiplyPoint3x4(particle.position);
+                    pVel = rotation * particle.velocity + frameVel;
                 }
                 Profiler.EndSample();
                 // try-finally block to ensure we set the particle velocities correctly in the end.
@@ -683,12 +688,12 @@ public class PersistentKSPShurikenEmitter
                 finally
                 {
                     Profiler.BeginSample("SetVelPos");
-                    particle.velocity = pe.main.simulationSpace == ParticleSystemSimulationSpace.World
+                    particle.velocity = useWorldSpace
                         ? (Vector3)(pVel - frameVel)
-                        : peTransform.InverseTransformDirection(pVel - frameVel);
-                    particle.position = pe.main.simulationSpace == ParticleSystemSimulationSpace.World
+                        : inverseRotation * (Vector3)(pVel - frameVel);
+                    particle.position = useWorldSpace
                         ? (Vector3)pPos
-                        : peTransform.InverseTransformPoint(pPos);
+                        : worldToLocal.MultiplyPoint3x4(pPos);
                     Profiler.EndSample();
                 }
 
