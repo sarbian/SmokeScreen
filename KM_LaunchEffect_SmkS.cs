@@ -150,11 +150,14 @@ namespace SmokeScreen
         private Dictionary<int, Vector3> locationList = new Dictionary<int, Vector3>();
         private Dictionary<int, Light> lightList = new Dictionary<int, Light>();
 
+        // Whether the effect is emitting now, as last set by setEffect
+        private bool effectOn = false;
+
 
         [KSPEvent(guiName = "Toggle", guiActive = true)]
         public void toggle()
         {
-            setEffect(!isActive);
+            setEffect(!effectOn);
         }
 
 
@@ -166,7 +169,7 @@ namespace SmokeScreen
         [KSPAction("Toggle")]
         public void toggleAG(KSPActionParam param)
         {
-            setEffect(!isActive);
+            setEffect(!effectOn);
         }
 
         public override void OnStart(StartState state)
@@ -216,6 +219,8 @@ namespace SmokeScreen
                 speed = new Vector3(speedX, speedY, speedZ);
 
             registerEffects();
+
+            Events["toggle"].guiName = "Toggle " + effectName;
 
 
             if (state != StartState.Editor && Vessel.Situations.PRELAUNCH == vessel.situation)
@@ -283,7 +288,7 @@ namespace SmokeScreen
                             launchEffect.minEnergy = height / 2;
 
                         if (size != 0)
-                            launchEffect.minSize = size;
+                            launchEffect.maxSize = size;
                         if (size != 0)
                             launchEffect.minSize = size / 2;
 
@@ -373,6 +378,7 @@ namespace SmokeScreen
         
         public void setEffect(bool state)
         {
+            effectOn = state;
             foreach (KeyValuePair<int, KSPParticleEmitter> pair in effectsList)
             {
                 KSPParticleEmitter launchEffect = pair.Value;
