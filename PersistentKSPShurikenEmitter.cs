@@ -367,7 +367,7 @@ public class PersistentKSPShurikenEmitter
                 emitParams.startSize += linGrowConst;
             }
 
-            emitParams.startSize = Mathf.Min (emitParams.startSize, SizeClampAt(simulatedLifetime / emitParams.startLifetime));
+            emitParams.startSize = Mathf.Min (emitParams.startSize, SizeClampAt(simulatedLifetime / emitParams.startLifetime, Time.deltaTime / emitParams.startLifetime));
         }
 
         pe.Emit(emitParams, 1);
@@ -387,14 +387,18 @@ public class PersistentKSPShurikenEmitter
         }
     }
 
-    // The largest startSize that renders at most sizeClamp at this fraction of the particle's life
-    private float SizeClampAt(float lifeFraction)
+    // The largest startSize that renders at most sizeClamp from this fraction of the particle's life until the next
+    // update, `step` later: a fast-growing particle would otherwise pass the clamp between two updates
+    private float SizeClampAt(float lifeFraction, float step)
     {
         if (sizeCurve == null)
             return sizeClamp;
         if (!(lifeFraction >= 0))
             lifeFraction = 0;
-        float curve = sizeCurveMultiplier * sizeCurve.Evaluate(Mathf.Min(lifeFraction, 1));
+        if (!(step >= 0))
+            step = 0;
+        float curve = Mathf.Max(sizeCurve.Evaluate(Mathf.Min(lifeFraction, 1)), sizeCurve.Evaluate(Mathf.Min(lifeFraction + step, 1)));
+        curve *= sizeCurveMultiplier;
         return curve > 0.001f ? sizeClamp / curve : sizeClamp;
     }
 
@@ -591,7 +595,7 @@ public class PersistentKSPShurikenEmitter
                         particle.startSize += linGrowConst;
                     }
                     
-                    particle.startSize = Mathf.Min(particle.startSize, SizeClampAt(1 - particle.remainingLifetime / particle.startLifetime));
+                    particle.startSize = Mathf.Min(particle.startSize, SizeClampAt(1 - particle.remainingLifetime / particle.startLifetime, Time.deltaTime / particle.startLifetime));
                     Profiler.EndSample();
                     Profiler.BeginSample("Velocity");
                     if (spawnedThisFrame)
