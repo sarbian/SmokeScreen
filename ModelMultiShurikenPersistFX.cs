@@ -336,7 +336,8 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         PersistentKSPShurikenEmitter pkse = persistentEmitters[transformIdx];
         if ((overRideInputs || power > 0) && activated)
         {
-            UpdateEmitters(power);
+            UpdateInputs(power);
+            UpdateEmitter(transformIdx);
 
             pkse.emitting = true;
             if (pkse.pe != null)
@@ -458,10 +459,18 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
 
         for (int i = 0; i < persistentEmitters.Count; i++)
         {
+            UpdateEmitter(i);
+        }
+    }
+
+    // Applies the current inputs to one emitter. Call UpdateInputs first.
+    private void UpdateEmitter(int i)
+    {
+        {
             PersistentKSPShurikenEmitter pkpe = persistentEmitters[i];
 
             if (pkpe.go == null)
-                continue;
+                return;
             
             float finalScale = fixedScale * specialScale;
 
