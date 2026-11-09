@@ -22,6 +22,12 @@ Open `SmokeScreen.csproj` or run `dotnet build SmokeScreen.csproj -c Release`. T
 install. When `KSPDIR` is set, the build also copies `SmokeScreen.dll` and its `.pdb` to `GameData\SmokeScreen`
 in that install.
 
+GitHub Actions builds every push to `master` and every pull request against the KSP 1.12.5 assemblies of
+[KSPModdingLibs](https://github.com/KSPModdingLibs/KSPLibs), and a pull request gets a comment with the zip of its
+`GameData/SmokeScreen` folder. The `create-release` workflow, run by hand with a `major.minor.patch.build` version,
+builds that version, commits it to `Properties/AssemblyInfo.cs`, tags `v<version>` and publishes a GitHub release
+with the zip and `SmokeScreen.version`, which the build generates from `SmokeScreen.version.in`.
+
 The effect
 ----------
 
