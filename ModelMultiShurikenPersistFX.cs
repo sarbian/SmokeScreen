@@ -28,7 +28,6 @@
 using SmokeScreen;
 using System;
 using System.Collections.Generic;
-using UniLinq;
 using UnityEngine;
 
 [EffectDefinition("MODEL_MULTI_SHURIKEN_PERSIST")]
@@ -182,7 +181,16 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
     {
         get
         {
-            int max = persistentEmitters.Max(emitter => emitter.pe.particleCount);
+            int max = 0;
+            if (persistentEmitters != null)
+            {
+                for (int i = 0; i < persistentEmitters.Count; i++)
+                {
+                    PersistentKSPShurikenEmitter emitter = persistentEmitters[i];
+                    if (emitter != null && emitter.pe != null)
+                        max = Mathf.Max(max, emitter.pe.particleCount);
+                }
+            }
             lastMaxActiveParticles = Mathf.Max(max, lastMaxActiveParticles);
             return lastMaxActiveParticles;
         }
@@ -563,10 +571,27 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
         }
     }
 
+    private static Camera mainCamera;
+    private static int mainCameraFrame = -1;
+
+    // Camera.main is a tag search: look it up once per frame for all the effects
+    private static Camera MainCamera
+    {
+        get
+        {
+            if (mainCameraFrame != Time.frameCount)
+            {
+                mainCamera = Camera.main;
+                mainCameraFrame = Time.frameCount;
+            }
+            return mainCamera;
+        }
+    }
+
     public void Update()
     {
         //Print("Update");
-        if (persistentEmitters == null || Camera.main == null)
+        if (persistentEmitters == null || MainCamera == null)
         {
             return;
         }
@@ -578,9 +603,9 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
 
             // using Camera.main will mess up anything multi cam but using current require adding a OnWillRenderObject() to the ksp particle emitter GameObject (? not tested)
             float currentAngle = Vector3.Angle(
-                -Camera.main.transform.forward,
+                -MainCamera.transform.forward,
                 persistentEmitters[i].go.transform.forward);
-            float currentDist = (Camera.main.transform.position - persistentEmitters[i].go.transform.position).magnitude;
+            float currentDist = (MainCamera.transform.position - persistentEmitters[i].go.transform.position).magnitude;
 
             persistentEmitters[i].pr.maxParticleSize = persistentEmitters[i].maxSizeBase * angle.Value(currentAngle) * distance.Value(currentDist);
         }
@@ -1120,7 +1145,7 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
 
     private static int baseWinID = 512100;
 
-    private static int winID = baseWinID;
+    private readonly int winID;
 
     private string nodeText = "";
 
@@ -1128,12 +1153,9 @@ public class ModelMultiShurikenPersistFX : EffectBehaviour
 
     private Vector2 scrollPosition = new Vector2();
 
-    private void OnGUI()
+    // Called from SmokeScreenUI.OnGUI, so that the effects don't each get an OnGUI call for every GUI event
+    internal void DrawWindow()
     {
-        if (!HighLogic.LoadedSceneIsFlight)
-        {
-            return;
-        }
         if (showUI && hostPart != null)
         {
             winPos = GUILayout.Window(
