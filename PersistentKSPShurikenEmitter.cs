@@ -347,8 +347,15 @@ public class PersistentKSPShurikenEmitter
         emitParams.rotation = rotation;
         emitParams.startLifetime = Random.Range(minEnergy, maxEnergy);
 
-        Color.RGBToHSV(color, out float h, out float s, out float v);
-        Color finalColor = Color.HSVToRGB(h, s * saturationMult, v * brightnessMult);
+        Color finalColor = color;
+        if (saturationMult != 1f || brightnessMult != 1f)
+        {
+            Color.RGBToHSV(color, out float h, out float s, out float v);
+            Color adjusted = Color.HSVToRGB(h, s * saturationMult, v * brightnessMult);
+            finalColor.r = adjusted.r;
+            finalColor.g = adjusted.g;
+            finalColor.b = adjusted.b;
+        }
         finalColor.a = color.a * alphaMult;
 
         emitParams.startColor = finalColor;
@@ -510,6 +517,9 @@ public class PersistentKSPShurikenEmitter
         // Doesn't need to be calculated multiple times
         float xyForceMultiplier = Mathf.Pow (xyForce, Time.deltaTime * 50);
         float zForceMultiplier = Mathf.Pow (zForce, Time.deltaTime * 50);
+
+        // The HSV round trip only changes the colour when the saturation or brightness multiplier is not 1
+        bool adjustColor = saturationMult != 1f || brightnessMult != 1f;
 
         //Step through all the particles:
         for (int j = 0; j < numParticlesAlive; j++)
@@ -737,11 +747,17 @@ public class PersistentKSPShurikenEmitter
                     }
                     
                     Color c = Color.Lerp(a, b, lerp);
-                    Color.RGBToHSV(c, out float h, out float s, out float v);
-                    Color finalColor = Color.HSVToRGB(h, s * saturationMult, v * brightnessMult);
-                    finalColor.a = c.a * alphaMult;
+                    if (adjustColor)
+                    {
+                        Color.RGBToHSV(c, out float h, out float s, out float v);
+                        Color adjusted = Color.HSVToRGB(h, s * saturationMult, v * brightnessMult);
+                        c.r = adjusted.r;
+                        c.g = adjusted.g;
+                        c.b = adjusted.b;
+                    }
+                    c.a *= alphaMult;
 
-                    particle.startColor = finalColor;
+                    particle.startColor = c;
                     Profiler.EndSample();
                 }
             }
