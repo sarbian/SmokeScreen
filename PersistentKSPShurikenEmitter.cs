@@ -450,6 +450,11 @@ public class PersistentKSPShurikenEmitter
         }
         Profiler.EndSample();
 
+        // Most of a vessel's emitters are empty most of the time, and the two particle copies below cost about a
+        // microsecond each even then: an emitter with nothing alive and nothing emitted has nothing to update
+        if (ParticlesThisFrame == 0 && pe.particleCount == 0)
+            return;
+
         if (particles == null || pe.main.maxParticles > particles.Length)
             particles = new ParticleSystem.Particle[pe.main.maxParticles];
         
