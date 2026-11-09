@@ -208,9 +208,9 @@ public class PersistentKSPShurikenEmitter
         // Unity sure love its strange way of using struct (this actually works because each properties of the struct does magic)
         ParticleSystem.ForceOverLifetimeModule fol = pe.forceOverLifetime;
         fol.enabled = force.sqrMagnitude > 0 || rndForce.sqrMagnitude > 0;
-        fol.x = new ParticleSystem.MinMaxCurve(forceBase.x, forceBase.x + rndForce.x);
-        fol.y = new ParticleSystem.MinMaxCurve(forceBase.y, forceBase.y + rndForce.y);
-        fol.z = new ParticleSystem.MinMaxCurve(forceBase.z, forceBase.z + rndForce.z);
+        fol.x = new ParticleSystem.MinMaxCurve(forceBase.x - 0.5f * rndForce.x, forceBase.x + 0.5f * rndForce.x);
+        fol.y = new ParticleSystem.MinMaxCurve(forceBase.y - 0.5f * rndForce.y, forceBase.y + 0.5f * rndForce.y);
+        fol.z = new ParticleSystem.MinMaxCurve(forceBase.z - 0.5f * rndForce.z, forceBase.z + 0.5f * rndForce.z);
 
         color = templateKspParticleEmitter.color;
         saturationMult = 1;
